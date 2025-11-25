@@ -39,7 +39,11 @@ func parseXPercentOfY(input string) (string, bool) {
 	base, _ := strconv.ParseFloat(matches[2], 64)
 
 	result := (percent / 100.0) * base
-	return fmt.Sprintf("%.2f%% of %.2f = %.2f", percent, base, result), true
+
+	output := fmt.Sprintf("%.2f%% of %.2f = %.2f\n", percent, base, result)
+	output += fmt.Sprintf("  Steps: (%.2f / 100) * %.2f = %.2f * %.2f = %.2f", percent, base, percent/100.0, base, result)
+
+	return output, true
 }
 
 func parseXIsWhatPercentOfY(input string) (string, bool) {
@@ -58,7 +62,11 @@ func parseXIsWhatPercentOfY(input string) (string, bool) {
 	}
 
 	percent := (part / whole) * 100.0
-	return fmt.Sprintf("%.2f is %.2f%% of %.2f", part, percent, whole), true
+
+	output := fmt.Sprintf("%.2f is %.2f%% of %.2f\n", part, percent, whole)
+	output += fmt.Sprintf("  Steps: (%.2f / %.2f) * 100 = %.2f * 100 = %.2f%%", part, whole, part/whole, percent)
+
+	return output, true
 }
 
 func parseXIsYPercentOfWhat(input string) (string, bool) {
@@ -77,5 +85,9 @@ func parseXIsYPercentOfWhat(input string) (string, bool) {
 	}
 
 	whole := (part / percent) * 100.0
-	return fmt.Sprintf("%.2f is %.2f%% of %.2f", part, percent, whole), true
+
+	output := fmt.Sprintf("%.2f is %.2f%% of %.2f\n", part, percent, whole)
+	output += fmt.Sprintf("  Steps: (%.2f / %.2f) * 100 = %.2f * 100 = %.2f", part, percent, part/percent, whole)
+
+	return output, true
 }

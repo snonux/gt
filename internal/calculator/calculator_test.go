@@ -49,8 +49,11 @@ func TestParseXPercentOfY(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Parse(%q) returned error: %v", tt.input, err)
 			}
-			if result != tt.expected {
-				t.Errorf("Parse(%q) = %q, expected %q", tt.input, result, tt.expected)
+			if !strings.HasPrefix(result, tt.expected) {
+				t.Errorf("Parse(%q) = %q, expected to start with %q", tt.input, result, tt.expected)
+			}
+			if !strings.Contains(result, "Steps:") {
+				t.Errorf("Parse(%q) = %q, expected to contain calculation steps", tt.input, result)
 			}
 		})
 	}
@@ -95,8 +98,11 @@ func TestParseXIsWhatPercentOfY(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Parse(%q) returned error: %v", tt.input, err)
 			}
-			if result != tt.expected {
-				t.Errorf("Parse(%q) = %q, expected %q", tt.input, result, tt.expected)
+			if !strings.HasPrefix(result, tt.expected) {
+				t.Errorf("Parse(%q) = %q, expected to start with %q", tt.input, result, tt.expected)
+			}
+			if !strings.Contains(result, "Steps:") {
+				t.Errorf("Parse(%q) = %q, expected to contain calculation steps", tt.input, result)
 			}
 		})
 	}
@@ -141,8 +147,11 @@ func TestParseXIsYPercentOfWhat(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Parse(%q) returned error: %v", tt.input, err)
 			}
-			if result != tt.expected {
-				t.Errorf("Parse(%q) = %q, expected %q", tt.input, result, tt.expected)
+			if !strings.HasPrefix(result, tt.expected) {
+				t.Errorf("Parse(%q) = %q, expected to start with %q", tt.input, result, tt.expected)
+			}
+			if !strings.Contains(result, "Steps:") {
+				t.Errorf("Parse(%q) = %q, expected to contain calculation steps", tt.input, result)
 			}
 		})
 	}
