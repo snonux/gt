@@ -1,6 +1,6 @@
 # perc
 
-A simple command-line percentage calculator written in Go.
+A simple vibe-coded command-line percentage calculator written in Go.
 
 ## Installation
 
