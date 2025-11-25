@@ -22,24 +22,32 @@ mage install
 
 ```bash
 perc 20% of 150
-# Output: 20.00% of 150.00 = 30.00
+# Output:
+# 20.00% of 150.00 = 30.00
+#   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
 
 perc what is 20% of 150
-# Output: 20.00% of 150.00 = 30.00
+# Output:
+# 20.00% of 150.00 = 30.00
+#   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
 ```
 
 ### Find what percentage X is of Y
 
 ```bash
 perc 30 is what % of 150
-# Output: 30.00 is 20.00% of 150.00
+# Output:
+# 30.00 is 20.00% of 150.00
+#   Steps: (30.00 / 150.00) * 100 = 0.20 * 100 = 20.00%
 ```
 
 ### Find the whole when X is Y% of it
 
 ```bash
 perc 30 is 20% of what
-# Output: 30.00 is 20.00% of 150.00
+# Output:
+# 30.00 is 20.00% of 150.00
+#   Steps: (30.00 / 20.00) * 100 = 1.50 * 100 = 150.00
 ```
 
 ## Building
