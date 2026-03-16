@@ -1,0 +1,95 @@
+package repl
+
+import (
+	"fmt"
+	"strings"
+)
+
+// builtinCommands defines the built-in REPL commands
+var builtinCommands = []string{"help", "clear", "quit", "exit"}
+
+// Commands returns the list of built-in command names
+func Commands() []string {
+	return builtinCommands
+}
+
+// ExecuteCommand runs a built-in command and returns its output or error
+func ExecuteCommand(cmd string) (string, error) {
+	args := strings.Fields(cmd)
+	if len(args) == 0 {
+		return "", nil
+	}
+
+	switch strings.ToLower(args[0]) {
+	case "help":
+		return cmdHelp(args[1:]), nil
+	case "clear":
+		return "", cmdClear()
+	case "quit", "exit":
+		return "", cmdQuit()
+	default:
+		return "", fmt.Errorf("unknown command: %s. Available commands: help, clear, quit, exit", args[0])
+	}
+}
+
+func cmdHelp(subCmds []string) string {
+	helpText := `PERC - Percentage Calculator REPL
+
+Built-in Commands:
+  help             Show this help message
+  help <command>   Show help for a specific topic
+  clear            Clear the screen
+  quit / exit      Exit the REPL
+
+Usage Examples:
+  20% of 150           Calculate 20% of 150
+  what is 20% of 150   Same as above (what is prefix is optional)
+  30 is what % of 150  Calculate what percentage 30 is of 150
+  30 is 20% of what    Calculate what number 30 is 20% of
+
+Keyboard Shortcuts (Vi Mode):
+  Normal Mode:
+    i              Enter Insert mode
+    a              Append after cursor
+    0              Move to beginning of line
+    $              Move to end of line
+    gg             Move to top of history
+    G              Move to bottom of history
+  Insert Mode:
+    ESC            Return to Normal mode
+    Ctrl+C         Cancel current input
+
+History Navigation:
+  Up Arrow         Previous command
+  Down Arrow       Next command
+
+Press Ctrl+D or type 'quit'/'exit' to exit.
+`
+
+	if len(subCmds) == 0 {
+		return helpText
+	}
+
+	subCmd := strings.ToLower(subCmds[0])
+	switch subCmd {
+	case "help":
+		return "help - Show this help message\nUsage: help [command]"
+	case "clear":
+		return "clear - Clear the screen\nUsage: clear"
+	case "quit", "exit":
+		return "quit / exit - Exit the REPL\nUsage: quit or exit"
+	default:
+		return fmt.Sprintf("No help available for: %s\nAvailable commands: help, clear, quit, exit", subCmd)
+	}
+}
+
+func cmdClear() error {
+	// Clear screen using ANSI escape sequence
+	fmt.Print("\033[2J\033[H")
+	return nil
+}
+
+func cmdQuit() error {
+	fmt.Println("Goodbye!")
+	return nil
+}

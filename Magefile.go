@@ -23,3 +23,7 @@ func Test() error {
 func Install() error {
 	return sh.RunV("go", "install", "./cmd/perc")
 }
+
+func Repl() error {
+	return sh.RunV("go", "run", "./cmd/perc", "--repl")
+}
