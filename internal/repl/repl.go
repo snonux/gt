@@ -24,9 +24,9 @@ type RPNState struct {
 	rpnCalc *rpn.RPN
 }
 
+// getRPNState returns or creates the RPN state
 var rpnState *RPNState
 
-// getRPNState returns or creates the RPN state
 func getRPNState() *RPNState {
 	if rpnState == nil {
 		vars := rpn.NewVariables()
@@ -36,6 +36,45 @@ func getRPNState() *RPNState {
 		}
 	}
 	return rpnState
+}
+
+// RunREPL starts the interactive REPL
+func RunREPL() error {
+	// Check if stdin is a TTY
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
+		fmt.Fprintln(os.Stderr, "REPL mode requires a TTY. Use 'perc <calculation>' for non-interactive mode.")
+		return fmt.Errorf("stdin is not a TTY")
+	}
+
+	history := loadHistory()
+
+	p := prompt.New(
+		executor,
+		completer,
+		prompt.OptionTitle("perc - Percentage Calculator"),
+		prompt.OptionPrefix("perc> "),
+		prompt.OptionLivePrefix(func() (string, bool) {
+			return "perc> ", true
+		}),
+		prompt.OptionHistory(history),
+	)
+
+	// Handle SIGINT gracefully
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT)
+
+	go func() {
+		<-sigChan
+		fmt.Println("\nUse 'quit' or 'exit' to exit, or Ctrl+D")
+	}()
+
+	// Run the prompt
+	p.Run()
+
+	// Note: History is not saved automatically in this version
+	// The prompt library stores it in memory but doesn't expose a getter
+
+	return nil
 }
 
 // executor runs a calculation command and returns the result
@@ -184,45 +223,6 @@ func saveHistory(history []string) error {
 		}
 	}
 	return writer.Flush()
-}
-
-// RunREPL starts the interactive REPL
-func RunREPL() error {
-	// Check if stdin is a TTY
-	if !isatty.IsTerminal(os.Stdin.Fd()) {
-		fmt.Fprintln(os.Stderr, "REPL mode requires a TTY. Use 'perc <calculation>' for non-interactive mode.")
-		return fmt.Errorf("stdin is not a TTY")
-	}
-
-	history := loadHistory()
-
-	p := prompt.New(
-		executor,
-		completer,
-		prompt.OptionTitle("perc - Percentage Calculator"),
-		prompt.OptionPrefix("perc> "),
-		prompt.OptionLivePrefix(func() (string, bool) {
-			return "perc> ", true
-		}),
-		prompt.OptionHistory(history),
-	)
-
-	// Handle SIGINT gracefully
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
-
-	go func() {
-		<-sigChan
-		fmt.Println("\nUse 'quit' or 'exit' to exit, or Ctrl+D")
-	}()
-
-	// Run the prompt
-	p.Run()
-
-	// Note: History is not saved automatically in this version
-	// The prompt library stores it in memory but doesn't expose a getter
-
-	return nil
 }
 
 // completer provides auto-completion for built-in commands
