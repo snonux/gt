@@ -523,12 +523,17 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 		{
 			name:     "'d' command not supported",
 			input:    "d",
-			expectedError: "'d' command not supported",
+			expectedError: "'d' command not supported as standalone token",
 		},
 		{
 			name:     "empty result after evaluation",
 			input:    "1 2 + pop", // 1 2 + => 3, then pop => empty stack
-			expectedError: "empty result",
+			expectedError: "empty result: expression evaluated to nothing",
+		},
+		{
+			name:     "stack overflow (simulate many numbers)",
+			input:    "", // placeholder
+			expectedError: "stack overflow",
 		},
 	}
 
@@ -546,6 +551,104 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 			}
 			if !strings.Contains(err.Error(), tt.expectedError) {
 				t.Errorf("ParseAndEvaluate(%q) error = %q, want to contain %q", tt.input, err.Error(), tt.expectedError)
+			}
+		})
+	}
+}
+
+func TestResultStackErrors(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test error cases in ResultStack function
+	tests := []struct {
+		name          string
+		input         []string
+		expectedError string
+	}{
+		{
+			name:     "division by zero",
+			input:    []string{"5", "0", "/"},
+			expectedError: "division by zero",
+		},
+		{
+			name:     "unknown token",
+			input:    []string{"1", "2", "+", "unknown"},
+			expectedError: "unknown token",
+		},
+		{
+			name:     "insufficient operands for +",
+			input:    []string{"5", "+"},
+			expectedError: "insufficient operands",
+		},
+		{
+			name:     "insufficient operands for -",
+			input:    []string{"5", "-"},
+			expectedError: "insufficient operands",
+		},
+		{
+			name:     "invalid assignment syntax in ResultStack",
+			input:    []string{"="},
+			expectedError: "unknown token '='",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := r.ResultStack(tt.input)
+			if err == nil {
+				t.Errorf("ResultStack(%v) expected error, got nil", tt.input)
+				return
+			}
+			if !strings.Contains(err.Error(), tt.expectedError) {
+				t.Errorf("ResultStack(%v) error = %q, want to contain %q", tt.input, err.Error(), tt.expectedError)
+			}
+		})
+	}
+}
+
+func TestResultStackMultipleValues(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test Case where stack has multiple values at the end
+	tests := []struct {
+		name     string
+		input    []string
+		expected string
+	}{
+		{
+			name:     "two values on stack",
+			input:    []string{"1", "2", "3", "+"}, // 1 2 3 + => 1 (5) => two values: 1, 5
+			expected: "1 5", // Show should show all values
+		},
+		{
+			name:     "three values on stack",
+			input:    []string{"1", "2", "3", "4"}, // just push 4 numbers
+			expected: "1 2 3 4",
+		},
+		{
+			name:     "multiple values with variables",
+			input:    []string{"x", "y", "z"}, // after setting variables
+			expected: "10 20 30", // variables x, y, z have values 10, 20, 30
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up variables if needed
+			if tt.name == "multiple values with variables" {
+				r.ParseAndEvaluate("x = 10")
+				r.ParseAndEvaluate("y = 20")
+				r.ParseAndEvaluate("z = 30")
+			}
+
+			result, err := r.ResultStack(tt.input)
+			if err != nil {
+				t.Fatalf("ResultStack(%v) returned error: %v", tt.input, err)
+			}
+			if result != tt.expected {
+				t.Errorf("ResultStack(%v) = %q, want %q", tt.input, result, tt.expected)
 			}
 		})
 	}
