@@ -30,8 +30,8 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 		return "", fmt.Errorf("empty expression")
 	}
 
-	// First check for special assignment pattern: "name value ="
-	// This is handled separately from RPN evaluation
+	// Handle single assignment: "name value ="
+	// This is when the entire input is just an assignment
 	if strings.Contains(input, " = ") {
 		parts := strings.SplitN(input, " = ", 2)
 		if len(parts) == 2 {
@@ -40,16 +40,51 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 			// Validate name is a single word (variable name)
 			nameFields := strings.Fields(name)
 			if len(nameFields) == 1 {
-				// Parse the value
+				// Validate value is a single number
+				valueFields := strings.Fields(valueStr)
+				if len(valueFields) == 1 {
+					val, err := strconv.ParseFloat(valueFields[0], 64)
+					if err != nil {
+						return "", fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
+					}
+					if err := r.vars.SetVariable(nameFields[0], val); err != nil {
+						return "", err
+					}
+					return fmt.Sprintf("%s = %.10g", nameFields[0], val), nil
+				}
+			}
+		}
+	}
+
+	// Handle assignment with expression: "name value = expression..."
+	// Format: variable_name value = expression (where = comes after value)
+	if strings.Contains(input, " = ") {
+		// Check if the input matches pattern: "name value = expr..."
+		// where name and value are single tokens, and = comes after value
+		// For example: "x 5 = x x +" or "pi 3.14 = pi 2 *"
+		
+		// Find " = " position and split
+		pos := strings.Index(input, " = ")
+		if pos >= 0 {
+			before := input[:pos]   // "name value"
+			after := input[pos+3:]  // "expr..."
+			
+			beforeFields := strings.Fields(before)
+			if len(beforeFields) == 2 {
+				name := beforeFields[0]
+				valueStr := beforeFields[1]
+				
+				// Try to parse value as a number
 				val, err := strconv.ParseFloat(valueStr, 64)
-				if err != nil {
-					return "", fmt.Errorf("invalid value '%s' for assignment: %w", valueStr, err)
+				if err == nil {
+					// Valid assignment pattern: "name value = expr..."
+					if err := r.vars.SetVariable(name, val); err != nil {
+						return "", err
+					}
+					
+					// Evaluate the remaining expression
+					return r.evaluate(strings.Fields(strings.TrimSpace(after)))
 				}
-				// Assign the variable
-				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
-					return "", err
-				}
-				return fmt.Sprintf("%s = %.10g", nameFields[0], val), nil
 			}
 		}
 	}
@@ -75,12 +110,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	for i, token := range tokens {
 		// Check for variable assignment: name value =
 		if token == "=" {
-			// Assignment requires: variable_name (as previous token), value (on stack)
-			// But tokens are processed linearly, so we need special handling
-			// For "name value =", we have tokens: [name, value, =]
-			// When we see =, we need to have the value on stack and name from before
-			// This approach won't work well, so we handle assignment at parse time
-			return "", fmt.Errorf("invalid assignment: '=' must be used with 'name value =' syntax")
+			return "", fmt.Errorf("invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
 		}
 
 		// Check if it's a number
@@ -135,7 +165,6 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("show: %w", err)
 			}
-			// For show, we return the stack state instead of continuing
 			return result, nil
 		case "vars":
 			result, err := r.ops.ListVariables()
