@@ -5,6 +5,36 @@ import (
 	"math"
 )
 
+// Operator defines the interface for operator implementations and stack manipulation.
+// This allows RPN to depend on an abstraction instead of the concrete Operations type.
+type Operator interface {
+	// Arithmetic operators
+	Add(stack *Stack) error
+	Subtract(stack *Stack) error
+	Multiply(stack *Stack) error
+	Divide(stack *Stack) error
+	Power(stack *Stack) error
+	Modulo(stack *Stack) error
+
+	// Hyper operators
+	HyperAdd(stack *Stack) error
+	HyperSubtract(stack *Stack) error
+	HyperMultiply(stack *Stack) error
+	HyperDivide(stack *Stack) error
+	HyperPower(stack *Stack) error
+	HyperModulo(stack *Stack) error
+
+	// Stack manipulation operators
+	Dup(stack *Stack) error
+	Swap(stack *Stack) error
+	Pop(stack *Stack) error
+	Show(stack *Stack) (string, error)
+
+	// Variable operations
+	ListVariables() (string, error)
+	ClearVariables()
+}
+
 // Operations provides operator implementations and stack manipulation.
 type Operations struct {
 	vars VariableStore

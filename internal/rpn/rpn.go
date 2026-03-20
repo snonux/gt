@@ -8,8 +8,8 @@ import (
 
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
-	vars    VariableStore
-	ops     *Operations
+	vars     VariableStore
+	ops      Operator
 	maxStack int
 	currentStack *Stack
 }
