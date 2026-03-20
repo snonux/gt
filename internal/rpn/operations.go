@@ -7,11 +7,11 @@ import (
 
 // Operations provides operator implementations and stack manipulation.
 type Operations struct {
-	vars *Variables
+	vars VariableStore
 }
 
 // NewOperations creates a new Operations instance with the given variable store.
-func NewOperations(vars *Variables) *Operations {
+func NewOperations(vars VariableStore) *Operations {
 	return &Operations{
 		vars: vars,
 	}

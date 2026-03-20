@@ -8,14 +8,14 @@ import (
 
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
-	vars    *Variables
+	vars    VariableStore
 	ops     *Operations
 	maxStack int
 	currentStack *Stack
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
-func NewRPN(vars *Variables) *RPN {
+func NewRPN(vars VariableStore) *RPN {
 	return &RPN{
 		vars:         vars,
 		ops:          NewOperations(vars),
@@ -203,16 +203,6 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 		return "", fmt.Errorf("empty result: expression evaluated to nothing")
 	}
 
-	// Get the final result
-	if stack.Len() > 1 {
-		// Multiple values on stack - show them all
-		result, err := r.ops.Show(stack)
-		if err != nil {
-			return "", fmt.Errorf("final result: %w", err)
-		}
-		return result, nil
-	}
-
 	// Save the current stack state for continued operations
 	// Create a copy of the stack to preserve it
 	r.currentStack = NewStack()
@@ -222,7 +212,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 	// Get the final result
 	if stack.Len() > 1 {
-		// Multiple values - show them all
+		// Multiple values on stack - show them all
 		result, err := r.ops.Show(stack)
 		if err != nil {
 			return "", fmt.Errorf("final result: %w", err)
@@ -241,11 +231,16 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 	stack := NewStack()
 
 	for _, token := range tokens {
+		// Check if it's a number
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
+			if stack.Len() >= r.maxStack {
+				return "", fmt.Errorf("stack overflow")
+			}
 			stack.Push(num)
 			continue
 		}
 
+		// Check for operators and special commands
 		switch token {
 		case "+":
 			if err := r.ops.Add(stack); err != nil {
@@ -291,6 +286,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 			r.ops.ClearVariables()
 			return "All variables cleared", nil
 		default:
+			// Check if it's a variable reference (push its value)
 			val, exists := r.vars.GetVariable(token)
 			if exists {
 				stack.Push(val)

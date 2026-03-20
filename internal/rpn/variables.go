@@ -29,6 +29,7 @@ type VariableStore interface {
 	ClearVariables()
 	Count() int
 	HasVariable(name string) bool
+	FormatVariables() string
 }
 
 // NewVariables creates and initializes a new Variables instance.

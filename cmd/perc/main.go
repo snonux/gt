@@ -73,7 +73,7 @@ func runCommand(args []string) (string, error) {
 
 // runRPN parses and evaluates an RPN expression
 func runRPN(input string) (string, error) {
-	vars := rpn.NewVariables().(*rpn.Variables)
+	vars := rpn.NewVariables()
 	rpnCalc := rpn.NewRPN(vars)
 	return rpnCalc.ParseAndEvaluate(input)
 }
