@@ -9,8 +9,8 @@ import (
 
 // Error variables for external error checking.
 var (
-	ErrVariableNotFound       = fmt.Errorf("variable not found")
-	ErrInvalidVariableName    = fmt.Errorf("invalid variable name")
+	ErrVariableNotFound    = fmt.Errorf("variable not found")
+	ErrInvalidVariableName = fmt.Errorf("invalid variable name")
 )
 
 // Stack represents a simple float64 stack for RPN calculations.
@@ -71,7 +71,7 @@ func (s *Stack) Clear() {
 // Variables stores variable name-value pairs for RPN calculations.
 // It provides thread-safe access to variable storage.
 type Variables struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	variables map[string]float64
 }
 

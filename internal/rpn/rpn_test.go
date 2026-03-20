@@ -462,23 +462,23 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:     "invalid value for assignment (non-numeric)",
-			input:    "x abc =",
+			name:          "invalid value for assignment (non-numeric)",
+			input:         "x abc =",
 			expectedError: "unknown token 'x'",
 		},
 		{
-			name:     "assignment with variable name containing space",
-			input:    "my var 5 =",
+			name:          "assignment with variable name containing space",
+			input:         "my var 5 =",
 			expectedError: "unknown token 'my'",
 		},
 		{
-			name:     "assignment with value containing space",
-			input:    "x 5 6 =",
+			name:          "assignment with value containing space",
+			input:         "x 5 6 =",
 			expectedError: "unknown token 'x'",
 		},
 		{
-			name:     "empty assignment",
-			input:    " = ",
+			name:          "empty assignment",
+			input:         " = ",
 			expectedError: "invalid assignment syntax",
 		},
 	}
@@ -507,23 +507,23 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:     "invalid assignment syntax (standalone =)",
-			input:    "=",
+			name:          "invalid assignment syntax (standalone =)",
+			input:         "=",
 			expectedError: "invalid assignment syntax",
 		},
 		{
-			name:     "'d' command not supported",
-			input:    "d",
+			name:          "'d' command not supported",
+			input:         "d",
 			expectedError: "'d' command not supported as standalone token",
 		},
 		{
-			name:     "empty result after evaluation",
-			input:    "1 2 + pop", // 1 2 + => 3, then pop => empty stack
+			name:          "empty result after evaluation",
+			input:         "1 2 + pop", // 1 2 + => 3, then pop => empty stack
 			expectedError: "empty result: expression evaluated to nothing",
 		},
 		{
-			name:     "stack overflow (simulate many numbers)",
-			input:    "", // placeholder
+			name:          "stack overflow (simulate many numbers)",
+			input:         "", // placeholder
 			expectedError: "stack overflow",
 		},
 	}
@@ -560,28 +560,28 @@ func TestResultStackErrors(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:     "division by zero",
-			input:    []string{"5", "0", "/"},
+			name:          "division by zero",
+			input:         []string{"5", "0", "/"},
 			expectedError: "division by zero",
 		},
 		{
-			name:     "unknown token",
-			input:    []string{"1", "2", "+", "unknown"},
+			name:          "unknown token",
+			input:         []string{"1", "2", "+", "unknown"},
 			expectedError: "unknown token",
 		},
 		{
-			name:     "insufficient operands for +",
-			input:    []string{"5", "+"},
+			name:          "insufficient operands for +",
+			input:         []string{"5", "+"},
 			expectedError: "insufficient operands",
 		},
 		{
-			name:     "insufficient operands for -",
-			input:    []string{"5", "-"},
+			name:          "insufficient operands for -",
+			input:         []string{"5", "-"},
 			expectedError: "insufficient operands",
 		},
 		{
-			name:     "invalid assignment syntax in ResultStack",
-			input:    []string{"="},
+			name:          "invalid assignment syntax in ResultStack",
+			input:         []string{"="},
 			expectedError: "unknown token '='",
 		},
 	}
@@ -613,7 +613,7 @@ func TestResultStackMultipleValues(t *testing.T) {
 		{
 			name:     "two values on stack",
 			input:    []string{"1", "2", "3", "+"}, // 1 2 3 + => 1 (5) => two values: 1, 5
-			expected: "1 5", // Show should show all values
+			expected: "1 5",                        // Show should show all values
 		},
 		{
 			name:     "three values on stack",
@@ -623,7 +623,7 @@ func TestResultStackMultipleValues(t *testing.T) {
 		{
 			name:     "multiple values with variables",
 			input:    []string{"x", "y", "z"}, // after setting variables
-			expected: "10 20 30", // variables x, y, z have values 10, 20, 30
+			expected: "10 20 30",              // variables x, y, z have values 10, 20, 30
 		},
 	}
 
@@ -913,7 +913,7 @@ func TestHyperModuloByZero(t *testing.T) {
 func TestHyperOperatorEdgeCases(t *testing.T) {
 	// Test with single value should error for all hyper operators
 	testCases := []struct {
-		input   string
+		input    string
 		operands int
 	}{
 		{"100 [%]", 1},

@@ -8,9 +8,9 @@ import (
 
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
-	vars     VariableStore
-	ops      Operator
-	maxStack int
+	vars         VariableStore
+	ops          Operator
+	maxStack     int
 	currentStack *Stack
 }
 
@@ -85,8 +85,8 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 	// Handle assignment with expression: "name value = expression..."
 	pos := strings.Index(input, " = ")
 	if pos >= 0 {
-		before := input[:pos]   // "name value"
-		after := input[pos+3:]  // "expr..."
+		before := input[:pos]  // "name value"
+		after := input[pos+3:] // "expr..."
 
 		beforeFields := strings.Fields(before)
 		if len(beforeFields) == 2 {

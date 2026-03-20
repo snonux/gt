@@ -525,13 +525,14 @@ func TestOperationsClearVariables(t *testing.T) {
 func TestOperationsConcurrent(t *testing.T) {
 	v := NewVariables().(*Variables)
 	o := NewOperations(v)
-	s := NewStack()
 
 	// Test concurrent variable access
+	// Each goroutine uses its own stack to avoid race conditions
 	done := make(chan bool, 10)
 	for i := 0; i < 5; i++ {
 		go func(id int) {
 			name := fmt.Sprintf("concurrent%d", id)
+			s := NewStack()
 			s.Push(float64(id))
 			o.AssignVariable(s, name)
 			done <- true
