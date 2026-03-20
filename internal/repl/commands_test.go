@@ -5,6 +5,47 @@ import (
 	"testing"
 )
 
+func TestCommands(t *testing.T) {
+	cmds := Commands()
+	if len(cmds) == 0 {
+		t.Error("Commands() should return at least one command")
+	}
+}
+
+func TestExecuteCommandRPN(t *testing.T) {
+	_, err := ExecuteCommand("rpn")
+	if err != nil {
+		t.Fatalf("ExecuteCommand('rpn') returned error: %v", err)
+	}
+}
+
+func TestExecuteCommandCalc(t *testing.T) {
+	_, err := ExecuteCommand("calc")
+	if err != nil {
+		t.Fatalf("ExecuteCommand('calc') returned error: %v", err)
+	}
+}
+
+func TestExecuteCommandHelpWithUnknownSubcommand(t *testing.T) {
+	output, err := ExecuteCommand("help unknown")
+	if err != nil {
+		t.Fatalf("ExecuteCommand('help unknown') returned error: %v", err)
+	}
+	if !strings.Contains(output, "No help available") {
+		t.Errorf("ExecuteCommand('help unknown') should mention 'No help available', got: %s", output[:50])
+	}
+}
+
+func TestExecuteCommandHelpForHelp(t *testing.T) {
+	output, err := ExecuteCommand("help help")
+	if err != nil {
+		t.Fatalf("ExecuteCommand('help help') returned error: %v", err)
+	}
+	if !strings.Contains(output, "help") {
+		t.Errorf("ExecuteCommand('help help') output should contain 'help', got: %s", output[:50])
+	}
+}
+
 func TestExecuteCommandHelp(t *testing.T) {
 	output, err := ExecuteCommand("help")
 	if err != nil {

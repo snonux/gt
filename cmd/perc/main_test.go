@@ -153,3 +153,87 @@ func TestRunCommandRPNModulo(t *testing.T) {
 		t.Errorf("runCommand with modulo = %q, want '1'", result)
 	}
 }
+
+func TestRunCommandNoArgs(t *testing.T) {
+	// Test with no arguments (simulating stdin not being TTY)
+	args := []string{"perc"}
+	_, err := runCommand(args)
+	if err == nil {
+		t.Error("runCommand with no args should return error")
+	}
+	if !strings.Contains(err.Error(), "no input provided") {
+		t.Errorf("Error = %v, should contain 'no input provided'", err)
+	}
+}
+
+func TestRunCommandRepl(t *testing.T) {
+	// Test repl command (returns empty string, doesn't start REPL in tests)
+	args := []string{"perc", "repl"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand(['perc', 'repl']) returned error: %v", err)
+	}
+	if result != "" {
+		t.Errorf("runCommand(['perc', 'repl']) = %q, want empty string", result)
+	}
+}
+
+func TestRunCommandReplFlag(t *testing.T) {
+	// Test --repl flag
+	args := []string{"perc", "--repl"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand(['perc', '--repl']) returned error: %v", err)
+	}
+	if result != "" {
+		t.Errorf("runCommand(['perc', '--repl']) = %q, want empty string", result)
+	}
+}
+
+func TestRunCommandRPNWithVariables(t *testing.T) {
+	// Test rpn with single variable assignment and usage
+	args := []string{"perc", "rpn", "x", "5", "=", "x", "x", "+"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand with variables returned error: %v", err)
+	}
+	if result != "10" {
+		t.Errorf("runCommand with variables = %q, want '10'", result)
+	}
+}
+
+func TestRunCommandCalcWithShow(t *testing.T) {
+	// Test calc with show command
+	args := []string{"perc", "calc", "1", "2", "3", "show"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand with show returned error: %v", err)
+	}
+	if result != "1 2 3" {
+		t.Errorf("runCommand with show = %q, want '1 2 3'", result)
+	}
+}
+
+func TestRunCommandCalcWithVars(t *testing.T) {
+	// Test calc with vars command
+	args := []string{"perc", "calc", "x", "5", "=", "vars"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand with vars returned error: %v", err)
+	}
+	if !strings.Contains(result, "x") {
+		t.Errorf("runCommand with vars = %q, should contain 'x'", result)
+	}
+}
+
+func TestRunCommandCalcWithClear(t *testing.T) {
+	// Test calc with clear command
+	args := []string{"perc", "calc", "x", "5", "=", "clear"}
+	result, err := runCommand(args)
+	if err != nil {
+		t.Fatalf("runCommand with clear returned error: %v", err)
+	}
+	if !strings.Contains(result, "All variables cleared") {
+		t.Errorf("runCommand with clear = %q, should contain 'All variables cleared'", result)
+	}
+}
