@@ -16,9 +16,11 @@ mage install
 
 ## Usage
 
-`perc` supports various percentage calculation formats:
+`perc` supports various percentage calculation formats and RPN (Reverse Polish Notation) stack calculations.
 
-### Calculate X% of Y
+### Percentage Calculations
+
+#### Calculate X% of Y
 
 ```bash
 perc 20% of 150
@@ -32,7 +34,7 @@ perc what is 20% of 150
 #   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
 ```
 
-### Find what percentage X is of Y
+#### Find what percentage X is of Y
 
 ```bash
 perc 30 is what % of 150
@@ -41,13 +43,91 @@ perc 30 is what % of 150
 #   Steps: (30.00 / 150.00) * 100 = 0.20 * 100 = 20.00%
 ```
 
-### Find the whole when X is Y% of it
+#### Find the whole when X is Y% of it
 
 ```bash
 perc 30 is 20% of what
 # Output:
 # 30.00 is 20.00% of 150.00
 #   Steps: (30.00 / 20.00) * 100 = 1.50 * 100 = 150.00
+```
+
+### RPN (Reverse Polish Notation) Calculations
+
+RPN (postfix notation) uses a stack-based approach where operators follow their operands. No parentheses needed!
+
+#### Basic Arithmetic
+
+```bash
+perc calc 3 4 +           # 3 + 4 = 7
+# → 7
+
+perc calc 3 4 -           # 3 - 4 = -1
+# → -1
+
+perc calc 5 6 *           # 5 * 6 = 30
+# → 30
+
+perc calc 20 4 /          # 20 / 4 = 5
+# → 5
+
+perc calc 2 3 ^           # 2^3 = 8
+# → 8
+
+perc calc 10 3 %          # 10 % 3 = 1 (modulo)
+# → 1
+```
+
+#### Expression Chaining
+
+```bash
+perc calc 3 4 + 4 4 - *   # (3+4) * (4-4) = 0
+# → 0
+
+perc calc 1 2 + 3 *       # (1+2) * 3 = 9
+# → 9
+```
+
+#### Variables
+
+```bash
+perc calc x 5 =           # Assign x = 5
+# → x = 5
+
+perc calc x 5 = x x +     # x + x = 10
+# → 10
+
+perc calc pi 3.14159 = pi 2 *  # 2 * π
+# → 6.28318
+```
+
+#### Variable Management
+
+```bash
+perc calc vars            # List all variables
+# x = 5
+
+perc calc name d          # Delete variable
+# Variable removed
+
+perc calc clear           # Clear all variables
+# All variables cleared
+```
+
+#### Stack Operations
+
+```bash
+perc calc 1 2 3 dup       # Duplicate top value
+# → 1 2 3 3
+
+perc calc 1 2 swap        # Swap top two values
+# → 2 1
+
+perc calc 1 2 3 pop       # Remove top value
+# → 1 2
+
+perc calc 1 2 3 show      # Show stack without modifying
+# → 1 2 3
 ```
 
 ## Building
@@ -68,6 +148,12 @@ go build -o perc ./cmd/perc
 
 ```bash
 mage test
+```
+
+Or for RPN-specific tests:
+
+```bash
+mage testRPN
 ```
 
 ## License
