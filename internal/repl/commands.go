@@ -8,7 +8,7 @@ import (
 // builtinCommands defines the built-in REPL commands
 var builtinCommands = []string{"help", "clear", "quit", "exit", "rpn", "calc"}
 
-// Commands returns the list of built-in command names
+// Commands returns the list of built-in command names supported by the REPL.
 func Commands() []string {
 	return builtinCommands
 }

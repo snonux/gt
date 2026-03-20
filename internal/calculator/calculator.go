@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// Parse parses a percentage calculation input string and returns the result.
+// It handles formats like "20% of 150", "30 is what % of 150", and "30 is 20% of what".
 func Parse(input string) (string, error) {
 	input = strings.ToLower(strings.TrimSpace(input))
 	input = strings.ReplaceAll(input, "what is ", "")
