@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"codeberg.org/snonux/perc/internal/calculator"
+	"codeberg.org/snonux/perc/internal/rpn"
 	"github.com/mattn/go-isatty"
 
 	"github.com/c-bata/go-prompt"
@@ -37,6 +38,19 @@ func executor(input string) {
 		return
 	}
 
+	// Check for rpn command prefix
+	if strings.HasPrefix(strings.ToLower(input), "rpn ") || strings.HasPrefix(strings.ToLower(input), "calc ") {
+		// Extract the expression after rpn/calc
+		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
+		result, err := runRPN(rest)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		fmt.Println(result)
+		return
+	}
+
 	// Run the calculation
 	result, err := calculator.Parse(input)
 	if err != nil {
@@ -44,6 +58,13 @@ func executor(input string) {
 		return
 	}
 	fmt.Println(result)
+}
+
+// runRPN parses and evaluates an RPN expression
+func runRPN(input string) (string, error) {
+	vars := rpn.NewVariables().(*rpn.Variables)
+	rpnCalc := rpn.NewRPN(vars)
+	return rpnCalc.ParseAndEvaluate(input)
 }
 
 // isBuiltinCommand checks if input starts with a built-in command
@@ -180,6 +201,8 @@ func getCommandDescription(cmd string) string {
 		"clear":  "Clear the screen",
 		"quit":   "Exit the REPL",
 		"exit":   "Exit the REPL",
+		"rpn":    "Evaluate an RPN (postfix notation) expression",
+		"calc":   "Same as rpn - evaluate an RPN expression",
 	}
 	return descriptions[cmd]
 }
