@@ -20,6 +20,10 @@ func Test() error {
 	return sh.RunV("go", "test", "./...")
 }
 
+func TestRPN() error {
+	return sh.RunV("go", "test", "./internal/rpn/...")
+}
+
 func Install() error {
 	return sh.RunV("go", "install", "./cmd/perc")
 }
