@@ -418,3 +418,43 @@ func TestResultStackEmpty(t *testing.T) {
 		t.Errorf("ResultStack([]) = %q, want \"Stack is empty\"", result)
 	}
 }
+
+func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test assignment with expression: "name value = expression..."
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "simple assignment with expression",
+			input:    "x 5 = x x +", // set x=5, then evaluate x x + => 5+5=10
+			expected: "10",
+		},
+		{
+			name:     "assignment with complex expression",
+			input:    "pi 3.14 = pi 2 *", // set pi=3.14, then evaluate pi 2 * => 3.14*2=6.28
+			expected: "6.28",
+		},
+		{
+			name:     "assignment then use in another expression",
+			input:    "b 7 = b 1 + b *", // set b=7, then b 1 + => 8, then b * => 7*8=56
+			expected: "56",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := r.ParseAndEvaluate(tt.input)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
+			}
+			if result != tt.expected {
+				t.Errorf("ParseAndEvaluate(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
