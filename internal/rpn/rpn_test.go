@@ -50,7 +50,7 @@ func TestTokenize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tokenize(tt.input)
+			result := Tokenize(tt.input)
 			if len(result) != len(tt.expected) {
 				t.Errorf("tokenize(%q) = %v, expected %v", tt.input, result, tt.expected)
 			}

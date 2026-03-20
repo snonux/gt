@@ -96,7 +96,7 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 		}
 	}
 
-	tokens := tokenize(input)
+	tokens := Tokenize(input)
 	if len(tokens) == 0 {
 		return "", fmt.Errorf("no valid tokens found")
 	}
@@ -104,8 +104,150 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	return r.evaluate(tokens)
 }
 
-// tokenize splits the input string into tokens (numbers, operators, variables).
-func tokenize(input string) []string {
+// ResultStack returns the final stack state after evaluation.
+// This is useful for commands that need to show the stack without consuming it.
+func (r *RPN) ResultStack(tokens []string) (string, error) {
+	stack := NewStack()
+
+	for _, token := range tokens {
+		// Check if it's a number
+		if num, err := strconv.ParseFloat(token, 64); err == nil {
+			if stack.Len() >= r.maxStack {
+				return "", fmt.Errorf("stack overflow")
+			}
+			stack.Push(num)
+			continue
+		}
+
+		// Check for operators and special commands
+		switch token {
+		case "+":
+			if err := r.ops.Add(stack); err != nil {
+				return "", err
+			}
+		case "-":
+			if err := r.ops.Subtract(stack); err != nil {
+				return "", err
+			}
+		case "*":
+			if err := r.ops.Multiply(stack); err != nil {
+				return "", err
+			}
+		case "/":
+			if err := r.ops.Divide(stack); err != nil {
+				return "", err
+			}
+		case "^":
+			if err := r.ops.Power(stack); err != nil {
+				return "", err
+			}
+		case "%":
+			if err := r.ops.Modulo(stack); err != nil {
+				return "", err
+			}
+		case "dup":
+			if err := r.ops.Dup(stack); err != nil {
+				return "", err
+			}
+		case "swap":
+			if err := r.ops.Swap(stack); err != nil {
+				return "", err
+			}
+		case "pop":
+			if err := r.ops.Pop(stack); err != nil {
+				return "", err
+			}
+		case "show", "showstack", "print":
+			return r.ops.Show(stack)
+		case "vars":
+			return r.ops.ListVariables()
+		case "clear":
+			r.ops.ClearVariables()
+			return "All variables cleared", nil
+		default:
+			// Check if it's a variable reference (push its value)
+			val, exists := r.vars.GetVariable(token)
+			if exists {
+				stack.Push(val)
+			} else {
+				return "", fmt.Errorf("unknown token '%s'", token)
+			}
+		}
+	}
+
+	return r.ops.Show(stack)
+}
+
+// EvalOperator evaluates a single operator on the current stack state.
+// This allows incremental RPN operations like: "1 2 +" then "+".
+func (r *RPN) EvalOperator(op string) (string, error) {
+	if r.currentStack == nil {
+		r.currentStack = NewStack()
+	}
+
+	switch op {
+	case "+":
+		if err := r.ops.Add(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator +: %w", err)
+		}
+	case "-":
+		if err := r.ops.Subtract(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator -: %w", err)
+		}
+	case "*":
+		if err := r.ops.Multiply(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator *: %w", err)
+		}
+	case "/":
+		if err := r.ops.Divide(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator /: %w", err)
+		}
+	case "^":
+		if err := r.ops.Power(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator ^: %w", err)
+		}
+	case "%":
+		if err := r.ops.Modulo(r.currentStack); err != nil {
+			return "", fmt.Errorf("operator %%: %w", err)
+		}
+	case "dup":
+		if err := r.ops.Dup(r.currentStack); err != nil {
+			return "", fmt.Errorf("dup: %w", err)
+		}
+	case "swap":
+		if err := r.ops.Swap(r.currentStack); err != nil {
+			return "", fmt.Errorf("swap: %w", err)
+		}
+	case "pop":
+		if err := r.ops.Pop(r.currentStack); err != nil {
+			return "", fmt.Errorf("pop: %w", err)
+		}
+	case "show", "showstack", "print":
+		return r.ops.Show(r.currentStack)
+	case "clear":
+		r.ops.ClearVariables()
+		return "All variables cleared", nil
+	case "vars":
+		return r.ops.ListVariables()
+	default:
+		return "", fmt.Errorf("unknown operator '%s'", op)
+	}
+
+	// Return the current stack state
+	return r.ops.Show(r.currentStack)
+}
+
+// GetCurrentStack returns a copy of the current stack for inspection.
+func (r *RPN) GetCurrentStack() []float64 {
+	if r.currentStack == nil {
+		return nil
+	}
+	return r.currentStack.Values()
+}
+
+// Tokenize splits the input string into tokens (numbers, operators, variables).
+// This is exported for testing purposes.
+func Tokenize(input string) []string {
 	// Standard RPN tokenization
 	return strings.Fields(input)
 }
@@ -249,145 +391,4 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	// Single value - return it
 	val, _ := stack.Pop()
 	return fmt.Sprintf("%.10g", val), nil
-}
-
-// ResultStack returns the final stack state after evaluation.
-// This is useful for commands that need to show the stack without consuming it.
-func (r *RPN) ResultStack(tokens []string) (string, error) {
-	stack := NewStack()
-
-	for _, token := range tokens {
-		// Check if it's a number
-		if num, err := strconv.ParseFloat(token, 64); err == nil {
-			if stack.Len() >= r.maxStack {
-				return "", fmt.Errorf("stack overflow")
-			}
-			stack.Push(num)
-			continue
-		}
-
-		// Check for operators and special commands
-		switch token {
-		case "+":
-			if err := r.ops.Add(stack); err != nil {
-				return "", err
-			}
-		case "-":
-			if err := r.ops.Subtract(stack); err != nil {
-				return "", err
-			}
-		case "*":
-			if err := r.ops.Multiply(stack); err != nil {
-				return "", err
-			}
-		case "/":
-			if err := r.ops.Divide(stack); err != nil {
-				return "", err
-			}
-		case "^":
-			if err := r.ops.Power(stack); err != nil {
-				return "", err
-			}
-		case "%":
-			if err := r.ops.Modulo(stack); err != nil {
-				return "", err
-			}
-		case "dup":
-			if err := r.ops.Dup(stack); err != nil {
-				return "", err
-			}
-		case "swap":
-			if err := r.ops.Swap(stack); err != nil {
-				return "", err
-			}
-		case "pop":
-			if err := r.ops.Pop(stack); err != nil {
-				return "", err
-			}
-		case "show", "showstack", "print":
-			return r.ops.Show(stack)
-		case "vars":
-			return r.ops.ListVariables()
-		case "clear":
-			r.ops.ClearVariables()
-			return "All variables cleared", nil
-		default:
-			// Check if it's a variable reference (push its value)
-			val, exists := r.vars.GetVariable(token)
-			if exists {
-				stack.Push(val)
-			} else {
-				return "", fmt.Errorf("unknown token '%s'", token)
-			}
-		}
-	}
-
-	return r.ops.Show(stack)
-}
-
-// EvalOperator evaluates a single operator on the current stack state.
-// This allows incremental RPN operations like: "1 2 +" then "+".
-func (r *RPN) EvalOperator(op string) (string, error) {
-	if r.currentStack == nil {
-		r.currentStack = NewStack()
-	}
-
-	switch op {
-	case "+":
-		if err := r.ops.Add(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator +: %w", err)
-		}
-	case "-":
-		if err := r.ops.Subtract(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator -: %w", err)
-		}
-	case "*":
-		if err := r.ops.Multiply(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator *: %w", err)
-		}
-	case "/":
-		if err := r.ops.Divide(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator /: %w", err)
-		}
-	case "^":
-		if err := r.ops.Power(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator ^: %w", err)
-		}
-	case "%":
-		if err := r.ops.Modulo(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator %%: %w", err)
-		}
-	case "dup":
-		if err := r.ops.Dup(r.currentStack); err != nil {
-			return "", fmt.Errorf("dup: %w", err)
-		}
-	case "swap":
-		if err := r.ops.Swap(r.currentStack); err != nil {
-			return "", fmt.Errorf("swap: %w", err)
-		}
-	case "pop":
-		if err := r.ops.Pop(r.currentStack); err != nil {
-			return "", fmt.Errorf("pop: %w", err)
-		}
-	case "show", "showstack", "print":
-		return r.ops.Show(r.currentStack)
-	case "clear":
-		r.ops.ClearVariables()
-		return "All variables cleared", nil
-	case "vars":
-		return r.ops.ListVariables()
-	default:
-		return "", fmt.Errorf("unknown operator '%s'", op)
-	}
-
-	// Return the current stack state
-	return r.ops.Show(r.currentStack)
-}
-
-// GetCurrentStack returns a copy of the current stack for inspection.
-func (r *RPN) GetCurrentStack() []float64 {
-	if r.currentStack == nil {
-		return nil
-	}
-	return r.currentStack.Values()
 }
