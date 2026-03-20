@@ -781,3 +781,155 @@ func TestRPNClearStack(t *testing.T) {
 		t.Errorf("After clear = %q, want 'All variables cleared'", result)
 	}
 }
+
+// Hyper operator tests
+
+func TestHyperAdd(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 1 2 3 4 5 [+]
+	result, err := r.ParseAndEvaluate("1 2 3 4 5 [+]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "15" {
+		t.Errorf("1 2 3 4 5 [+] = %q, want '15'", result)
+	}
+}
+
+func TestHyperAddEdgeCases(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test with two values: 10 20 [+]
+	result, err := r.ParseAndEvaluate("10 20 [+]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "30" {
+		t.Errorf("10 20 [+] = %q, want '30'", result)
+	}
+
+	// Test with single value should error - use fresh instance to avoid stack state
+	v2 := NewVariables().(*Variables)
+	r2 := NewRPN(v2)
+	_, err = r2.ParseAndEvaluate("5 [+]")
+	if err == nil {
+		t.Error("5 [+] should return error")
+	}
+}
+
+func TestHyperSubtract(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 10 3 2 [-] => 10 - 3 - 2 = 5
+	result, err := r.ParseAndEvaluate("10 3 2 [-]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "5" {
+		t.Errorf("10 3 2 [-] = %q, want '5'", result)
+	}
+}
+
+func TestHyperMultiply(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 2 3 4 [*] => 2 * 3 * 4 = 24
+	result, err := r.ParseAndEvaluate("2 3 4 [*]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "24" {
+		t.Errorf("2 3 4 [*] = %q, want '24'", result)
+	}
+}
+
+func TestHyperDivide(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 100 5 2 [/] => 100 / 5 / 2 = 10
+	result, err := r.ParseAndEvaluate("100 5 2 [/]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "10" {
+		t.Errorf("100 5 2 [/] = %q, want '10'", result)
+	}
+}
+
+func TestHyperDivideByZero(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("100 0 [/]")
+	if err == nil {
+		t.Error("100 0 [/] should return error")
+	}
+}
+
+func TestHyperPower(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 2 3 2 [^] => 2 ^ 3 ^ 2 = (2 ^ 3) ^ 2 = 8 ^ 2 = 64
+	result, err := r.ParseAndEvaluate("2 3 2 [^]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "64" {
+		t.Errorf("2 3 2 [^] = %q, want '64'", result)
+	}
+}
+
+func TestHyperModulo(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 100 7 3 [%%] => 100 %% 7 %% 3 = 2 %% 3 = 2
+	result, err := r.ParseAndEvaluate("100 7 3 [%]")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate failed: %v", err)
+	}
+	if result != "2" {
+		t.Errorf("100 7 3 [%%] = %q, want '2'", result)
+	}
+}
+
+func TestHyperModuloByZero(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("100 0 [%]")
+	if err == nil {
+		t.Error("100 0 [%] should return error")
+	}
+}
+
+func TestHyperOperatorEdgeCases(t *testing.T) {
+	// Test with single value should error for all hyper operators
+	testCases := []struct {
+		input   string
+		operands int
+	}{
+		{"100 [%]", 1},
+		{"5 [+]", 1},
+		{"10 [-]", 1},
+		{"2 [*]", 1},
+		{"100 [/]", 1},
+		{"2 [^]", 1},
+	}
+
+	for _, tc := range testCases {
+		v := NewVariables().(*Variables)
+		r := NewRPN(v)
+		_, err := r.ParseAndEvaluate(tc.input)
+		if err == nil {
+			t.Errorf("%s should return error for insufficient operands", tc.input)
+		}
+	}
+}

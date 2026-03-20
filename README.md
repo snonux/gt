@@ -136,19 +136,47 @@ perc calc 1 2 3 show      # Show stack without modifying
 
 ### REPL Mode Notes
 
-In REPL mode, each line is evaluated independently. To chain operations:
-- Use the `rpn` subcommand for multi-step expressions: `rpn 2 3 + 4 -`
-- Or use the `rpn` command to set variables: `rpn x 5 =` then `rpn x x +`
-- The `show` command can display the final stack state
+In REPL mode, RPN operations maintain persistent state between commands. This allows you to build up values on the stack across multiple commands.
 
 Example REPL session:
 ```
 perc> rpn 2 3 4 +        # Push 2, 3, 4; add last two
 2 7
-perc> rpn show           # Show full stack (but we start fresh per command)
+perc> +                  # Add top two: 2 + 7 = 9
+9
+perc> 5 *                # Multiply by 5: 9 * 5 = 45
+45
 ```
 
-Note: Each REPL command is evaluated independently, so you cannot chain operations like `2 3 4 +` then `-` on separate lines. Use `rpn 2 3 4 + -` for a single expression instead.
+To show the current stack without modifying it:
+```
+perc> show               # Show current stack state
+45
+```
+
+## Hyper Operators
+
+Hyper operators work on all values on the stack simultaneously:
+
+```bash
+perc calc 1 2 3 4 5 [+]    # Sum all: 1+2+3+4+5 = 15
+# → 15
+
+perc calc 2 3 4 [*]        # Multiply all: 2*3*4 = 24
+# → 24
+
+perc calc 10 3 2 [-]       # 10 - 3 - 2 = 5
+# → 5
+
+perc calc 100 5 2 [/]      # 100 / 5 / 2 = 10
+# → 10
+
+perc calc 2 3 2 [^]        # (2^3)^2 = 64
+# → 64
+
+perc calc 100 7 3 [%]      # 100 % 7 % 3 = 2
+# → 2
+```
 
 ## Building
 

@@ -160,6 +160,30 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 			if err := r.ops.Modulo(stack); err != nil {
 				return "", fmt.Errorf("operator %%: %w", err)
 			}
+		case "[+]":
+			if err := r.ops.HyperAdd(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [+]: %w", err)
+			}
+		case "[-]":
+			if err := r.ops.HyperSubtract(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [-]: %w", err)
+			}
+		case "[*]":
+			if err := r.ops.HyperMultiply(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [*]: %w", err)
+			}
+		case "[/]":
+			if err := r.ops.HyperDivide(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [/]: %w", err)
+			}
+		case "[^]":
+			if err := r.ops.HyperPower(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [^]: %w", err)
+			}
+		case "[%]":
+			if err := r.ops.HyperModulo(stack); err != nil {
+				return "", fmt.Errorf("hyperoperator [%%]: %w", err)
+			}
 		case "dup":
 			if err := r.ops.Dup(stack); err != nil {
 				return "", fmt.Errorf("dup: %w", err)

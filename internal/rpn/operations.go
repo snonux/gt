@@ -123,6 +123,182 @@ func (o *Operations) Modulo(stack *Stack) error {
 	return nil
 }
 
+// Hyper operators - operate on all values on the stack
+
+// HyperAdd pops all values from stack, adds them left-associative, and pushes result.
+func (o *Operations) HyperAdd(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperadd: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperadd: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative
+	sum := 0.0
+	for i := 0; i < len(values); i++ {
+		sum += values[i]
+	}
+	stack.Push(sum)
+	return nil
+}
+
+// HyperMultiply pops all values from stack, multiplies them left-associative, and pushes result.
+func (o *Operations) HyperMultiply(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hypermultiply: need at least 2 values")
+	}
+
+	product := 1.0
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hypermultiply: %w", err)
+		}
+		product *= val
+	}
+	stack.Push(product)
+	return nil
+}
+
+// HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
+func (o *Operations) HyperSubtract(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hypersubtract: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hypersubtract: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative
+	result := values[0]
+	for i := 1; i < len(values); i++ {
+		result -= values[i]
+	}
+	stack.Push(result)
+	return nil
+}
+
+// HyperDivide pops all values from stack, divides them left-associative, and pushes result.
+func (o *Operations) HyperDivide(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperdivide: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperdivide: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative
+	result := values[0]
+	for i := 1; i < len(values); i++ {
+		if values[i] == 0 {
+			return fmt.Errorf("division by zero")
+		}
+		result /= values[i]
+	}
+	stack.Push(result)
+	return nil
+}
+
+// HyperPower pops all values from stack, raises to power left-associative, and pushes result.
+func (o *Operations) HyperPower(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperpower: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperpower: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative
+	result := values[0]
+	for i := 1; i < len(values); i++ {
+		result = math.Pow(result, values[i])
+	}
+	stack.Push(result)
+	return nil
+}
+
+// HyperModulo pops all values from stack, computes modulo left-associative, and pushes result.
+func (o *Operations) HyperModulo(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hypermodulo: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hypermodulo: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative
+	result := values[0]
+	for i := 1; i < len(values); i++ {
+		if values[i] == 0 {
+			return fmt.Errorf("modulo by zero")
+		}
+		result = math.Mod(result, values[i])
+	}
+	stack.Push(result)
+	return nil
+}
+
 // stack manipulation operators
 
 // Dup duplicates the top stack value.
