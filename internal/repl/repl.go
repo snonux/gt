@@ -51,7 +51,15 @@ func executor(input string) {
 		return
 	}
 
-	// Run the calculation
+	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
+	rpnResult, rpnErr := runRPN(input)
+	if rpnErr == nil {
+		// Valid RPN expression - print result
+		fmt.Println(rpnResult)
+		return
+	}
+
+	// Run the percentage calculation
 	result, err := calculator.Parse(input)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

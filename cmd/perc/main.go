@@ -56,6 +56,13 @@ func runCommand(args []string) (string, error) {
 	}
 
 	input := strings.Join(args[1:], " ")
+	
+	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
+	if rpnResult, rpnErr := runRPN(input); rpnErr == nil {
+		return rpnResult, nil
+	}
+	
+	// Fall back to percentage calculation
 	result, err := calculator.Parse(input)
 	if err != nil {
 		return "", err

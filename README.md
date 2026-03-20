@@ -99,6 +99,10 @@ perc calc x 5 = x x +     # x + x = 10
 
 perc calc pi 3.14159 = pi 2 *  # 2 * π
 # → 6.28318
+
+# Note: Variable assignment only works with calc/rpn subcommand:
+# perc calc x 5 = x x +  (works)
+# perc x 5 =             (won't work in bare mode - use "perc calc x 5 =")
 ```
 
 #### Variable Management
