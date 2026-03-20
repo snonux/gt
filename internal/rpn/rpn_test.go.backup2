@@ -523,12 +523,12 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 		{
 			name:     "'d' command not supported",
 			input:    "d",
-			expectedError: "'d' command not supported",
+			expectedError: `"d' command not supported`,
 		},
 		{
 			name:     "empty result after evaluation",
 			input:    "1 2 + pop", // 1 2 + => 3, then pop => empty stack
-			expectedError: "empty result",
+			expectedError: "empty result: evaluated to nothing",
 		},
 	}
 
