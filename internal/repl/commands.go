@@ -60,17 +60,17 @@ RPN (Reverse Polish Notation) Examples:
   rpn 1 2 3 dup        Duplicate top value
   rpn show             Show current stack state
 
-Keyboard Shortcuts (Vi Mode):
-  Normal Mode:
-    i              Enter Insert mode
-    a              Append after cursor
-    0              Move to beginning of line
-    $              Move to end of line
-    gg             Move to top of history
-    G              Move to bottom of history
-  Insert Mode:
-    ESC            Return to Normal mode
-    Ctrl+C         Cancel current input
+Keyboard Shortcuts (Emacs Mode - default):
+  Ctrl+A         Go to beginning of line
+  Ctrl+E         Go to end of line
+  Ctrl+L         Clear the screen
+  Ctrl+D         Delete character under cursor
+  Ctrl+H         Delete character before cursor (Backspace)
+  Ctrl+F         Forward one character
+  Ctrl+B         Backward one character
+  Ctrl+W         Cut word before cursor
+  Ctrl+K         Cut line after cursor
+  Ctrl+U         Cut line before cursor
 
 History Navigation:
   Up Arrow         Previous command
