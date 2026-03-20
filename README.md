@@ -134,6 +134,22 @@ perc calc 1 2 3 show      # Show stack without modifying
 # → 1 2 3
 ```
 
+### REPL Mode Notes
+
+In REPL mode, each line is evaluated independently. To chain operations:
+- Use the `rpn` subcommand for multi-step expressions: `rpn 2 3 + 4 -`
+- Or use the `rpn` command to set variables: `rpn x 5 =` then `rpn x x +`
+- The `show` command can display the final stack state
+
+Example REPL session:
+```
+perc> rpn 2 3 4 +        # Push 2, 3, 4; add last two
+2 7
+perc> rpn show           # Show full stack (but we start fresh per command)
+```
+
+Note: Each REPL command is evaluated independently, so you cannot chain operations like `2 3 4 +` then `-` on separate lines. Use `rpn 2 3 4 + -` for a single expression instead.
+
 ## Building
 
 Using mage:

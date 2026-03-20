@@ -18,6 +18,23 @@ import (
 
 const historyFile = ".perc_history"
 
+// RPNState holds the state for RPN operations in REPL
+type RPNState struct {
+	vars *rpn.Variables
+}
+
+var rpnState *RPNState
+
+// getRPNState returns or creates the RPN state
+func getRPNState() *RPNState {
+	if rpnState == nil {
+		rpnState = &RPNState{
+			vars: rpn.NewVariables().(*rpn.Variables),
+		}
+	}
+	return rpnState
+}
+
 // executor runs a calculation command and returns the result
 func executor(input string) {
 	input = strings.TrimSpace(input)
