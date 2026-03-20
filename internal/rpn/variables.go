@@ -13,6 +13,61 @@ var (
 	ErrInvalidVariableName    = fmt.Errorf("invalid variable name")
 )
 
+// Stack represents a simple float64 stack for RPN calculations.
+type Stack struct {
+	values []float64
+}
+
+// NewStack creates a new empty stack.
+func NewStack() *Stack {
+	return &Stack{
+		values: make([]float64, 0),
+	}
+}
+
+// Push adds a value to the top of the stack.
+func (s *Stack) Push(val float64) {
+	s.values = append(s.values, val)
+}
+
+// Pop removes and returns the top value from the stack.
+// Returns an error if the stack is empty.
+func (s *Stack) Pop() (float64, error) {
+	if len(s.values) == 0 {
+		return 0, fmt.Errorf("stack is empty")
+	}
+
+	val := s.values[len(s.values)-1]
+	s.values = s.values[:len(s.values)-1]
+	return val, nil
+}
+
+// Peek returns the top value without removing it.
+// Returns an error if the stack is empty.
+func (s *Stack) Peek() (float64, error) {
+	if len(s.values) == 0 {
+		return 0, fmt.Errorf("stack is empty")
+	}
+	return s.values[len(s.values)-1], nil
+}
+
+// Len returns the number of values on the stack.
+func (s *Stack) Len() int {
+	return len(s.values)
+}
+
+// Values returns a copy of all stack values (top-to-bottom order).
+func (s *Stack) Values() []float64 {
+	vals := make([]float64, len(s.values))
+	copy(vals, s.values)
+	return vals
+}
+
+// Clear removes all values from the stack.
+func (s *Stack) Clear() {
+	s.values = s.values[:0]
+}
+
 // Variables stores variable name-value pairs for RPN calculations.
 // It provides thread-safe access to variable storage.
 type Variables struct {
@@ -141,59 +196,4 @@ func (v *Variables) HasVariable(name string) bool {
 
 	_, exists := v.variables[name]
 	return exists
-}
-
-// Stack represents a simple float64 stack for RPN calculations.
-type Stack struct {
-	values []float64
-}
-
-// NewStack creates a new empty stack.
-func NewStack() *Stack {
-	return &Stack{
-		values: make([]float64, 0),
-	}
-}
-
-// Push adds a value to the top of the stack.
-func (s *Stack) Push(val float64) {
-	s.values = append(s.values, val)
-}
-
-// Pop removes and returns the top value from the stack.
-// Returns an error if the stack is empty.
-func (s *Stack) Pop() (float64, error) {
-	if len(s.values) == 0 {
-		return 0, fmt.Errorf("stack is empty")
-	}
-
-	val := s.values[len(s.values)-1]
-	s.values = s.values[:len(s.values)-1]
-	return val, nil
-}
-
-// Peek returns the top value without removing it.
-// Returns an error if the stack is empty.
-func (s *Stack) Peek() (float64, error) {
-	if len(s.values) == 0 {
-		return 0, fmt.Errorf("stack is empty")
-	}
-	return s.values[len(s.values)-1], nil
-}
-
-// Len returns the number of values on the stack.
-func (s *Stack) Len() int {
-	return len(s.values)
-}
-
-// Values returns a copy of all stack values (top-to-bottom order).
-func (s *Stack) Values() []float64 {
-	vals := make([]float64, len(s.values))
-	copy(vals, s.values)
-	return vals
-}
-
-// Clear removes all values from the stack.
-func (s *Stack) Clear() {
-	s.values = s.values[:0]
 }

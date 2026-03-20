@@ -59,9 +59,6 @@ func TestTokenize(t *testing.T) {
 }
 
 func TestParseAndEvaluateSimple(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	tests := []struct {
 		name     string
 		input    string
@@ -101,6 +98,8 @@ func TestParseAndEvaluateSimple(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -113,9 +112,6 @@ func TestParseAndEvaluateSimple(t *testing.T) {
 }
 
 func TestParseAndEvaluateChain(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	tests := []struct {
 		name     string
 		input    string
@@ -140,6 +136,8 @@ func TestParseAndEvaluateChain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -152,9 +150,6 @@ func TestParseAndEvaluateChain(t *testing.T) {
 }
 
 func TestParseAndEvaluateStackOps(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	tests := []struct {
 		name     string
 		input    string
@@ -179,6 +174,8 @@ func TestParseAndEvaluateStackOps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -228,9 +225,6 @@ func TestParseAndEvaluateEmpty(t *testing.T) {
 }
 
 func TestParseAndEvaluateAssignment(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	// Test assignment format: "varname = value"
 	tests := []struct {
 		name     string
@@ -251,6 +245,8 @@ func TestParseAndEvaluateAssignment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -420,9 +416,6 @@ func TestResultStackEmpty(t *testing.T) {
 }
 
 func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	// Test assignment with expression: "name value = expression..."
 	tests := []struct {
 		name     string
@@ -448,6 +441,8 @@ func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -460,9 +455,6 @@ func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
 }
 
 func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	// Test error cases in assignment handling
 	tests := []struct {
 		name          string
@@ -493,6 +485,8 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("ParseAndEvaluate(%q) expected error, got nil", tt.input)
@@ -506,9 +500,6 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 }
 
 func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
-	v := NewVariables().(*Variables)
-	r := NewRPN(v)
-
 	// Test error cases in evaluate function
 	tests := []struct {
 		name          string
@@ -544,6 +535,8 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 			continue
 		}
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables().(*Variables)
+			r := NewRPN(v)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("ParseAndEvaluate(%q) expected error, got nil", tt.input)

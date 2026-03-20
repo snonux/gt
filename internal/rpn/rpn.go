@@ -32,8 +32,10 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 		return "", fmt.Errorf("empty expression")
 	}
 
-	// Reset the stack for fresh evaluation (each call should be independent)
-	r.currentStack = NewStack()
+	// Initialize stack if nil (first use)
+	if r.currentStack == nil {
+		r.currentStack = NewStack()
+	}
 
 	// Handle single assignment: "name value ="
 	// This is when the entire input is just an assignment

@@ -109,9 +109,8 @@ func executor(input string) {
 
 // runRPN parses and evaluates an RPN expression
 func runRPN(input string) (string, error) {
-	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
-	return rpnCalc.ParseAndEvaluate(input)
+	state := getRPNState()
+	return state.rpnCalc.ParseAndEvaluate(input)
 }
 
 // isBuiltinCommand checks if input starts with a built-in command
