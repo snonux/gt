@@ -68,6 +68,12 @@ func (s *Stack) Clear() {
 	s.values = s.values[:0]
 }
 
+// VariableInfo represents a single variable with its name and value.
+type VariableInfo struct {
+	Name  string
+	Value float64
+}
+
 // Variables stores variable name-value pairs for RPN calculations.
 // It provides thread-safe access to variable storage.
 type Variables struct {
@@ -147,12 +153,6 @@ func (v *Variables) ListVariables() []VariableInfo {
 	})
 
 	return infos
-}
-
-// VariableInfo represents a single variable with its name and value.
-type VariableInfo struct {
-	Name  string
-	Value float64
 }
 
 // ClearVariables removes all variables from storage.
