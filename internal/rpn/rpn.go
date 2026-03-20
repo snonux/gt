@@ -52,65 +52,6 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	return r.evaluate(tokens)
 }
 
-// handleAssignment checks if the input is an assignment format and handles it.
-// Returns (result string, isAssignment bool, error error).
-func (r *RPN) handleAssignment(input string) (string, bool, error) {
-	if !strings.Contains(input, " = ") {
-		return "", false, nil
-	}
-
-	// Handle single assignment: "name = value"
-	if parts := strings.SplitN(input, " = ", 2); len(parts) == 2 {
-		name := strings.TrimSpace(parts[0])
-		valueStr := strings.TrimSpace(parts[1])
-
-		// Validate name is a single word (variable name)
-		nameFields := strings.Fields(name)
-		if len(nameFields) == 1 {
-			// Validate value is a single number
-			valueFields := strings.Fields(valueStr)
-			if len(valueFields) == 1 {
-				val, err := strconv.ParseFloat(valueFields[0], 64)
-				if err != nil {
-					return "", false, fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
-				}
-				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
-					return "", false, err
-				}
-				return fmt.Sprintf("%s = %.10g", nameFields[0], val), true, nil
-			}
-		}
-	}
-
-	// Handle assignment with expression: "name value = expression..."
-	pos := strings.Index(input, " = ")
-	if pos >= 0 {
-		before := input[:pos]  // "name value"
-		after := input[pos+3:] // "expr..."
-
-		beforeFields := strings.Fields(before)
-		if len(beforeFields) == 2 {
-			name := beforeFields[0]
-			valueStr := beforeFields[1]
-
-			// Try to parse value as a number
-			val, err := strconv.ParseFloat(valueStr, 64)
-			if err == nil {
-				// Valid assignment pattern: "name value = expr..."
-				if err := r.vars.SetVariable(name, val); err != nil {
-					return "", false, err
-				}
-
-				// Evaluate the remaining expression
-				result, err := r.evaluate(strings.Fields(strings.TrimSpace(after)))
-				return result, true, err
-			}
-		}
-	}
-
-	return "", false, nil
-}
-
 // ResultStack returns the final stack state after evaluation.
 // This is useful for commands that need to show the stack without consuming it.
 func (r *RPN) ResultStack(tokens []string) (string, error) {
@@ -398,4 +339,63 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	// Single value - return it
 	val, _ := stack.Pop()
 	return fmt.Sprintf("%.10g", val), nil
+}
+
+// handleAssignment checks if the input is an assignment format and handles it.
+// Returns (result string, isAssignment bool, error error).
+func (r *RPN) handleAssignment(input string) (string, bool, error) {
+	if !strings.Contains(input, " = ") {
+		return "", false, nil
+	}
+
+	// Handle single assignment: "name = value"
+	if parts := strings.SplitN(input, " = ", 2); len(parts) == 2 {
+		name := strings.TrimSpace(parts[0])
+		valueStr := strings.TrimSpace(parts[1])
+
+		// Validate name is a single word (variable name)
+		nameFields := strings.Fields(name)
+		if len(nameFields) == 1 {
+			// Validate value is a single number
+			valueFields := strings.Fields(valueStr)
+			if len(valueFields) == 1 {
+				val, err := strconv.ParseFloat(valueFields[0], 64)
+				if err != nil {
+					return "", false, fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
+				}
+				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
+					return "", false, err
+				}
+				return fmt.Sprintf("%s = %.10g", nameFields[0], val), true, nil
+			}
+		}
+	}
+
+	// Handle assignment with expression: "name value = expression..."
+	pos := strings.Index(input, " = ")
+	if pos >= 0 {
+		before := input[:pos]  // "name value"
+		after := input[pos+3:] // "expr..."
+
+		beforeFields := strings.Fields(before)
+		if len(beforeFields) == 2 {
+			name := beforeFields[0]
+			valueStr := beforeFields[1]
+
+			// Try to parse value as a number
+			val, err := strconv.ParseFloat(valueStr, 64)
+			if err == nil {
+				// Valid assignment pattern: "name value = expr..."
+				if err := r.vars.SetVariable(name, val); err != nil {
+					return "", false, err
+				}
+
+				// Evaluate the remaining expression
+				result, err := r.evaluate(strings.Fields(strings.TrimSpace(after)))
+				return result, true, err
+			}
+		}
+	}
+
+	return "", false, nil
 }
