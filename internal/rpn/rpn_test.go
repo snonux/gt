@@ -653,3 +653,138 @@ func TestResultStackMultipleValues(t *testing.T) {
 		})
 	}
 }
+
+func TestRPNIncrementalOperations(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test: 1 2 3 + then +
+	// First evaluate "1 2 3 +"
+	result, err := r.ParseAndEvaluate("1 2 3 +")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+	if result != "1 5" {
+		t.Errorf("First result = %q, want '1 5'", result)
+	}
+
+	// Then apply + operator
+	result, err = r.EvalOperator("+")
+	if err != nil {
+		t.Fatalf("EvalOperator('+') failed: %v", err)
+	}
+	if result != "6" {
+		t.Errorf("After + = %q, want '6'", result)
+	}
+}
+
+func TestRPNIncrementalSubtract(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// First put two values on stack: "10 3" gives stack [10, 3]
+	_, err := r.ParseAndEvaluate("10 3")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+
+	// Now subtract
+	result, err := r.EvalOperator("-")
+	if err != nil {
+		t.Fatalf("EvalOperator('-') failed: %v", err)
+	}
+	// 10 - 3 = 7
+	if result != "7" {
+		t.Errorf("After - = %q, want '7'", result)
+	}
+}
+
+func TestRPNIncrementalDup(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// First push values (two values so stack is not emptied after evaluation)
+	_, err := r.ParseAndEvaluate("5 6")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+	// After "5 6", stack should have [5, 6], result is "5 6"
+
+	// Now duplicate
+	result, err := r.EvalOperator("dup")
+	if err != nil {
+		t.Fatalf("EvalOperator('dup') failed: %v", err)
+	}
+	if result != "5 6 6" {
+		t.Errorf("After dup = %q, want '5 6 6'", result)
+	}
+}
+
+func TestRPNIncrementalSwap(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("1 2")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+
+	result, err := r.EvalOperator("swap")
+	if err != nil {
+		t.Fatalf("EvalOperator('swap') failed: %v", err)
+	}
+	if result != "2 1" {
+		t.Errorf("After swap = %q, want '2 1'", result)
+	}
+}
+
+func TestRPNGetCurrentStack(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("1 2 3")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+
+	stack := r.GetCurrentStack()
+	if len(stack) != 3 {
+		t.Errorf("Stack length = %d, want 3", len(stack))
+	}
+	if stack[0] != 1 || stack[1] != 2 || stack[2] != 3 {
+		t.Errorf("Stack = %v, want [1 2 3]", stack)
+	}
+}
+
+func TestRPNIncrementalUnknownOperator(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("1 2")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+
+	_, err = r.EvalOperator("unknown")
+	if err == nil {
+		t.Error("EvalOperator('unknown') should return error")
+	}
+}
+
+func TestRPNClearStack(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	_, err := r.ParseAndEvaluate("1 2 3")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+
+	result, err := r.EvalOperator("clear")
+	if err != nil {
+		t.Fatalf("EvalOperator('clear') failed: %v", err)
+	}
+	if result != "All variables cleared" {
+		t.Errorf("After clear = %q, want 'All variables cleared'", result)
+	}
+}

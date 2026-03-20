@@ -20,7 +20,8 @@ const historyFile = ".perc_history"
 
 // RPNState holds the state for RPN operations in REPL
 type RPNState struct {
-	vars *rpn.Variables
+	vars   *rpn.Variables
+	rpnCalc *rpn.RPN
 }
 
 var rpnState *RPNState
@@ -28,8 +29,10 @@ var rpnState *RPNState
 // getRPNState returns or creates the RPN state
 func getRPNState() *RPNState {
 	if rpnState == nil {
+		vars := rpn.NewVariables().(*rpn.Variables)
 		rpnState = &RPNState{
-			vars: rpn.NewVariables().(*rpn.Variables),
+			vars:    vars,
+			rpnCalc: rpn.NewRPN(vars),
 		}
 	}
 	return rpnState
@@ -74,6 +77,25 @@ func executor(input string) {
 		// Valid RPN expression - print result
 		fmt.Println(rpnResult)
 		return
+	}
+
+	// Try evaluating as a single operator on the current RPN stack
+	// This allows incremental operations like: "1 2 +" then "+"
+	state := getRPNState()
+	fields := strings.Fields(input)
+	if len(fields) == 1 {
+		op := strings.ToLower(fields[0])
+		// Check if it's a valid operator
+		switch op {
+		case "+", "-", "*", "/", "^", "%", "dup", "swap", "pop", "show", "clear", "vars":
+			result, err := state.rpnCalc.EvalOperator(op)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+			} else {
+				fmt.Println(result)
+			}
+			return
+		}
 	}
 
 	// Run the percentage calculation
