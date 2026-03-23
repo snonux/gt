@@ -432,7 +432,9 @@ func TestOperationsUseVariable(t *testing.T) {
 	o := NewOperations(v)
 	s := NewStack()
 
-	v.SetVariable("pi", 3.14159)
+	if err := v.SetVariable("pi", 3.14159); err != nil {
+		t.Fatalf("SetVariable() returned error: %v", err)
+	}
 
 	err := o.UseVariable(s, "pi")
 	if err != nil {
@@ -466,7 +468,9 @@ func TestOperationsDeleteVariable(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 
-	v.SetVariable("temp", 100.0)
+	if err := v.SetVariable("temp", 100.0); err != nil {
+		t.Fatalf("SetVariable() returned error: %v", err)
+	}
 
 	err := o.DeleteVariable("temp")
 	if err != nil {
@@ -493,8 +497,12 @@ func TestOperationsListVariables(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 
-	v.SetVariable("x", 1.0)
-	v.SetVariable("y", 2.0)
+	if err := v.SetVariable("x", 1.0); err != nil {
+		t.Fatalf("SetVariable() returned error: %v", err)
+	}
+	if err := v.SetVariable("y", 2.0); err != nil {
+		t.Fatalf("SetVariable() returned error: %v", err)
+	}
 
 	result, err := o.ListVariables()
 	if err != nil {
@@ -535,7 +543,9 @@ func TestOperationsConcurrent(t *testing.T) {
 			name := fmt.Sprintf("concurrent%d", id)
 			s := NewStack()
 			s.Push(float64(id))
-			o.AssignVariable(s, name)
+			if err := o.AssignVariable(s, name); err != nil {
+				t.Errorf("AssignVariable() returned error: %v", err)
+			}
 			done <- true
 		}(i)
 	}
