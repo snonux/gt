@@ -49,7 +49,7 @@ func TestSetVariable(t *testing.T) {
 
 func TestGetVariable(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("test", 100.0)
+	_ = v.SetVariable("test", 100.0)
 
 	tests := []struct {
 		name     string
@@ -76,7 +76,7 @@ func TestGetVariable(t *testing.T) {
 
 func TestDeleteVariable(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("temp", 50.0)
+	_ = v.SetVariable("temp", 50.0)
 
 	// Delete existing variable
 	deleted := v.DeleteVariable("temp")
@@ -96,9 +96,9 @@ func TestDeleteVariable(t *testing.T) {
 
 func TestListVariables(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("z", 3.0)
-	v.SetVariable("a", 1.0)
-	v.SetVariable("m", 2.0)
+	_ = v.SetVariable("z", 3.0)
+	_ = v.SetVariable("a", 1.0)
+	_ = v.SetVariable("m", 2.0)
 
 	infos := v.ListVariables()
 
@@ -117,9 +117,9 @@ func TestListVariables(t *testing.T) {
 
 func TestClearVariables(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("x", 1.0)
-	v.SetVariable("y", 2.0)
-	v.SetVariable("z", 3.0)
+	_ = v.SetVariable("x", 1.0)
+	_ = v.SetVariable("y", 2.0)
+	_ = v.SetVariable("z", 3.0)
 
 	v.ClearVariables()
 
@@ -136,8 +136,8 @@ func TestClearVariables(t *testing.T) {
 
 func TestFormatVariables(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("pi", 3.14159)
-	v.SetVariable("e", 2.71828)
+	_ = v.SetVariable("pi", 3.14159)
+	_ = v.SetVariable("e", 2.71828)
 
 	formatted := v.FormatVariables()
 
@@ -161,7 +161,7 @@ func TestFormatVariablesEmpty(t *testing.T) {
 
 func TestHasVariable(t *testing.T) {
 	v := NewVariables()
-	v.SetVariable("exists", 1.0)
+	_ = v.SetVariable("exists", 1.0)
 
 	tests := []struct {
 		name     string
@@ -205,7 +205,7 @@ func TestVariableConcurrency(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		go func(id int) {
 			name := fmt.Sprintf("var%d", id)
-			v.SetVariable(name, float64(id))
+			_ = v.SetVariable(name, float64(id))
 			done <- true
 		}(i)
 	}

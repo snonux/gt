@@ -220,15 +220,16 @@ func saveHistory(history []string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	writer := bufio.NewWriter(file)
 	for _, entry := range history {
 		if _, err := writer.WriteString(entry + "\n"); err != nil {
+			_ = file.Close()
 			return err
 		}
 	}
 	if err := writer.Flush(); err != nil {
+		_ = file.Close()
 		return err
 	}
 	return file.Close()

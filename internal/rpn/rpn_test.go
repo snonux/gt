@@ -381,7 +381,7 @@ func TestRPNConcurrency(t *testing.T) {
 		go func(id int) {
 			name := fmt.Sprintf("val%d", id)
 			input := fmt.Sprintf("%s = %d", name, id)
-			r.ParseAndEvaluate(input)
+			_, _ = r.ParseAndEvaluate(input)
 			done <- true
 		}(i)
 	}
@@ -639,9 +639,9 @@ func TestResultStackMultipleValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set up variables if needed
 			if tt.name == "multiple values with variables" {
-				r.ParseAndEvaluate("x = 10")
-				r.ParseAndEvaluate("y = 20")
-				r.ParseAndEvaluate("z = 30")
+				_, _ = r.ParseAndEvaluate("x = 10")
+				_, _ = r.ParseAndEvaluate("y = 20")
+				_, _ = r.ParseAndEvaluate("z = 30")
 			}
 
 			result, err := r.ResultStack(tt.input)

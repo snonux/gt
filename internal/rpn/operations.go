@@ -365,9 +365,9 @@ func (o *Operations) Swap(stack *Stack) error {
 	top := vals[len(vals)-1]
 	second := vals[len(vals)-2]
 
-	// Pop both
-	stack.Pop()
-	stack.Pop()
+	// Pop both (this won't fail because we checked stack.Len() >= 2 above)
+	_, _ = stack.Pop()
+	_, _ = stack.Pop()
 
 	// Push in swapped order
 	stack.Push(top)

@@ -521,8 +521,7 @@ func TestOperationsClearVariables(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 
-	v.SetVariable("x", 1.0)
-	v.SetVariable("y", 2.0)
+	_, _ = v.SetVariable("x", 1.0), v.SetVariable("y", 2.0)
 
 	o.ClearVariables()
 
