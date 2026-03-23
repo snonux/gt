@@ -192,12 +192,14 @@ func loadHistory() []string {
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
 
 	var history []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		history = append(history, scanner.Text())
+	}
+	if err := file.Close(); err != nil {
+		return nil
 	}
 	return history
 }
@@ -226,7 +228,10 @@ func saveHistory(history []string) error {
 			return err
 		}
 	}
-	return writer.Flush()
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+	return file.Close()
 }
 
 // completer provides auto-completion for built-in commands
