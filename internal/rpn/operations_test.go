@@ -1,6 +1,7 @@
 package rpn
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -456,8 +457,8 @@ func TestOperationsUseVariableUndefined(t *testing.T) {
 	if err == nil {
 		t.Error("UseVariable for undefined variable should return error")
 	}
-	if !strings.Contains(err.Error(), "undefined variable") {
-		t.Errorf("UseVariable error = %v, should contain 'undefined variable'", err)
+	if !errors.Is(err, ErrVariableNotFound) {
+		t.Errorf("UseVariable error = %v, should be ErrVariableNotFound", err)
 	}
 }
 

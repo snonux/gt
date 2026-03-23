@@ -419,7 +419,7 @@ func (o *Operations) UseVariable(stack *Stack, name string) error {
 
 	val, exists := o.vars.GetVariable(name)
 	if !exists {
-		return fmt.Errorf("undefined variable: %s", name)
+		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
 	}
 
 	stack.Push(val)
@@ -435,7 +435,7 @@ func (o *Operations) DeleteVariable(name string) error {
 
 	deleted := o.vars.DeleteVariable(name)
 	if !deleted {
-		return fmt.Errorf("undefined variable: %s", name)
+		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
 	}
 	return nil
 }

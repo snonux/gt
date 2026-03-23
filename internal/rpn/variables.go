@@ -100,10 +100,24 @@ func NewVariables() VariableStore {
 	}
 }
 
+// isValidVariableName checks if a variable name is valid.
+// Variable names must be non-empty and contain only alphanumeric characters and underscores.
+func isValidVariableName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if !('a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' || '0' <= r && r <= '9' || r == '_') {
+			return false
+		}
+	}
+	return true
+}
+
 // SetVariable assigns a value to a variable name.
 // Usage: `name value =` stores value in variable.
 func (v *Variables) SetVariable(name string, value float64) error {
-	if name == "" {
+	if !isValidVariableName(name) {
 		return ErrInvalidVariableName
 	}
 
@@ -161,12 +175,24 @@ func (v *Variables) ClearVariables() {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	v.variables = make(map[string]float64)
+	for k := range v.variables {
+		delete(v.variables, k)
+	}
 }
 
-// FormatVariables formats all variables for display.
-func (v *Variables) FormatVariables() string {
-	infos := v.ListVariables()
+// formatVariablesUnsafe returns a list of variable info without acquiring a lock.
+// The caller must hold a read lock.
+func (v *Variables) formatVariablesUnsafe() string {
+	var infos []VariableInfo
+	for name, value := range v.variables {
+		infos = append(infos, VariableInfo{Name: name, Value: value})
+	}
+
+	// Sort by name for consistent output
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].Name < infos[j].Name
+	})
+
 	if len(infos) == 0 {
 		return "No variables defined"
 	}
@@ -179,6 +205,14 @@ func (v *Variables) FormatVariables() string {
 		fmt.Fprintf(&sb, "%s = %.10g", info.Name, info.Value)
 	}
 	return sb.String()
+}
+
+// FormatVariables formats all variables for display.
+func (v *Variables) FormatVariables() string {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	return v.formatVariablesUnsafe()
 }
 
 // Count returns the number of defined variables.
