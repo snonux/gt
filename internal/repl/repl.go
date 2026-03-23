@@ -164,7 +164,7 @@ func isBuiltinCommand(input string) (string, bool) {
 	}
 
 	cmd := strings.ToLower(args[0])
-	for _, builtin := range builtinCommands {
+	for _, builtin := range builtinCommands() {
 		if cmd == builtin {
 			return input, true
 		}
@@ -237,7 +237,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 	}
 
 	var suggestions []prompt.Suggest
-	for _, cmd := range builtinCommands {
+	for _, cmd := range builtinCommands() {
 		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(text)) {
 			suggestions = append(suggestions, prompt.Suggest{Text: cmd, Description: getCommandDescription(cmd)})
 		}

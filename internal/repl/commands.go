@@ -6,11 +6,13 @@ import (
 )
 
 // builtinCommands defines the built-in REPL commands
-var builtinCommands = []string{"help", "clear", "quit", "exit", "rpn", "calc"}
+func builtinCommands() []string {
+	return []string{"help", "clear", "quit", "exit", "rpn", "calc"}
+}
 
 // Commands returns the list of built-in command names supported by the REPL.
 func Commands() []string {
-	return builtinCommands
+	return builtinCommands()
 }
 
 // ExecuteCommand runs a built-in command and returns its output or error
