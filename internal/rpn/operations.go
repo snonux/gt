@@ -5,34 +5,47 @@ import (
 	"math"
 )
 
-// Operator defines the interface for operator implementations and stack manipulation.
-// This allows RPN to depend on an abstraction instead of the concrete Operations type.
-type Operator interface {
-	// Arithmetic operators
+// ArithmeticOperator defines the interface for basic arithmetic operators.
+type ArithmeticOperator interface {
 	Add(stack *Stack) error
 	Subtract(stack *Stack) error
 	Multiply(stack *Stack) error
 	Divide(stack *Stack) error
 	Power(stack *Stack) error
 	Modulo(stack *Stack) error
+}
 
-	// Hyper operators
+// HyperOperator defines the interface for hyper operators.
+type HyperOperator interface {
 	HyperAdd(stack *Stack) error
 	HyperSubtract(stack *Stack) error
 	HyperMultiply(stack *Stack) error
 	HyperDivide(stack *Stack) error
 	HyperPower(stack *Stack) error
 	HyperModulo(stack *Stack) error
+}
 
-	// Stack manipulation operators
+// StackOperator defines the interface for stack manipulation operators.
+type StackOperator interface {
 	Dup(stack *Stack) error
 	Swap(stack *Stack) error
 	Pop(stack *Stack) error
 	Show(stack *Stack) (string, error)
+}
 
-	// Variable operations
+// VariableOperator defines the interface for variable operations.
+type VariableOperator interface {
 	ListVariables() (string, error)
 	ClearVariables()
+}
+
+// Operator is the combined interface for all operator implementations.
+// This allows RPN to depend on an abstraction instead of the concrete Operations type.
+type Operator interface {
+	ArithmeticOperator
+	HyperOperator
+	StackOperator
+	VariableOperator
 }
 
 // Operations provides operator implementations and stack manipulation.
@@ -365,8 +378,7 @@ func (o *Operations) Swap(stack *Stack) error {
 
 // Pop removes and discards the top stack value.
 func (o *Operations) Pop(stack *Stack) error {
-	_, err := stack.Pop()
-	if err != nil {
+	if _, err := stack.Pop(); err != nil {
 		return fmt.Errorf("insufficient operands for pop: %w", err)
 	}
 	return nil
