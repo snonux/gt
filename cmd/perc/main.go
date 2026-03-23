@@ -25,7 +25,9 @@ func runCommand(args []string) (string, error) {
 	if len(args) < 2 {
 		// No args provided - check if stdin is a TTY for REPL mode
 		if isatty.IsTerminal(os.Stdin.Fd()) {
-			repl.RunREPL()
+			if err := runREPL(); err != nil {
+				return "", err
+			}
 			return "", nil
 		}
 		printUsage()
@@ -38,7 +40,14 @@ func runCommand(args []string) (string, error) {
 
 	// Check for --repl flag
 	if args[1] == "--repl" || args[1] == "repl" {
-		repl.RunREPL()
+		// REPL command explicitly requested - run it (may fail if not a TTY)
+		if err := runREPL(); err != nil {
+			// If not a TTY, just return empty string (REPL can't run in non-interactive mode)
+			if !isatty.IsTerminal(os.Stdin.Fd()) {
+				return "", nil
+			}
+			return "", err
+		}
 		return "", nil
 	}
 
@@ -58,7 +67,8 @@ func runCommand(args []string) (string, error) {
 	input := strings.Join(args[1:], " ")
 	
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	if rpnResult, rpnErr := runRPN(input); rpnErr == nil {
+	rpnResult, rpnErr := runRPN(input)
+	if rpnErr == nil {
 		return rpnResult, nil
 	}
 	
@@ -69,6 +79,14 @@ func runCommand(args []string) (string, error) {
 	}
 
 	return result, nil
+}
+
+// runREPL runs the REPL and handles errors
+func runREPL() error {
+	if err := repl.RunREPL(); err != nil {
+		return fmt.Errorf("REPL error: %w", err)
+	}
+	return nil
 }
 
 // runRPN parses and evaluates an RPN expression
