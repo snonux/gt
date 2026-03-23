@@ -39,6 +39,11 @@ func TestRPN() error {
 	return sh.RunV("go", "test", "./internal/rpn/...")
 }
 
+// RPN runs tests for the RPN package (alias for TestRPN).
+func RPN() error {
+	return TestRPN()
+}
+
 // Install installs the perc binary to GOPATH/bin.
 func Install() error {
 	fmt.Println("Installing perc...")
