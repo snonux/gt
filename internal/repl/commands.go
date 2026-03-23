@@ -5,9 +5,13 @@ import (
 	"strings"
 )
 
-// builtinCommands defines the built-in REPL commands
+// builtinCommandsList is the list of built-in REPL commands.
+// It's exposed as a variable to allow for dependency injection in tests.
+var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc"}
+
+// builtinCommands returns the list of built-in commands.
 func builtinCommands() []string {
-	return []string{"help", "clear", "quit", "exit", "rpn", "calc"}
+	return builtinCommandsList
 }
 
 // Commands returns the list of built-in command names supported by the REPL.
@@ -33,7 +37,7 @@ func ExecuteCommand(cmd string) (string, error) {
 		// rpn/calc commands are handled in executor(), not here
 		return "", nil
 	default:
-		return "", fmt.Errorf("unknown command: %s. Available commands: help, clear, quit, exit, rpn, calc", args[0])
+		return "", fmt.Errorf("unknown command: %s. Available commands: %s", args[0], strings.Join(builtinCommandsList, ", "))
 	}
 }
 
