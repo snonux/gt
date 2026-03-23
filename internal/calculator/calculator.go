@@ -29,7 +29,8 @@ func Parse(input string) (string, error) {
 	}
 
 	// Try RPN as a fallback
-	if result, err := ParseRPN(input); err == nil {
+	result, err := ParseRPN(input)
+	if err == nil {
 		return result, nil
 	}
 
