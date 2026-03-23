@@ -933,3 +933,46 @@ func TestHyperOperatorEdgeCases(t *testing.T) {
 		}
 	}
 }
+
+// TestParseAndEvaluateAssignmentNoExpression tests "name value =" without expression
+func TestParseAndEvaluateAssignmentNoExpression(t *testing.T) {
+	v := NewVariables().(*Variables)
+	r := NewRPN(v)
+
+	// Test "x 5 =" without expression
+	result, err := r.ParseAndEvaluate("x 5 =")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate(%q) returned error: %v", "x 5 =", err)
+	}
+	if result != "x = 5" {
+		t.Errorf("ParseAndEvaluate(%q) = %q, want %q", "x 5 =", result, "x = 5")
+	}
+
+	// Verify variable was set
+	val, exists := v.GetVariable("x")
+	if !exists {
+		t.Error("Variable x should exist after assignment")
+	}
+	if val != 5.0 {
+		t.Errorf("Variable x = %v, want 5.0", val)
+	}
+}
+
+// TestHandleAssignmentTrace traces handleAssignment with "x 5 ="
+func TestHandleAssignmentTrace(t *testing.T) {
+	input := "x 5 ="
+	t.Logf("Input: %q", input)
+	t.Logf("Contains ' = ': %v", strings.Contains(input, " = "))
+	
+	pos := strings.Index(input, " =")
+	t.Logf("Index of ' =': %d", pos)
+	
+	if pos >= 0 {
+		before := strings.TrimSpace(input[:pos])
+		after := strings.TrimSpace(input[pos+2:])
+		t.Logf("Before: %q, After: %q", before, after)
+		
+		beforeFields := strings.Fields(before)
+		t.Logf("BeforeFields: %v (len=%d)", beforeFields, len(beforeFields))
+	}
+}

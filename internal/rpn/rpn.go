@@ -344,7 +344,10 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 // handleAssignment checks if the input is an assignment format and handles it.
 // Returns (result string, isAssignment bool, error error).
 func (r *RPN) handleAssignment(input string) (string, bool, error) {
-	if !strings.Contains(input, " = ") {
+	// Check for assignment format (name = value or name value = expression)
+	// We look for either " = " (with trailing space) or " =" (just space before equals)
+	hasAssignment := strings.Contains(input, " = ") || strings.Contains(input, " =")
+	if !hasAssignment {
 		return "", false, nil
 	}
 
@@ -372,10 +375,13 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 	}
 
 	// Handle assignment with expression: "name value = expression..."
-	pos := strings.Index(input, " = ")
+	// Use " =" (space before equals) to find the boundary
+	pos := strings.Index(input, " =")
 	if pos >= 0 {
-		before := input[:pos]  // "name value"
-		after := input[pos+3:] // "expr..."
+		// Extract content before the assignment
+		before := strings.TrimSpace(input[:pos])
+		// Extract content after " =" (may be empty or contain expression)
+		after := strings.TrimSpace(input[pos+2:])
 
 		beforeFields := strings.Fields(before)
 		if len(beforeFields) == 2 {
@@ -385,13 +391,16 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 			// Try to parse value as a number
 			val, err := strconv.ParseFloat(valueStr, 64)
 			if err == nil {
-				// Valid assignment pattern: "name value = expr..."
+				// Valid assignment pattern: "name value = expr..." or "name value ="
 				if err := r.vars.SetVariable(name, val); err != nil {
 					return "", false, err
 				}
 
-				// Evaluate the remaining expression
-				result, err := r.evaluate(strings.Fields(strings.TrimSpace(after)))
+				// If no expression after assignment, just return assignment info
+				if after == "" {
+					return fmt.Sprintf("%s = %.10g", name, val), true, nil
+				}
+				result, err := r.evaluate(strings.Fields(after))
 				return result, true, err
 			}
 		}
