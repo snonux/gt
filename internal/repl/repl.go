@@ -99,6 +99,14 @@ func RunREPL() error {
 
 // executor runs a calculation command and returns the result
 func executor(input string) {
+	// Add panic recovery for better resilience
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Error: Unexpected error occurred: %v\n", r)
+			fmt.Println("Please try a different expression or command.")
+		}
+	}()
+
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return
