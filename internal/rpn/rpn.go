@@ -8,17 +8,20 @@ import (
 
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
-	vars         VariableStore
-	ops          Operator
-	maxStack     int
-	currentStack *Stack
+	vars           VariableStore
+	ops            Operator
+	opRegistry     *OperatorRegistry
+	maxStack       int
+	currentStack   *Stack
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
 func NewRPN(vars VariableStore) *RPN {
+	ops := NewOperations(vars)
 	return &RPN{
 		vars:         vars,
-		ops:          NewOperations(vars),
+		ops:          ops,
+		opRegistry:   NewOperatorRegistry(ops),
 		maxStack:     1000, // Reasonable limit for RPN expressions
 		currentStack: NewStack(),
 	}
@@ -67,59 +70,33 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 			continue
 		}
 
-		// Check for operators and special commands
-		switch token {
-		case "+":
-			if err := r.ops.Add(stack); err != nil {
+		// Check for hyperoperators
+		if handled, result, err := r.handleHyperOperatorWithRegistry(stack, token); err != nil {
+			return "", err
+		} else if handled {
+			return result, nil
+		}
+
+		// Check for standard operators
+		if result, handled, err := r.opRegistry.HandleStandardOperator(stack, token); err != nil {
+			// If the error is not "unknown token", return it
+			// Otherwise, fall through to check for variable
+			if !strings.Contains(err.Error(), "unknown token") {
 				return "", err
 			}
-		case "-":
-			if err := r.ops.Subtract(stack); err != nil {
-				return "", err
+		} else if handled {
+			if result != "" {
+				return result, nil
 			}
-		case "*":
-			if err := r.ops.Multiply(stack); err != nil {
-				return "", err
-			}
-		case "/":
-			if err := r.ops.Divide(stack); err != nil {
-				return "", err
-			}
-		case "^":
-			if err := r.ops.Power(stack); err != nil {
-				return "", err
-			}
-		case "%":
-			if err := r.ops.Modulo(stack); err != nil {
-				return "", err
-			}
-		case "dup":
-			if err := r.ops.Dup(stack); err != nil {
-				return "", err
-			}
-		case "swap":
-			if err := r.ops.Swap(stack); err != nil {
-				return "", err
-			}
-		case "pop":
-			if err := r.ops.Pop(stack); err != nil {
-				return "", err
-			}
-		case "show", "showstack", "print":
-			return r.ops.Show(stack)
-		case "vars":
-			return r.ops.ListVariables()
-		case "clear":
-			r.ops.ClearVariables()
-			return "All variables cleared", nil
-		default:
-			// Check if it's a variable reference (push its value)
-			val, exists := r.vars.GetVariable(token)
-			if exists {
-				stack.Push(val)
-			} else {
-				return "", fmt.Errorf("unknown token '%s'", token)
-			}
+			continue
+		}
+
+		// Check if it's a variable reference (push its value)
+		val, exists := r.vars.GetVariable(token)
+		if exists {
+			stack.Push(val)
+		} else {
+			return "", fmt.Errorf("unknown token '%s'", token)
 		}
 	}
 
@@ -133,56 +110,35 @@ func (r *RPN) EvalOperator(op string) (string, error) {
 		r.currentStack = NewStack()
 	}
 
-	switch op {
-	case "+":
-		if err := r.ops.Add(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator +: %w", err)
+	// Check for hyperoperators
+	if handled, result, err := r.handleHyperOperatorWithRegistry(r.currentStack, op); err != nil {
+		return "", err
+	} else if handled {
+		if result != "" {
+			return result, nil
 		}
-	case "-":
-		if err := r.ops.Subtract(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator -: %w", err)
+		stackShow, err := r.ops.Show(r.currentStack)
+		if err != nil {
+			return "", fmt.Errorf("show stack: %w", err)
 		}
-	case "*":
-		if err := r.ops.Multiply(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator *: %w", err)
-		}
-	case "/":
-		if err := r.ops.Divide(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator /: %w", err)
-		}
-	case "^":
-		if err := r.ops.Power(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator ^: %w", err)
-		}
-	case "%":
-		if err := r.ops.Modulo(r.currentStack); err != nil {
-			return "", fmt.Errorf("operator %%: %w", err)
-		}
-	case "dup":
-		if err := r.ops.Dup(r.currentStack); err != nil {
-			return "", fmt.Errorf("dup: %w", err)
-		}
-	case "swap":
-		if err := r.ops.Swap(r.currentStack); err != nil {
-			return "", fmt.Errorf("swap: %w", err)
-		}
-	case "pop":
-		if err := r.ops.Pop(r.currentStack); err != nil {
-			return "", fmt.Errorf("pop: %w", err)
-		}
-	case "show", "showstack", "print":
-		return r.ops.Show(r.currentStack)
-	case "clear":
-		r.ops.ClearVariables()
-		return "All variables cleared", nil
-	case "vars":
-		return r.ops.ListVariables()
-	default:
-		return "", fmt.Errorf("unknown operator '%s'", op)
+		return stackShow, nil
 	}
 
-	// Return the current stack state
-	return r.ops.Show(r.currentStack)
+	// Check for standard operators
+	if result, handled, err := r.opRegistry.HandleStandardOperator(r.currentStack, op); err != nil {
+		return "", err
+	} else if handled {
+		if result != "" {
+			return result, nil
+		}
+		stackShow, err := r.ops.Show(r.currentStack)
+		if err != nil {
+			return "", fmt.Errorf("show stack: %w", err)
+		}
+		return stackShow, nil
+	}
+
+	return "", fmt.Errorf("unknown operator '%s'", op)
 }
 
 // GetCurrentStack returns a copy of the current stack for inspection.
@@ -259,122 +215,43 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	return fmt.Sprintf("%.10g", val), nil
 }
 
-// handleOperator handles operators and special commands
+// handleOperator handles operators and special commands using the operator registry.
 func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string, error) {
-	// Handle hyperoperators
-	if isHyperOperator(token) {
-		if err := r.handleHyperOperator(stack, token); err != nil {
-			return "", err
-		}
+	// Check if it's a number first
+	if _, err := strconv.ParseFloat(token, 64); err == nil {
 		return "", nil
 	}
 
+	// Check if it's a variable reference first (before operators)
+	if val, exists := r.vars.GetVariable(token); exists {
+		stack.Push(val)
+		return "", nil
+	}
+
+	// Check for hyperoperators
+	if handled, result, err := r.handleHyperOperatorWithRegistry(stack, token); err != nil {
+		return "", err
+	} else if handled {
+		return result, nil
+	}
+
 	// Handle standard operators
-	switch token {
-	case "+":
-		if err := r.ops.Add(stack); err != nil {
-			return "", fmt.Errorf("operator +: %w", err)
-		}
-	case "-":
-		if err := r.ops.Subtract(stack); err != nil {
-			return "", fmt.Errorf("operator -: %w", err)
-		}
-	case "*":
-		if err := r.ops.Multiply(stack); err != nil {
-			return "", fmt.Errorf("operator *: %w", err)
-		}
-	case "/":
-		if err := r.ops.Divide(stack); err != nil {
-			return "", fmt.Errorf("operator /: %w", err)
-		}
-	case "^":
-		if err := r.ops.Power(stack); err != nil {
-			return "", fmt.Errorf("operator ^: %w", err)
-		}
-	case "%":
-		if err := r.ops.Modulo(stack); err != nil {
-			return "", fmt.Errorf("operator %%: %w", err)
-		}
-	case "dup":
-		if err := r.ops.Dup(stack); err != nil {
-			return "", fmt.Errorf("dup: %w", err)
-		}
-	case "swap":
-		if err := r.ops.Swap(stack); err != nil {
-			return "", fmt.Errorf("swap: %w", err)
-		}
-	case "pop":
-		if err := r.ops.Pop(stack); err != nil {
-			return "", fmt.Errorf("pop: %w", err)
-		}
-	case "show", "showstack", "print":
-		result, err := r.ops.Show(stack)
-		if err != nil {
-			return "", fmt.Errorf("show: %w", err)
-		}
+	if result, handled, err := r.opRegistry.HandleStandardOperator(stack, token); err != nil {
+		return "", err
+	} else if handled {
 		return result, nil
-	case "vars":
-		result, err := r.ops.ListVariables()
-		if err != nil {
-			return "", fmt.Errorf("vars: %w", err)
-		}
-		return result, nil
-	case "clear":
-		r.ops.ClearVariables()
-		return "All variables cleared", nil
-	case "d":
-		return "", fmt.Errorf("'d' command not supported as standalone token")
-	default:
-		// Check if it's a variable reference (push its value)
-		val, exists := r.vars.GetVariable(token)
-		if exists {
-			stack.Push(val)
-		} else {
-			return "", fmt.Errorf("rpn: unknown token '%s' at position %d", token, tokenIndex)
-		}
 	}
-	return "", nil
+
+	return "", fmt.Errorf("unknown token '%s'", token)
 }
 
-// isHyperOperator checks if the token is a hyperoperator
-func isHyperOperator(token string) bool {
-	switch token {
-	case "[+]", "[-]", "[*]", "[/]", "[^]", "[%]":
-		return true
-	default:
-		return false
+// handleHyperOperatorWithRegistry handles hyperoperators and returns (handled, result, error).
+func (r *RPN) handleHyperOperatorWithRegistry(stack *Stack, token string) (bool, string, error) {
+	if !r.opRegistry.IsHyperOperator(token) {
+		return false, "", nil
 	}
-}
-
-// handleHyperOperator handles hyperoperators
-func (r *RPN) handleHyperOperator(stack *Stack, token string) error {
-	switch token {
-	case "[+]":
-		if err := r.ops.HyperAdd(stack); err != nil {
-			return fmt.Errorf("hyperoperator [+]: %w", err)
-		}
-	case "[-]":
-		if err := r.ops.HyperSubtract(stack); err != nil {
-			return fmt.Errorf("hyperoperator [-]: %w", err)
-		}
-	case "[*]":
-		if err := r.ops.HyperMultiply(stack); err != nil {
-			return fmt.Errorf("hyperoperator [*]: %w", err)
-		}
-	case "[/]":
-		if err := r.ops.HyperDivide(stack); err != nil {
-			return fmt.Errorf("hyperoperator [/]: %w", err)
-		}
-	case "[^]":
-		if err := r.ops.HyperPower(stack); err != nil {
-			return fmt.Errorf("hyperoperator [^]: %w", err)
-		}
-	case "[%]":
-		if err := r.ops.HyperModulo(stack); err != nil {
-			return fmt.Errorf("hyperoperator [%%]: %w", err)
-		}
-	}
-	return nil
+	result, handled, err := r.opRegistry.HandleHyperOperator(stack, token)
+	return handled, result, err
 }
 
 // handleAssignment checks if the input is an assignment format and handles it.
