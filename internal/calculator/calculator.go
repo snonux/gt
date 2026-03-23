@@ -9,6 +9,36 @@ import (
 	"codeberg.org/snonux/perc/internal/rpn"
 )
 
+// ParsingStrategy represents a parsing function that attempts to parse input.
+type ParsingStrategy func(input string) (result string, handled bool)
+
+// strategyRegistry maintains a registry of parsing strategies.
+type strategyRegistry struct {
+	strategies []ParsingStrategy
+}
+
+// newStrategyRegistry creates a new strategy registry.
+func newStrategyRegistry() *strategyRegistry {
+	return &strategyRegistry{
+		strategies: make([]ParsingStrategy, 0),
+	}
+}
+
+// register adds a parsing strategy to the registry.
+func (r *strategyRegistry) register(strategy ParsingStrategy) {
+	r.strategies = append(r.strategies, strategy)
+}
+
+// parse attempts to parse input using registered strategies in order.
+func (r *strategyRegistry) parse(input string) (string, bool) {
+	for _, strategy := range r.strategies {
+		if result, handled := strategy(input); handled {
+			return result, true
+		}
+	}
+	return "", false
+}
+
 // Parse parses a percentage calculation input string and returns the result.
 // It handles formats like "20% of 150", "30 is what % of 150", and "30 is 20% of what".
 func Parse(input string) (string, error) {
@@ -16,25 +46,27 @@ func Parse(input string) (string, error) {
 	input = strings.ReplaceAll(input, "what is ", "")
 	input = strings.TrimSpace(input)
 
-	if result, ok := parseXPercentOfY(input); ok {
-		return result, nil
-	}
+	// Create registry and register parsing strategies
+	registry := newStrategyRegistry()
+	registry.register(parseXPercentOfY)
+	registry.register(parseXIsWhatPercentOfY)
+	registry.register(parseXIsYPercentOfWhat)
+	registry.register(parseRPNFallback)
 
-	if result, ok := parseXIsWhatPercentOfY(input); ok {
-		return result, nil
-	}
-
-	if result, ok := parseXIsYPercentOfWhat(input); ok {
-		return result, nil
-	}
-
-	// Try RPN as a fallback
-	result, err := ParseRPN(input)
-	if err == nil {
+	if result, ok := registry.parse(input); ok {
 		return result, nil
 	}
 
 	return "", fmt.Errorf("calculator: unable to parse input %q. See usage for examples", input)
+}
+
+// parseRPNFallback is a parsing strategy that delegates to ParseRPN.
+func parseRPNFallback(input string) (string, bool) {
+	result, err := ParseRPN(input)
+	if err == nil {
+		return result, true
+	}
+	return "", false
 }
 
 // ParseRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
