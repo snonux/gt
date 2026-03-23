@@ -339,8 +339,12 @@ func TestParseAndEvaluateVars(t *testing.T) {
 	r := NewRPN(v)
 
 	// Set some variables using new format: "name = value"
-	r.ParseAndEvaluate("x = 5")
-	r.ParseAndEvaluate("y = 10")
+	if _, err := r.ParseAndEvaluate("x = 5"); err != nil {
+		t.Fatalf("ParseAndEvaluate(%q) returned error: %v", "x = 5", err)
+	}
+	if _, err := r.ParseAndEvaluate("y = 10"); err != nil {
+		t.Fatalf("ParseAndEvaluate(%q) returned error: %v", "y = 10", err)
+	}
 
 	result, err := r.ParseAndEvaluate("vars")
 	if err != nil {
@@ -356,8 +360,12 @@ func TestParseAndEvaluateClear(t *testing.T) {
 	r := NewRPN(v)
 
 	// Set and clear
-	r.ParseAndEvaluate("x 5 =")
-	r.ParseAndEvaluate("clear")
+	if _, err := r.ParseAndEvaluate("x 5 ="); err != nil {
+		t.Fatalf("ParseAndEvaluate(%q) returned error: %v", "x 5 =", err)
+	}
+	if _, err := r.ParseAndEvaluate("clear"); err != nil {
+		t.Fatalf("ParseAndEvaluate(%q) returned error: %v", "clear", err)
+	}
 
 	if v.Count() != 0 {
 		t.Errorf("Count after clear = %d, want 0", v.Count())
