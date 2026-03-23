@@ -109,7 +109,7 @@ func TestStackClear(t *testing.T) {
 }
 
 func TestOperationsAdd(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(3.0)
@@ -130,7 +130,7 @@ func TestOperationsAdd(t *testing.T) {
 }
 
 func TestOperationsSubtract(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(10.0)
@@ -151,7 +151,7 @@ func TestOperationsSubtract(t *testing.T) {
 }
 
 func TestOperationsMultiply(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(5.0)
@@ -172,7 +172,7 @@ func TestOperationsMultiply(t *testing.T) {
 }
 
 func TestOperationsDivide(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(20.0)
@@ -193,7 +193,7 @@ func TestOperationsDivide(t *testing.T) {
 }
 
 func TestOperationsDivideByZero(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(10.0)
@@ -209,7 +209,7 @@ func TestOperationsDivideByZero(t *testing.T) {
 }
 
 func TestOperationsPower(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(2.0)
@@ -230,7 +230,7 @@ func TestOperationsPower(t *testing.T) {
 }
 
 func TestOperationsModulo(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(10.0)
@@ -251,7 +251,7 @@ func TestOperationsModulo(t *testing.T) {
 }
 
 func TestOperationsModuloByZero(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(10.0)
@@ -264,7 +264,7 @@ func TestOperationsModuloByZero(t *testing.T) {
 }
 
 func TestOperationsInsufficientOperands(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(5.0)
@@ -277,7 +277,7 @@ func TestOperationsInsufficientOperands(t *testing.T) {
 }
 
 func TestOperationsDup(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(7.0)
@@ -299,7 +299,7 @@ func TestOperationsDup(t *testing.T) {
 }
 
 func TestOperationsSwap(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(1.0)
@@ -318,7 +318,7 @@ func TestOperationsSwap(t *testing.T) {
 }
 
 func TestOperationsSwapInsufficient(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(5.0)
@@ -330,7 +330,7 @@ func TestOperationsSwapInsufficient(t *testing.T) {
 }
 
 func TestOperationsPop(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(1.0)
@@ -348,7 +348,7 @@ func TestOperationsPop(t *testing.T) {
 }
 
 func TestOperationsPopEmpty(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 
@@ -359,7 +359,7 @@ func TestOperationsPopEmpty(t *testing.T) {
 }
 
 func TestOperationsShow(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(1.0)
@@ -377,7 +377,7 @@ func TestOperationsShow(t *testing.T) {
 }
 
 func TestOperationsShowEmpty(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 
@@ -392,7 +392,7 @@ func TestOperationsShowEmpty(t *testing.T) {
 }
 
 func TestOperationsAssignVariable(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 	s.Push(5.0)
@@ -417,7 +417,7 @@ func TestOperationsAssignVariable(t *testing.T) {
 }
 
 func TestOperationsAssignVariableEmptyName(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 
@@ -428,7 +428,7 @@ func TestOperationsAssignVariableEmptyName(t *testing.T) {
 }
 
 func TestOperationsUseVariable(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 
@@ -449,7 +449,7 @@ func TestOperationsUseVariable(t *testing.T) {
 }
 
 func TestOperationsUseVariableUndefined(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
 
@@ -463,7 +463,7 @@ func TestOperationsUseVariableUndefined(t *testing.T) {
 }
 
 func TestOperationsDeleteVariable(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 
 	v.SetVariable("temp", 100.0)
@@ -480,7 +480,7 @@ func TestOperationsDeleteVariable(t *testing.T) {
 }
 
 func TestOperationsDeleteVariableUndefined(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 
 	err := o.DeleteVariable("nonexistent")
@@ -490,7 +490,7 @@ func TestOperationsDeleteVariableUndefined(t *testing.T) {
 }
 
 func TestOperationsListVariables(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 
 	v.SetVariable("x", 1.0)
@@ -510,7 +510,7 @@ func TestOperationsListVariables(t *testing.T) {
 }
 
 func TestOperationsClearVariables(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 
 	v.SetVariable("x", 1.0)
@@ -524,7 +524,7 @@ func TestOperationsClearVariables(t *testing.T) {
 }
 
 func TestOperationsConcurrent(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	o := NewOperations(v)
 
 	// Test concurrent variable access

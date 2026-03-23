@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewRPN(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 	if r == nil {
 		t.Fatal("NewRPN() returned nil")
@@ -98,7 +98,7 @@ func TestParseAndEvaluateSimple(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -136,7 +136,7 @@ func TestParseAndEvaluateChain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -174,7 +174,7 @@ func TestParseAndEvaluateStackOps(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -188,7 +188,7 @@ func TestParseAndEvaluateStackOps(t *testing.T) {
 }
 
 func TestParseAndEvaluateVariables(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test variable assignment and reuse
@@ -212,7 +212,7 @@ func TestParseAndEvaluateVariables(t *testing.T) {
 }
 
 func TestParseAndEvaluateEmpty(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("")
@@ -245,7 +245,7 @@ func TestParseAndEvaluateAssignment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -259,7 +259,7 @@ func TestParseAndEvaluateAssignment(t *testing.T) {
 }
 
 func TestParseAndEvaluateDivisionByZero(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("5 0 /")
@@ -272,7 +272,7 @@ func TestParseAndEvaluateDivisionByZero(t *testing.T) {
 }
 
 func TestParseAndEvaluateUndefinedVariable(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("undefined +")
@@ -286,7 +286,7 @@ func TestParseAndEvaluateUndefinedVariable(t *testing.T) {
 }
 
 func TestParseAndEvaluateUnknownToken(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("1 2 + hello")
@@ -299,7 +299,7 @@ func TestParseAndEvaluateUnknownToken(t *testing.T) {
 }
 
 func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	tests := []struct {
@@ -322,7 +322,7 @@ func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
 }
 
 func TestParseAndEvaluateShow(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	result, err := r.ParseAndEvaluate("1 2 3 show")
@@ -335,7 +335,7 @@ func TestParseAndEvaluateShow(t *testing.T) {
 }
 
 func TestParseAndEvaluateVars(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Set some variables using new format: "name = value"
@@ -352,7 +352,7 @@ func TestParseAndEvaluateVars(t *testing.T) {
 }
 
 func TestParseAndEvaluateClear(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Set and clear
@@ -365,7 +365,7 @@ func TestParseAndEvaluateClear(t *testing.T) {
 }
 
 func TestRPNConcurrency(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	done := make(chan bool, 10)
@@ -388,7 +388,7 @@ func TestRPNConcurrency(t *testing.T) {
 }
 
 func TestResultStack(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	tokens := []string{"1", "2", "3", "+"}
@@ -402,7 +402,7 @@ func TestResultStack(t *testing.T) {
 }
 
 func TestResultStackEmpty(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	tokens := []string{}
@@ -441,7 +441,7 @@ func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -485,7 +485,7 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
@@ -535,7 +535,7 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 			continue
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			v := NewVariables().(*Variables)
+			v := NewVariables()
 			r := NewRPN(v)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
@@ -550,7 +550,7 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 }
 
 func TestResultStackErrors(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test error cases in ResultStack function
@@ -601,7 +601,7 @@ func TestResultStackErrors(t *testing.T) {
 }
 
 func TestResultStackMultipleValues(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test Case where stack has multiple values at the end
@@ -648,7 +648,7 @@ func TestResultStackMultipleValues(t *testing.T) {
 }
 
 func TestRPNIncrementalOperations(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 1 2 3 + then +
@@ -672,7 +672,7 @@ func TestRPNIncrementalOperations(t *testing.T) {
 }
 
 func TestRPNIncrementalSubtract(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// First put two values on stack: "10 3" gives stack [10, 3]
@@ -693,7 +693,7 @@ func TestRPNIncrementalSubtract(t *testing.T) {
 }
 
 func TestRPNIncrementalDup(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// First push values (two values so stack is not emptied after evaluation)
@@ -714,7 +714,7 @@ func TestRPNIncrementalDup(t *testing.T) {
 }
 
 func TestRPNIncrementalSwap(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("1 2")
@@ -732,7 +732,7 @@ func TestRPNIncrementalSwap(t *testing.T) {
 }
 
 func TestRPNGetCurrentStack(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("1 2 3")
@@ -750,7 +750,7 @@ func TestRPNGetCurrentStack(t *testing.T) {
 }
 
 func TestRPNIncrementalUnknownOperator(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("1 2")
@@ -765,7 +765,7 @@ func TestRPNIncrementalUnknownOperator(t *testing.T) {
 }
 
 func TestRPNClearStack(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("1 2 3")
@@ -785,7 +785,7 @@ func TestRPNClearStack(t *testing.T) {
 // Hyper operator tests
 
 func TestHyperAdd(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 1 2 3 4 5 [+]
@@ -799,7 +799,7 @@ func TestHyperAdd(t *testing.T) {
 }
 
 func TestHyperAddEdgeCases(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test with two values: 10 20 [+]
@@ -812,7 +812,7 @@ func TestHyperAddEdgeCases(t *testing.T) {
 	}
 
 	// Test with single value should error - use fresh instance to avoid stack state
-	v2 := NewVariables().(*Variables)
+	v2 := NewVariables()
 	r2 := NewRPN(v2)
 	_, err = r2.ParseAndEvaluate("5 [+]")
 	if err == nil {
@@ -821,7 +821,7 @@ func TestHyperAddEdgeCases(t *testing.T) {
 }
 
 func TestHyperSubtract(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 10 3 2 [-] => 10 - 3 - 2 = 5
@@ -835,7 +835,7 @@ func TestHyperSubtract(t *testing.T) {
 }
 
 func TestHyperMultiply(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 2 3 4 [*] => 2 * 3 * 4 = 24
@@ -849,7 +849,7 @@ func TestHyperMultiply(t *testing.T) {
 }
 
 func TestHyperDivide(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 100 5 2 [/] => 100 / 5 / 2 = 10
@@ -863,7 +863,7 @@ func TestHyperDivide(t *testing.T) {
 }
 
 func TestHyperDivideByZero(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("100 0 [/]")
@@ -873,7 +873,7 @@ func TestHyperDivideByZero(t *testing.T) {
 }
 
 func TestHyperPower(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 2 3 2 [^] => 2 ^ 3 ^ 2 = (2 ^ 3) ^ 2 = 8 ^ 2 = 64
@@ -887,7 +887,7 @@ func TestHyperPower(t *testing.T) {
 }
 
 func TestHyperModulo(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test: 100 7 3 [%%] => 100 %% 7 %% 3 = 2 %% 3 = 2
@@ -901,7 +901,7 @@ func TestHyperModulo(t *testing.T) {
 }
 
 func TestHyperModuloByZero(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	_, err := r.ParseAndEvaluate("100 0 [%]")
@@ -925,7 +925,7 @@ func TestHyperOperatorEdgeCases(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		v := NewVariables().(*Variables)
+		v := NewVariables()
 		r := NewRPN(v)
 		_, err := r.ParseAndEvaluate(tc.input)
 		if err == nil {
@@ -936,7 +936,7 @@ func TestHyperOperatorEdgeCases(t *testing.T) {
 
 // TestParseAndEvaluateAssignmentNoExpression tests "name value =" without expression
 func TestParseAndEvaluateAssignmentNoExpression(t *testing.T) {
-	v := NewVariables().(*Variables)
+	v := NewVariables()
 	r := NewRPN(v)
 
 	// Test "x 5 =" without expression

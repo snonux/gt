@@ -94,7 +94,7 @@ type VariableStore interface {
 }
 
 // NewVariables creates and initializes a new Variables instance.
-func NewVariables() VariableStore {
+func NewVariables() *Variables {
 	return &Variables{
 		variables: make(map[string]float64),
 	}

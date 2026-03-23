@@ -139,7 +139,7 @@ func TestFormatVariables(t *testing.T) {
 	v.SetVariable("pi", 3.14159)
 	v.SetVariable("e", 2.71828)
 
-	formatted := v.(*Variables).FormatVariables()
+	formatted := v.FormatVariables()
 
 	if strings.Contains(formatted, "No variables defined") {
 		t.Error("Formatted variables should not show 'No variables defined' when variables exist")
@@ -152,7 +152,7 @@ func TestFormatVariables(t *testing.T) {
 
 func TestFormatVariablesEmpty(t *testing.T) {
 	v := NewVariables()
-	formatted := v.(*Variables).FormatVariables()
+	formatted := v.FormatVariables()
 
 	if !strings.Contains(formatted, "No variables defined") {
 		t.Errorf("Empty variables should show 'No variables defined', got: %s", formatted)
