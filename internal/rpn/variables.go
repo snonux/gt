@@ -64,8 +64,9 @@ func (s *Stack) Values() []float64 {
 }
 
 // Clear removes all values from the stack.
+// Note: This resets the slice to nil, releasing the underlying memory.
 func (s *Stack) Clear() {
-	s.values = s.values[:0]
+	s.values = nil
 }
 
 // VariableInfo represents a single variable with its name and value.

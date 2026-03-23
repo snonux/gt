@@ -34,7 +34,7 @@ func Parse(input string) (string, error) {
 		return result, nil
 	}
 
-	return "", fmt.Errorf("unable to parse input. See usage for examples")
+	return "", fmt.Errorf("calculator: unable to parse input %q. See usage for examples", input)
 }
 
 // ParseRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
@@ -53,8 +53,14 @@ func parseXPercentOfY(input string) (string, bool) {
 		return "", false
 	}
 
-	percent, _ := strconv.ParseFloat(matches[1], 64)
-	base, _ := strconv.ParseFloat(matches[2], 64)
+	percent, err := strconv.ParseFloat(matches[1], 64)
+	if err != nil {
+		return "", false
+	}
+	base, err := strconv.ParseFloat(matches[2], 64)
+	if err != nil {
+		return "", false
+	}
 
 	result := (percent / 100.0) * base
 
@@ -72,8 +78,14 @@ func parseXIsWhatPercentOfY(input string) (string, bool) {
 		return "", false
 	}
 
-	part, _ := strconv.ParseFloat(matches[1], 64)
-	whole, _ := strconv.ParseFloat(matches[2], 64)
+	part, err := strconv.ParseFloat(matches[1], 64)
+	if err != nil {
+		return "", false
+	}
+	whole, err := strconv.ParseFloat(matches[2], 64)
+	if err != nil {
+		return "", false
+	}
 
 	if whole == 0 {
 		return "", false
@@ -95,8 +107,14 @@ func parseXIsYPercentOfWhat(input string) (string, bool) {
 		return "", false
 	}
 
-	part, _ := strconv.ParseFloat(matches[1], 64)
-	percent, _ := strconv.ParseFloat(matches[2], 64)
+	part, err := strconv.ParseFloat(matches[1], 64)
+	if err != nil {
+		return "", false
+	}
+	percent, err := strconv.ParseFloat(matches[2], 64)
+	if err != nil {
+		return "", false
+	}
 
 	if percent == 0 {
 		return "", false

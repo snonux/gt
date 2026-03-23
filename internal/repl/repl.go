@@ -17,19 +17,35 @@ import (
 	"github.com/c-bata/go-prompt"
 )
 
-const historyFile = ".perc_history"
+const historyFile = ".gt_history"
 
 // RPNState holds the state for RPN operations in REPL
+// Note: This struct should never be copied - use pointer receivers only
 type RPNState struct {
-	vars   rpn.VariableStore
+	vars    rpn.VariableStore
 	rpnCalc *rpn.RPN
 }
 
-// getRPNState returns or creates the RPN state
+// rpnStateMu protects rpnState
+// Note: The mutex must NOT be copied - keep it as a top-level variable
 var rpnStateMu sync.RWMutex
+
+// rpnState holds the singleton RPN state for REPL operations
 var rpnState *RPNState
 
+// getRPNState returns or creates the RPN state
+// Thread-safe implementation with double-checked locking pattern
 func getRPNState() *RPNState {
+	// First check with read lock for performance
+	rpnStateMu.RLock()
+	if rpnState != nil {
+		state := rpnState
+		rpnStateMu.RUnlock()
+		return state
+	}
+	rpnStateMu.RUnlock()
+
+	// Need to create - use write lock
 	rpnStateMu.Lock()
 	defer rpnStateMu.Unlock()
 	if rpnState == nil {
@@ -46,7 +62,7 @@ func getRPNState() *RPNState {
 func RunREPL() error {
 	// Check if stdin is a TTY
 	if !isatty.IsTerminal(os.Stdin.Fd()) {
-		fmt.Fprintln(os.Stderr, "REPL mode requires a TTY. Use 'perc <calculation>' for non-interactive mode.")
+		fmt.Fprintln(os.Stderr, "REPL mode requires a TTY. Use 'gt <calculation>' for non-interactive mode.")
 		return fmt.Errorf("stdin is not a TTY")
 	}
 
@@ -55,10 +71,10 @@ func RunREPL() error {
 	p := prompt.New(
 		executor,
 		completer,
-		prompt.OptionTitle("perc - Percentage Calculator"),
-		prompt.OptionPrefix("perc> "),
+		prompt.OptionTitle("gt - Percentage Calculator"),
+		prompt.OptionPrefix("> "),
 		prompt.OptionLivePrefix(func() (string, bool) {
-			return "perc> ", true
+			return "> ", true
 		}),
 		prompt.OptionHistory(history),
 	)
@@ -220,19 +236,23 @@ func saveHistory(history []string) error {
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			// Log error but don't overwrite the original error
+			_ = fmt.Errorf("warning: failed to close history file: %w", closeErr)
+		}
+	}()
 
 	writer := bufio.NewWriter(file)
 	for _, entry := range history {
 		if _, err := writer.WriteString(entry + "\n"); err != nil {
-			_ = file.Close()
-			return err
+			return fmt.Errorf("failed to write history entry: %w", err)
 		}
 	}
 	if err := writer.Flush(); err != nil {
-		_ = file.Close()
-		return err
+		return fmt.Errorf("failed to flush history writer: %w", err)
 	}
-	return file.Close()
+	return nil
 }
 
 // completer provides auto-completion for built-in commands
@@ -253,12 +273,12 @@ func completer(d prompt.Document) []prompt.Suggest {
 
 func getCommandDescription(cmd string) string {
 	descriptions := map[string]string{
-		"help":   "Show help information",
-		"clear":  "Clear the screen",
-		"quit":   "Exit the REPL",
-		"exit":   "Exit the REPL",
-		"rpn":    "Evaluate an RPN (postfix notation) expression",
-		"calc":   "Same as rpn - evaluate an RPN expression",
+		"help":  "Show help information",
+		"clear": "Clear the screen",
+		"quit":  "Exit the REPL",
+		"exit":  "Exit the REPL",
+		"rpn":   "Evaluate an RPN (postfix notation) expression",
+		"calc":  "Same as rpn - evaluate an RPN expression",
 	}
 	return descriptions[cmd]
 }

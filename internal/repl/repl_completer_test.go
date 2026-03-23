@@ -15,29 +15,29 @@ func TestCompleterLogic(t *testing.T) {
 		text  string
 		match bool
 	}{
-		{"h", "h", true},   // "help"
-		{"he", "he", true}, // "help"
+		{"h", "h", true},     // "help"
+		{"he", "he", true},   // "help"
 		{"hel", "hel", true}, // "help"
 		{"help", "help", true},
-		{"c", "c", true},   // "clear", "calc"
-		{"cl", "cl", true}, // "clear"
+		{"c", "c", true},     // "clear", "calc"
+		{"cl", "cl", true},   // "clear"
 		{"cle", "cle", true}, // "clear"
 		{"clear", "clear", true},
-		{"ca", "ca", true}, // "calc"
+		{"ca", "ca", true},   // "calc"
 		{"cal", "cal", true}, // "calc"
 		{"calc", "calc", true},
-		{"q", "q", true},   // "quit"
-		{"qu", "qu", true}, // "quit"
+		{"q", "q", true},     // "quit"
+		{"qu", "qu", true},   // "quit"
 		{"qui", "qui", true}, // "quit"
 		{"quit", "quit", true},
-		{"e", "e", true},   // "exit"
-		{"ex", "ex", true}, // "exit"
+		{"e", "e", true},     // "exit"
+		{"ex", "ex", true},   // "exit"
 		{"exi", "exi", true}, // "exit"
 		{"exit", "exit", true},
 		{"r", "r", true},   // "rpn"
 		{"rp", "rp", true}, // "rpn"
 		{"rpn", "rpn", true},
-		{"x", "x", false},   // no match
+		{"x", "x", false},     // no match
 		{"xyz", "xyz", false}, // no match
 	}
 

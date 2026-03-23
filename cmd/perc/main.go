@@ -7,8 +7,8 @@ import (
 
 	"codeberg.org/snonux/perc/internal"
 	"codeberg.org/snonux/perc/internal/calculator"
-	"codeberg.org/snonux/perc/internal/rpn"
 	"codeberg.org/snonux/perc/internal/repl"
+	"codeberg.org/snonux/perc/internal/rpn"
 	"github.com/mattn/go-isatty"
 )
 
@@ -65,17 +65,17 @@ func runCommand(args []string) (string, error) {
 	}
 
 	input := strings.Join(args[1:], " ")
-	
+
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
 	rpnResult, rpnErr := runRPN(input)
 	if rpnErr == nil {
 		return rpnResult, nil
 	}
-	
+
 	// Fall back to percentage calculation
 	result, err := calculator.Parse(input)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
 	}
 
 	return result, nil

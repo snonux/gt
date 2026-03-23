@@ -30,7 +30,7 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	// Validate input and initialize
 	input = strings.TrimSpace(input)
 	if input == "" {
-		return "", fmt.Errorf("empty expression")
+		return "", fmt.Errorf("rpn: empty expression")
 	}
 	if r.currentStack == nil {
 		r.currentStack = NewStack()
@@ -38,7 +38,7 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 
 	// Handle assignment formats
 	if assignmentResult, isAssignment, err := r.handleAssignment(input); err != nil {
-		return "", err
+		return "", fmt.Errorf("rpn: failed to handle assignment: %w", err)
 	} else if isAssignment {
 		return assignmentResult, nil
 	}
@@ -46,7 +46,7 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	// Evaluate standard RPN expression
 	tokens := Tokenize(input)
 	if len(tokens) == 0 {
-		return "", fmt.Errorf("no valid tokens found")
+		return "", fmt.Errorf("rpn: no valid tokens found in input: %q", input)
 	}
 
 	return r.evaluate(tokens)
@@ -212,7 +212,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	for i, token := range tokens {
 		// Check for variable assignment: name value =
 		if token == "=" {
-			return "", fmt.Errorf("invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
+			return "", fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
 		}
 
 		// Check if it's a number
@@ -226,7 +226,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 		// Handle special operators and commands
 		if result, err := r.handleOperator(stack, token, i); err != nil {
-			return "", err
+			return "", fmt.Errorf("rpn: failed to handle operator '%s' at position %d: %w", token, i, err)
 		} else if result != "" {
 			return result, nil
 		}
@@ -330,7 +330,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		if exists {
 			stack.Push(val)
 		} else {
-			return "", fmt.Errorf("unknown token '%s' at position %d", token, tokenIndex)
+			return "", fmt.Errorf("rpn: unknown token '%s' at position %d", token, tokenIndex)
 		}
 	}
 	return "", nil

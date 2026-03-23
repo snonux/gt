@@ -11,20 +11,20 @@ import (
 )
 
 // Project description for build output
-const binaryName = "perc"
+const binaryName = "gt"
 
 // Default is the default target when no target is specified.
 var Default = Build
 
 // Build builds the perc binary.
 func Build() error {
-	fmt.Println("Building perc...")
-	return sh.RunV("go", "build", "-o", binaryName, "./cmd/perc")
+	fmt.Println("Building gt...")
+	return sh.RunV("go", "build", "-o", binaryName, "./cmd/gt")
 }
 
 // Run runs the perc binary.
 func Run() error {
-	return sh.RunV("go", "run", "./cmd/perc")
+	return sh.RunV("go", "run", "./cmd/gt")
 }
 
 // Test runs all tests.
@@ -46,18 +46,18 @@ func RPN() error {
 
 // Install installs the perc binary to GOPATH/bin.
 func Install() error {
-	fmt.Println("Installing perc...")
-	return sh.RunV("go", "install", "./cmd/perc")
+	fmt.Println("Installing gt...")
+	return sh.RunV("go", "install", "./cmd/gt")
 }
 
 // Repl starts the REPL mode.
 func Repl() error {
-	return sh.RunV("go", "run", "./cmd/perc", "--repl")
+	return sh.RunV("go", "run", "./cmd/gt", "--repl")
 }
 
 // Uninstall removes the perc binary from GOPATH/bin.
 func Uninstall() error {
-	fmt.Println("Uninstalling perc...")
+	fmt.Println("Uninstalling gt...")
 	binPath := filepath.Join(getGOPATH(), "bin", binaryName)
 	return os.Remove(binPath)
 }

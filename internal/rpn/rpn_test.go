@@ -971,15 +971,15 @@ func TestHandleAssignmentTrace(t *testing.T) {
 	input := "x 5 ="
 	t.Logf("Input: %q", input)
 	t.Logf("Contains ' = ': %v", strings.Contains(input, " = "))
-	
+
 	pos := strings.Index(input, " =")
 	t.Logf("Index of ' =': %d", pos)
-	
+
 	if pos >= 0 {
 		before := strings.TrimSpace(input[:pos])
 		after := strings.TrimSpace(input[pos+2:])
 		t.Logf("Before: %q, After: %q", before, after)
-		
+
 		beforeFields := strings.Fields(before)
 		t.Logf("BeforeFields: %v (len=%d)", beforeFields, len(beforeFields))
 	}
