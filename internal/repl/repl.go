@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 
 	"codeberg.org/snonux/perc/internal/calculator"
@@ -25,9 +26,12 @@ type RPNState struct {
 }
 
 // getRPNState returns or creates the RPN state
+var rpnStateMu sync.RWMutex
 var rpnState *RPNState
 
 func getRPNState() *RPNState {
+	rpnStateMu.Lock()
+	defer rpnStateMu.Unlock()
 	if rpnState == nil {
 		vars := rpn.NewVariables()
 		rpnState = &RPNState{
