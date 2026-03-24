@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"codeberg.org/snonux/perc/internal/rpn"
 )
 
 // ParsingStrategy represents a parsing function that attempts to parse input.
@@ -41,40 +39,23 @@ func (r *strategyRegistry) parse(input string) (string, bool) {
 
 // Parse parses a percentage calculation input string and returns the result.
 // It handles formats like "20% of 150", "30 is what % of 150", and "30 is 20% of what".
+// Note: This function only handles percentage calculations, not RPN expressions.
 func Parse(input string) (string, error) {
 	input = strings.ToLower(strings.TrimSpace(input))
 	input = strings.ReplaceAll(input, "what is ", "")
 	input = strings.TrimSpace(input)
 
-	// Create registry and register parsing strategies
+	// Create registry and register percentage parsing strategies
 	registry := newStrategyRegistry()
 	registry.register(parseXPercentOfY)
 	registry.register(parseXIsWhatPercentOfY)
 	registry.register(parseXIsYPercentOfWhat)
-	registry.register(parseRPNFallback)
 
 	if result, ok := registry.parse(input); ok {
 		return result, nil
 	}
 
 	return "", fmt.Errorf("calculator: unable to parse input %q. See usage for examples", input)
-}
-
-// parseRPNFallback is a parsing strategy that delegates to ParseRPN.
-func parseRPNFallback(input string) (string, bool) {
-	result, err := ParseRPN(input)
-	if err == nil {
-		return result, true
-	}
-	return "", false
-}
-
-// ParseRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
-// It handles formats like "3 4 +", "3 4 + 4 4 - *", "x 5 = x x +", etc.
-func ParseRPN(input string) (string, error) {
-	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
-	return rpnCalc.ParseAndEvaluate(input)
 }
 
 func parseXPercentOfY(input string) (string, bool) {

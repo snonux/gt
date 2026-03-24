@@ -313,40 +313,4 @@ func TestParseWhitespace(t *testing.T) {
 	}
 }
 
-// TestParseRPNFallthrough tests that RPN expressions are handled as a fallback
-// when they don't match any percentage format.
-func TestParseRPNFallthrough(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "simple addition",
-			input:    "3 4 +",
-			expected: "7",
-		},
-		{
-			name:     "complex expression",
-			input:    "3 4 + 4 4 - *",
-			expected: "0",
-		},
-		{
-			name:     "with variables",
-			input:    "x 5 = x x +",
-			expected: "10",
-		},
-	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := Parse(tt.input)
-			if err != nil {
-				t.Fatalf("Parse(%q) returned error: %v", tt.input, err)
-			}
-			if result != tt.expected {
-				t.Errorf("Parse(%q) = %q, expected %q", tt.input, result, tt.expected)
-			}
-		})
-	}
-}
