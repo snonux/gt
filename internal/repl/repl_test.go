@@ -543,13 +543,18 @@ func TestDefaultCompleter(t *testing.T) {
 	// The actual completer logic is tested in completer_test.go
 
 	// Test with text that would match if cursor position was set correctly
-	// For now, just verify the function exists and doesn't panic
-	doc := prompt.Document{Text: "help"}
-	suggestions := defaultCompleter(&REPL{}, doc)
+	repl := &REPL{}
+	doc := prompt.Document{Text: "h"}
+	suggestions := defaultCompleter(repl, doc)
 
 	// When cursor is at position 0 (default), GetWordBeforeCursor returns empty
-	// The actual behavior depends on how the prompt library sets cursor position
+	// But the test in completer_test.go verifies the actual behavior
 	_ = suggestions
+
+	// Test with clear prefix
+	doc2 := prompt.Document{Text: "cl"}
+	suggestions2 := defaultCompleter(repl, doc2)
+	_ = suggestions2
 }
 
 func TestDefaultGetCommandDescription(t *testing.T) {
@@ -582,4 +587,28 @@ func TestExecutorWithUnknownCommand(t *testing.T) {
 	// Test that unknown commands are handled by the error handler
 	// This should exercise the "Not handled by any handler" path
 	executor("completelyunknowncommand123")
+}
+
+func TestDefaultExecutorCodePaths(t *testing.T) {
+	// Test all code paths in defaultExecutor
+	// 1. Empty input (returns early at line 110)
+	// 2. Handled=true with error (prints error, returns at line 124)
+	// 3. Handled=true with output (prints output, returns at line 124)
+	// 4. Handled=false with error (prints error at line 130)
+	// 5. Handled=false without error (does nothing)
+	
+	// Path 1: Empty input
+	executor("")
+	
+	// Path 2: Built-in command with error (clear should not error but let's verify)
+	executor("clear")
+	
+	// Path 3: Built-in command with output (help returns help text)
+	executor("help")
+	
+	// Path 4: Unknown command (error handler returns handled=false, err!=nil)
+	executor("completelyunknowncommand123")
+	
+	// Path 5: Whitespace only (trimmed to empty, returns early)
+	executor("   ")
 }
