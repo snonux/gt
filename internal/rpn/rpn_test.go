@@ -984,3 +984,242 @@ func TestHandleAssignmentTrace(t *testing.T) {
 		t.Logf("BeforeFields: %v (len=%d)", beforeFields, len(beforeFields))
 	}
 }
+
+func TestFloatNumberSub(t *testing.T) {
+	f := NewFloat(10.0)
+
+	result := f.Sub(NewFloat(3.0))
+	if result.Float64() != 7.0 {
+		t.Errorf("Float(10).Sub(Float(3)) = %f, expected 7.0", result.Float64())
+	}
+}
+
+func TestFloatNumberDiv(t *testing.T) {
+	f := NewFloat(10.0)
+
+	result, err := f.Div(NewFloat(2.0))
+	if err != nil {
+		t.Errorf("Float(10).Div(Float(2)) returned error: %v", err)
+	} else if result.Float64() != 5.0 {
+		t.Errorf("Float(10).Div(Float(2)) = %f, expected 5.0", result.Float64())
+	}
+
+	_, err = f.Div(NewFloat(0.0))
+	if err == nil {
+		t.Errorf("Float(10).Div(Float(0)) should return error, got nil")
+	}
+}
+
+func TestFloatNumberPow(t *testing.T) {
+	f := NewFloat(2.0)
+
+	result := f.Pow(NewFloat(3.0))
+	if result.Float64() != 8.0 {
+		t.Errorf("Float(2).Pow(Float(3)) = %f, expected 8.0", result.Float64())
+	}
+}
+
+func TestFloatNumberMod(t *testing.T) {
+	f := NewFloat(10.0)
+
+	result, err := f.Mod(NewFloat(3.0))
+	if err != nil {
+		t.Errorf("Float(10).Mod(Float(3)) returned error: %v", err)
+	} else if result.Float64() != 1.0 {
+		t.Errorf("Float(10).Mod(Float(3)) = %f, expected 1.0", result.Float64())
+	}
+}
+
+func TestFloatNumberIsZero(t *testing.T) {
+	zero := NewFloat(0.0)
+	nonZero := NewFloat(1.0)
+
+	if !zero.IsZero() {
+		t.Error("Float(0) should be zero")
+	}
+	if nonZero.IsZero() {
+		t.Error("Float(1) should not be zero")
+	}
+}
+
+func TestFloatNumberIsNegative(t *testing.T) {
+	positive := NewFloat(1.0)
+	negative := NewFloat(-1.0)
+	zero := NewFloat(0.0)
+
+	if positive.IsNegative() {
+		t.Error("Float(1) should not be negative")
+	}
+	if !negative.IsNegative() {
+		t.Error("Float(-1) should be negative")
+	}
+	if zero.IsNegative() {
+		t.Error("Float(0) should not be negative")
+	}
+}
+
+func TestRatNumberSub(t *testing.T) {
+	r := NewRat(10.0)
+
+	result := r.Sub(NewRat(3.0))
+	if result.Float64() != 7.0 {
+		t.Errorf("Rat(10).Sub(Rat(3)) = %f, expected 7.0", result.Float64())
+	}
+}
+
+func TestRatNumberDiv(t *testing.T) {
+	r := NewRat(10.0)
+
+	result, err := r.Div(NewRat(2.0))
+	if err != nil {
+		t.Errorf("Rat(10).Div(Rat(2)) returned error: %v", err)
+	} else if result.Float64() != 5.0 {
+		t.Errorf("Rat(10).Div(Rat(2)) = %f, expected 5.0", result.Float64())
+	}
+
+	_, err = r.Div(NewRat(0.0))
+	if err == nil {
+		t.Errorf("Rat(10).Div(Rat(0)) should return error, got nil")
+	}
+}
+
+func TestRatNumberPow(t *testing.T) {
+	r := NewRat(2.0)
+
+	result := r.Pow(NewRat(3.0))
+	if result.Float64() != 8.0 {
+		t.Errorf("Rat(2).Pow(Rat(3)) = %f, expected 8.0", result.Float64())
+	}
+}
+
+func TestRatNumberMod(t *testing.T) {
+	r := NewRat(10.0)
+
+	result, err := r.Mod(NewRat(3.0))
+	if err != nil {
+		t.Errorf("Rat(10).Mod(Rat(3)) returned error: %v", err)
+	} else if result.Float64() != 1.0 {
+		t.Errorf("Rat(10).Mod(Rat(3)) = %f, expected 1.0", result.Float64())
+	}
+}
+
+func TestRatNumberIsZero(t *testing.T) {
+	zero := NewRat(0.0)
+	nonZero := NewRat(1.0)
+
+	if !zero.IsZero() {
+		t.Error("Rat(0) should be zero")
+	}
+	if nonZero.IsZero() {
+		t.Error("Rat(1) should not be zero")
+	}
+}
+
+func TestRatNumberIsNegative(t *testing.T) {
+	positive := NewRat(1.0)
+	negative := NewRat(-1.0)
+	zero := NewRat(0.0)
+
+	if positive.IsNegative() {
+		t.Error("Rat(1) should not be negative")
+	}
+	if !negative.IsNegative() {
+		t.Error("Rat(-1) should be negative")
+	}
+	if zero.IsNegative() {
+		t.Error("Rat(0) should not be negative")
+	}
+}
+
+func TestRatNumberCompare(t *testing.T) {
+	r1 := NewRat(5.0)
+	r2 := NewRat(5.0)
+	r3 := NewRat(10.0)
+	r4 := NewRat(3.0)
+
+	if r1.Compare(r2) != 0 {
+		t.Error("Rat(5) should equal Rat(5)")
+	}
+	if r1.Compare(r3) >= 0 {
+		t.Error("Rat(5) should be less than Rat(10)")
+	}
+	if r1.Compare(r4) <= 0 {
+		t.Error("Rat(5) should be greater than Rat(3)")
+	}
+}
+
+func TestNewRatFromString(t *testing.T) {
+	r, err := NewRatFromString("1/2")
+	if err != nil {
+		t.Errorf("NewRatFromString(\"1/2\") returned error: %v", err)
+	}
+	if val := r.Float64(); val != 0.5 {
+		t.Errorf("NewRatFromString(\"1/2\") = %f, expected 0.5", val)
+	}
+
+	_, err = NewRatFromString("invalid")
+	if err == nil {
+		t.Error("NewRatFromString(\"invalid\") should return error")
+	}
+}
+
+func TestToRat(t *testing.T) {
+	// Test with Rat (should return the same Rat's internal *big.Rat)
+	r2 := NewRat(10.0)
+	r3 := ToRat(r2)
+	if r3 == nil {
+		t.Error("ToRat(Rat(10)) should not return nil")
+	}
+	val, _ := r3.Float64()
+	if val != 10.0 {
+		t.Errorf("ToRat(Rat(10)) = %f, expected 10.0", val)
+	}
+}
+
+func TestToFloat(t *testing.T) {
+	// Test with Float
+	f := NewFloat(5.0)
+	val := ToFloat(f)
+	if val != 5.0 {
+		t.Errorf("ToFloat(Float(5)) = %f, expected 5.0", val)
+	}
+
+	// Test with Rat
+	r := NewRat(10.0)
+	val = ToFloat(r)
+	if val != 10.0 {
+		t.Errorf("ToFloat(Rat(10)) = %f, expected 10.0", val)
+	}
+}
+
+func TestRPNStackPreservation(t *testing.T) {
+	vars := NewVariables()
+	rpnCalc := NewRPN(vars)
+
+	// Test stack preservation across multiple evaluations
+	result, err := rpnCalc.ParseAndEvaluate("1 2 +")
+	if err != nil {
+		t.Errorf("First evaluation failed: %v", err)
+	}
+	if result != "3" {
+		t.Errorf("Expected '3', got '%s'", result)
+	}
+
+	// Stack should preserve 3
+	stack := rpnCalc.GetCurrentStack()
+	if len(stack) != 1 || stack[0] != 3.0 {
+		t.Errorf("Stack should be [3], got %v", stack)
+	}
+
+	// Push another number
+	_, err = rpnCalc.ParseAndEvaluate("4")
+	if err != nil {
+		t.Errorf("Second evaluation failed: %v", err)
+	}
+
+	// Stack should now be [3, 4]
+	stack = rpnCalc.GetCurrentStack()
+	if len(stack) != 2 {
+		t.Errorf("Stack should have 2 values, got %d", len(stack))
+	}
+}

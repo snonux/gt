@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+// CalculationMode represents the mode for number calculations.
+type CalculationMode int
+
+const (
+	// FloatMode uses float64 for calculations (default).
+	FloatMode CalculationMode = iota
+	// RationalMode uses *big.Rat for precise rational calculations.
+	RationalMode
+)
+
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
 	vars         VariableStore
@@ -13,18 +23,32 @@ type RPN struct {
 	opRegistry   *OperatorRegistry
 	maxStack     int
 	currentStack *Stack
+	mode         CalculationMode
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
 func NewRPN(vars VariableStore) *RPN {
 	ops := NewOperations(vars)
+	ops.SetMode(FloatMode) // Set default mode
 	return &RPN{
 		vars:         vars,
 		ops:          ops,
 		opRegistry:   NewOperatorRegistry(ops),
 		maxStack:     1000, // Reasonable limit for RPN expressions
 		currentStack: NewStack(),
+		mode:         FloatMode, // Default mode
 	}
+}
+
+// GetMode returns the current calculation mode.
+func (r *RPN) GetMode() CalculationMode {
+	return r.mode
+}
+
+// SetMode sets the calculation mode.
+func (r *RPN) SetMode(mode CalculationMode) {
+	r.mode = mode
+	r.ops.SetMode(mode)
 }
 
 // ParseAndEvaluate parses and evaluates an RPN expression.
@@ -153,6 +177,8 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 		// Check if it's a number
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
+			// Create Number based on mode, but push float64 for backward compatibility
+			// In a future refactoring, Stack would use Number interface
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}

@@ -82,16 +82,26 @@ type Variables struct {
 	variables map[string]float64
 }
 
-// VariableStore defines the interface for variable storage operations.
-type VariableStore interface {
-	SetVariable(name string, value float64) error
+// VariableReader defines the interface for reading variable storage.
+type VariableReader interface {
 	GetVariable(name string) (float64, bool)
-	DeleteVariable(name string) bool
 	ListVariables() []VariableInfo
-	ClearVariables()
+	FormatVariables() string
 	Count() int
 	HasVariable(name string) bool
-	FormatVariables() string
+}
+
+// VariableWriter defines the interface for writing to variable storage.
+type VariableWriter interface {
+	SetVariable(name string, value float64) error
+	DeleteVariable(name string) bool
+	ClearVariables()
+}
+
+// VariableStore combines VariableReader and VariableWriter for full variable storage access.
+type VariableStore interface {
+	VariableReader
+	VariableWriter
 }
 
 // NewVariables creates and initializes a new Variables instance.
@@ -108,7 +118,17 @@ func isValidVariableName(name string) bool {
 		return false
 	}
 	for _, r := range name {
-		if !('a' <= r && r <= 'z' || 'A' <= r && r <= 'Z' || '0' <= r && r <= '9' || r == '_') {
+		// Check if character is NOT alphanumeric or underscore
+		// Apply De Morgan's law: !(P || Q || R || S) == !P && !Q && !R && !S
+		// where P = 'a' <= r && r <= 'z' (lowercase)
+		// Q = 'A' <= r && r <= 'Z' (uppercase)
+		// R = '0' <= r && r <= '9' (digit)
+		// S = r == '_' (underscore)
+		// !P = r < 'a' || r > 'z'
+		// !Q = r < 'A' || r > 'Z'
+		// !R = r < '0' || r > '9'
+		// !S = r != '_'
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
 			return false
 		}
 	}
@@ -203,7 +223,11 @@ func (v *Variables) formatVariablesUnsafe() string {
 		if i > 0 {
 			sb.WriteString("\n")
 		}
-		fmt.Fprintf(&sb, "%s = %.10g", info.Name, info.Value)
+		// Use Number interface for consistent formatting
+		num := NewNumber(info.Value, FloatMode)
+		sb.WriteString(info.Name)
+		sb.WriteString(" = ")
+		sb.WriteString(num.String())
 	}
 	return sb.String()
 }

@@ -3,6 +3,7 @@ package rpn
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 )
@@ -555,5 +556,178 @@ func TestOperationsConcurrent(t *testing.T) {
 
 	if v.Count() != 5 {
 		t.Errorf("Final count = %d, want 5", v.Count())
+	}
+}
+
+func TestLog2(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test log₂(8) = 3
+	stack.Push(8)
+	err := o.Log2(stack)
+	if err != nil {
+		t.Errorf("Log2() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 3.0 {
+		t.Errorf("Log2(8) = %f, want 3.0", val)
+	}
+
+	// Test log₂(1) = 0
+	stack.Push(1)
+	err = o.Log2(stack)
+	if err != nil {
+		t.Errorf("Log2(1) returned error: %v", err)
+	}
+	val, err = stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 0.0 {
+		t.Errorf("Log2(1) = %f, want 0.0", val)
+	}
+
+	// Test log₂(0) should error
+	stack.Push(0)
+	err = o.Log2(stack)
+	if err == nil {
+		t.Errorf("Log2(0) should return error, got nil")
+	}
+}
+
+func TestLog10(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test log₁₀(100) = 2
+	stack.Push(100)
+	err := o.Log10(stack)
+	if err != nil {
+		t.Errorf("Log10() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 2.0 {
+		t.Errorf("Log10(100) = %f, want 2.0", val)
+	}
+
+	// Test log₁₀(1) = 0
+	stack.Push(1)
+	err = o.Log10(stack)
+	if err != nil {
+		t.Errorf("Log10(1) returned error: %v", err)
+	}
+	val, err = stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 0.0 {
+		t.Errorf("Log10(1) = %f, want 0.0", val)
+	}
+}
+
+func TestLn(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test ln(e) ≈ 1
+	stack.Push(math.E)
+	err := o.Ln(stack)
+	if err != nil {
+		t.Errorf("Ln() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if math.Abs(val-1.0) > 0.0001 {
+		t.Errorf("ln(e) = %f, want ~1.0", val)
+	}
+
+	// Test ln(1) = 0
+	stack.Push(1)
+	err = o.Ln(stack)
+	if err != nil {
+		t.Errorf("Ln(1) returned error: %v", err)
+	}
+	val, err = stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 0.0 {
+		t.Errorf("Ln(1) = %f, want 0.0", val)
+	}
+}
+
+func TestHyperLog2(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperlog₂(4, 16) = log₂(4) + log₂(16) = 2 + 4 = 6
+	stack.Push(4)
+	stack.Push(16)
+	err := o.HyperLog2(stack)
+	if err != nil {
+		t.Errorf("HyperLog2() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 6.0 {
+		t.Errorf("HyperLog2(4, 16) = %f, want 6.0", val)
+	}
+
+	// Test with single value (should error, like other hyper operators)
+	stack.Push(8)
+	err = o.HyperLog2(stack)
+	if err == nil {
+		t.Errorf("HyperLog2 with single value should return error, got nil")
+	}
+}
+
+func TestHyperLog10(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperlog₁₀(10, 100) = log₁₀(10) + log₁₀(100) = 1 + 2 = 3
+	stack.Push(10)
+	stack.Push(100)
+	err := o.HyperLog10(stack)
+	if err != nil {
+		t.Errorf("HyperLog10() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val != 3.0 {
+		t.Errorf("HyperLog10(10, 100) = %f, want 3.0", val)
+	}
+}
+
+func TestHyperLn(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperln(e, e²) = ln(e) + ln(e²) = 1 + 2 = 3
+	stack.Push(math.E)
+	stack.Push(math.E * math.E)
+	err := o.HyperLn(stack)
+	if err != nil {
+		t.Errorf("HyperLn() returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if math.Abs(val-3.0) > 0.0001 {
+		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", val)
 	}
 }

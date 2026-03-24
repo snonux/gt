@@ -58,30 +58,6 @@ func TestCompleterLogic(t *testing.T) {
 	}
 }
 
-// TestCompleterWithTrailingSpace tests completer with trailing space
-func TestCompleterWithTrailingSpace(t *testing.T) {
-	// When there's a trailing space, GetWordBeforeCursor() should return the word
-	// This is how the actual REPL works when user types "help " then presses tab
-	tests := []struct {
-		name string
-		text string
-	}{
-		{"h ", "h "},
-		{"hel ", "hel "},
-		{"c ", "c "},
-		{"cl ", "cl "},
-		{"help ", "help "},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			suggestions := completer(prompt.Document{Text: tt.text})
-			// We just verify it doesn't panic
-			_ = suggestions
-		})
-	}
-}
-
 // TestCompleterEmptyText tests completer with empty text
 func TestCompleterEmptyText(t *testing.T) {
 	suggestions := completer(prompt.Document{Text: ""})
@@ -97,7 +73,3 @@ func TestCompleterNoPrefix(t *testing.T) {
 		t.Errorf("Expected no suggestions for 'xyz', got %d", len(suggestions))
 	}
 }
-
-// TestCompleterWithAllCommands tests completer for all commands
-
-// TestCompleterWithTrailingSpace tests completer with trailing space

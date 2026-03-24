@@ -1,108 +1,91 @@
 package repl
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"os/signal"
-	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 
-	"codeberg.org/snonux/perc/internal/calculator"
 	"codeberg.org/snonux/perc/internal/rpn"
-	"github.com/mattn/go-isatty"
 
 	"github.com/c-bata/go-prompt"
 )
 
-const historyFile = ".gt_history"
-
-// RPNState holds the state for RPN operations in REPL
-// Note: This struct should never be copied - use pointer receivers only
-type RPNState struct {
-	vars    rpn.VariableStore
-	rpnCalc *rpn.RPN
+// REPL manages the interactive command-line interface.
+type REPL struct {
+	ttyChecker    *TTYChecker
+	historyMgr    *HistoryManager
+	signalHandler *SignalHandler
+	prompt        *prompt.Prompt
+	commandChain  CommandHandler
 }
 
-// rpnStateMu protects rpnState
-// Note: The mutex must NOT be copied - keep it as a top-level variable
-var rpnStateMu sync.RWMutex
-
-// rpnState holds the singleton RPN state for REPL operations
-var rpnState *RPNState
-
-// getRPNState returns or creates the RPN state
-// Thread-safe implementation with double-checked locking pattern
-func getRPNState() *RPNState {
-	// First check with read lock for performance
-	rpnStateMu.RLock()
-	if rpnState != nil {
-		state := rpnState
-		rpnStateMu.RUnlock()
-		return state
+// NewREPL creates a new REPL instance with default components.
+// If executor is nil, it uses a default executor.
+// If completer is nil, it uses a default completer.
+func NewREPL(executor func(string), completer func(prompt.Document) []prompt.Suggest) *REPL {
+	repl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
 	}
-	rpnStateMu.RUnlock()
 
-	// Need to create - use write lock
-	rpnStateMu.Lock()
-	defer rpnStateMu.Unlock()
-	if rpnState == nil {
-		vars := rpn.NewVariables()
-		rpnState = &RPNState{
-			vars:    vars,
-			rpnCalc: rpn.NewRPN(vars),
+	// Set up executor - if nil, use default
+	execFn := executor
+	if execFn == nil {
+		execFn = func(input string) {
+			defaultExecutor(repl, input)
 		}
 	}
-	return rpnState
-}
 
-// RunREPL starts the interactive REPL
-func RunREPL() error {
-	// Check if stdin is a TTY
-	if !isatty.IsTerminal(os.Stdin.Fd()) {
-		fmt.Fprintln(os.Stderr, "REPL mode requires a TTY. Use 'gt <calculation>' for non-interactive mode.")
-		return fmt.Errorf("stdin is not a TTY")
+	// Set up completer - if nil, use default
+	completerFn := completer
+	if completerFn == nil {
+		completerFn = func(d prompt.Document) []prompt.Suggest {
+			return defaultCompleter(repl, d)
+		}
 	}
 
-	history := loadHistory()
+	// Load history from file
+	history := repl.historyMgr.Load()
 
-	p := prompt.New(
-		executor,
-		completer,
-		prompt.OptionTitle("gt - Percentage Calculator"),
-		prompt.OptionPrefix("> "),
-		prompt.OptionLivePrefix(func() (string, bool) {
-			return "> ", true
-		}),
-		prompt.OptionHistory(history),
-	)
+	// Build the prompt
+	repl.prompt = NewPromptBuilder().
+		SetTitle("gt - Percentage Calculator").
+		SetPrefix("> ").
+		SetLivePrefix(func() (string, bool) { return "> ", true }).
+		SetExecutor(execFn).
+		SetCompleter(completerFn).
+		SetHistory(history).
+		Build()
 
-	// Handle SIGINT gracefully
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT)
+	return repl
+}
 
-	go func() {
-		<-sigChan
+// Run starts the REPL and blocks until it exits.
+func (r *REPL) Run() error {
+	// Check if stdin is a TTY
+	if err := r.ttyChecker.EnsureTTY(); err != nil {
+		return err
+	}
+
+	// Start signal handler
+	r.signalHandler.Start(func() {
 		fmt.Println("\nUse 'quit' or 'exit' to exit, or Ctrl+D")
-	}()
+	})
 
 	// Run the prompt
-	p.Run()
-
-	// Note: History is not saved automatically in this version
-	// The prompt library stores it in memory but doesn't expose a getter
+	r.prompt.Run()
 
 	return nil
 }
 
-// executor runs a calculation command and returns the result
-func executor(input string) {
+// defaultExecutor is the default executor function.
+func defaultExecutor(r *REPL, input string) {
 	// Add panic recovery for better resilience
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("Error: Unexpected error occurred: %v\n", r)
+		if rec := recover(); rec != nil {
+			fmt.Printf("Error: Unexpected error occurred: %v\n", rec)
 			fmt.Println("Please try a different expression or command.")
 		}
 	}()
@@ -112,72 +95,142 @@ func executor(input string) {
 		return
 	}
 
-	// Check if it's a built-in command
-	if cmd, ok := isBuiltinCommand(input); ok {
-		output, err := ExecuteCommand(cmd)
+	// Use chain of responsibility pattern to handle the command
+	output, handled, err := r.commandChain.Handle(r, input)
+
+	if handled {
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
 		if output != "" {
 			fmt.Println(output)
 		}
-		// Don't add built-in commands to history
+		// Don't add handled commands to history
 		return
 	}
 
-	// Check for rpn command prefix
-	if strings.HasPrefix(strings.ToLower(input), "rpn ") || strings.HasPrefix(strings.ToLower(input), "calc ") {
-		// Extract the expression after rpn/calc
-		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
-		result, err := runRPN(rest)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-		fmt.Println(result)
-		return
-	}
-
-	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	rpnResult, rpnErr := runRPN(input)
-	if rpnErr == nil {
-		// Valid RPN expression - print result
-		fmt.Println(rpnResult)
-		return
-	}
-
-	// Try evaluating as a single operator on the current RPN stack
-	// This allows incremental operations like: "1 2 +" then "+"
-	state := getRPNState()
-	fields := strings.Fields(input)
-	if len(fields) == 1 {
-		op := strings.ToLower(fields[0])
-		// Check if it's a valid operator
-		switch op {
-		case "+", "-", "*", "/", "^", "%", "dup", "swap", "pop", "show", "clear", "vars":
-			result, err := state.rpnCalc.EvalOperator(op)
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-			} else {
-				fmt.Println(result)
-			}
-			return
-		}
-	}
-
-	// Run the percentage calculation
-	result, err := calculator.Parse(input)
+	// Not handled by any handler in the chain
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
-		return
 	}
-	fmt.Println(result)
 }
 
-// runRPN parses and evaluates an RPN expression
+// defaultCompleter is the default completer function.
+func defaultCompleter(r *REPL, d prompt.Document) []prompt.Suggest {
+	text := d.GetWordBeforeCursor()
+	if text == "" {
+		return nil
+	}
+
+	var suggestions []prompt.Suggest
+	for _, cmd := range builtinCommands() {
+		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(text)) {
+			suggestions = append(suggestions, prompt.Suggest{
+				Text:        cmd,
+				Description: r.defaultGetCommandDescription(cmd),
+			})
+		}
+	}
+	return suggestions
+}
+
+// defaultGetCommandDescription returns the description for a command.
+func (r *REPL) defaultGetCommandDescription(cmd string) string {
+	descriptions := map[string]string{
+		"help":  "Show help information",
+		"clear": "Clear the screen",
+		"quit":  "Exit the REPL",
+		"exit":  "Exit the REPL",
+		"rpn":   "Evaluate an RPN (postfix notation) expression",
+		"calc":  "Same as rpn - evaluate an RPN expression",
+	}
+	return descriptions[cmd]
+}
+
+// RunREPL starts the interactive REPL.
+// This is a convenience wrapper around NewREPL().Run().
+func RunREPL() error {
+	repl := NewREPL(nil, nil)
+	return repl.Run()
+}
+
+// executor runs a calculation command and returns the result.
+// This is a package-level wrapper for backward compatibility.
+// It creates a minimal REPL instance without a prompt for testing purposes.
+func executor(input string) {
+	// Create a minimal REPL instance without building a prompt
+	r := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+	}
+	defaultExecutor(r, input)
+}
+
+// RPNState holds the state for RPN operations in REPL
+// Note: This struct should never be copied - use pointer receivers only
+type RPNState struct {
+	vars    rpn.VariableStore
+	rpnCalc *rpn.RPN
+}
+
+// rpnState holds the singleton RPN state for REPL operations
+var rpnState *RPNState
+
+// rpnStateOnce ensures rpnState is initialized exactly once
+var rpnStateOnce sync.Once
+
+// getRPNState returns or creates the RPN state
+// Thread-safe implementation using sync.Once for simpler singleton initialization
+func getRPNState() *RPNState {
+	rpnStateOnce.Do(func() {
+		vars := rpn.NewVariables()
+		rpnState = &RPNState{
+			vars:    vars,
+			rpnCalc: rpn.NewRPN(vars),
+		}
+	})
+	return rpnState
+}
+
+// getRPNState returns the RPN state.
+// This is a REPL instance method for backward compatibility.
+func (r *REPL) getRPNState() *RPNState {
+	return getRPNState()
+}
+
+// runRPN parses and evaluates an RPN expression.
 func runRPN(input string) (string, error) {
 	state := getRPNState()
 	return state.rpnCalc.ParseAndEvaluate(input)
+}
+
+// runRPN parses and evaluates an RPN expression.
+// This is a REPL instance method for backward compatibility.
+func (r *REPL) runRPN(input string) (string, error) {
+	return runRPN(input)
+}
+
+// getHistoryPath returns the path to the history file.
+// This is a package-level wrapper for backward compatibility.
+func getHistoryPath() string {
+	historyMgr := NewHistoryManager(".gt_history")
+	return historyMgr.Path()
+}
+
+// loadHistory loads history from file.
+// This is a package-level wrapper for backward compatibility.
+func loadHistory() []string {
+	historyMgr := NewHistoryManager(".gt_history")
+	return historyMgr.Load()
+}
+
+// saveHistory saves history to file.
+// This is a package-level wrapper for backward compatibility.
+func saveHistory(history []string) error {
+	historyMgr := NewHistoryManager(".gt_history")
+	return historyMgr.Save(history)
 }
 
 // isBuiltinCommand checks if input starts with a built-in command
@@ -194,99 +247,4 @@ func isBuiltinCommand(input string) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-// getHistoryPath returns the path to the history file
-func getHistoryPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(home, historyFile)
-}
-
-// loadHistory loads history from file
-func loadHistory() []string {
-	historyPath := getHistoryPath()
-	if historyPath == "" {
-		return nil
-	}
-
-	file, err := os.Open(historyPath)
-	if err != nil {
-		return nil
-	}
-
-	var history []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		history = append(history, scanner.Text())
-	}
-	if err := file.Close(); err != nil {
-		return nil
-	}
-	return history
-}
-
-// saveHistory saves history to file
-func saveHistory(history []string) error {
-	historyPath := getHistoryPath()
-	if historyPath == "" {
-		return nil
-	}
-
-	// Keep only last 1000 entries to prevent unlimited growth
-	if len(history) > 1000 {
-		history = history[len(history)-1000:]
-	}
-
-	file, err := os.Create(historyPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			// Log error but don't overwrite the original error
-			_ = fmt.Errorf("warning: failed to close history file: %w", closeErr)
-		}
-	}()
-
-	writer := bufio.NewWriter(file)
-	for _, entry := range history {
-		if _, err := writer.WriteString(entry + "\n"); err != nil {
-			return fmt.Errorf("failed to write history entry: %w", err)
-		}
-	}
-	if err := writer.Flush(); err != nil {
-		return fmt.Errorf("failed to flush history writer: %w", err)
-	}
-	return nil
-}
-
-// completer provides auto-completion for built-in commands
-func completer(d prompt.Document) []prompt.Suggest {
-	text := d.GetWordBeforeCursor()
-	if text == "" {
-		return nil
-	}
-
-	var suggestions []prompt.Suggest
-	for _, cmd := range builtinCommands() {
-		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(text)) {
-			suggestions = append(suggestions, prompt.Suggest{Text: cmd, Description: getCommandDescription(cmd)})
-		}
-	}
-	return suggestions
-}
-
-func getCommandDescription(cmd string) string {
-	descriptions := map[string]string{
-		"help":  "Show help information",
-		"clear": "Clear the screen",
-		"quit":  "Exit the REPL",
-		"exit":  "Exit the REPL",
-		"rpn":   "Evaluate an RPN (postfix notation) expression",
-		"calc":  "Same as rpn - evaluate an RPN expression",
-	}
-	return descriptions[cmd]
 }

@@ -7,7 +7,7 @@ import (
 
 // builtinCommandsList is the list of built-in REPL commands.
 // It's exposed as a variable to allow for dependency injection in tests.
-var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc"}
+var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc", "rat"}
 
 // builtinCommands returns the list of built-in commands.
 func builtinCommands() []string {
@@ -36,6 +36,9 @@ func ExecuteCommand(cmd string) (string, error) {
 	case "rpn", "calc":
 		// rpn/calc commands are handled in executor(), not here
 		return "", nil
+	case "rat":
+		// rat command is handled in executor() with access to RPN state
+		return "", nil
 	default:
 		return "", fmt.Errorf("unknown command: %s. Available commands: %s", args[0], strings.Join(builtinCommandsList, ", "))
 	}
@@ -50,6 +53,7 @@ Built-in Commands:
   clear            Clear the screen
   quit / exit      Exit the REPL
   rpn / calc       Evaluate an RPN (postfix notation) expression
+  rat on/off/toggle Switch between float64 and rational number modes
 
 Usage Examples:
   20% of 150           Calculate 20% of 150

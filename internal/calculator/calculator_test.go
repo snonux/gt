@@ -114,41 +114,6 @@ func runParseTest(t *testing.T, tests []struct {
 		})
 	}
 }
-
-// runParseErrorTest runs a parse error test
-func runParseErrorTest(t *testing.T, tests []struct {
-	name  string
-	input string
-}) {
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := Parse(tt.input)
-			if err == nil {
-				t.Errorf("Parse(%q) expected error, got nil", tt.input)
-			}
-		})
-	}
-}
-
-// runParseNoStepsTest runs a parse test without requiring steps
-func runParseNoStepsTest(t *testing.T, tests []struct {
-	name     string
-	input    string
-	expected string
-}) {
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := Parse(tt.input)
-			if err != nil {
-				t.Fatalf("Parse(%q) returned error: %v", tt.input, err)
-			}
-			if result != tt.expected {
-				t.Errorf("Parse(%q) = %q, expected %q", tt.input, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestParseXPercentOfY(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -312,5 +277,3 @@ func TestParseWhitespace(t *testing.T) {
 		})
 	}
 }
-
-

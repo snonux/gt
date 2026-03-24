@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"codeberg.org/snonux/perc/internal/rpn"
+
 	"github.com/c-bata/go-prompt"
 )
 
@@ -144,46 +146,6 @@ func TestIsBuiltinCommandWithMixedCase(t *testing.T) {
 				t.Errorf("isBuiltinCommand(%q) = %v, want %v", tt.input, ok, tt.expected)
 			}
 		})
-	}
-}
-
-func TestCompleter(t *testing.T) {
-	suggestions := completer(prompt.Document{})
-	_ = suggestions
-}
-
-func TestCompleterWithPartialMatch(t *testing.T) {
-	// Use trailing space to ensure GetWordBeforeCursor() returns non-empty
-	suggestions := completer(prompt.Document{Text: "h "})
-	_ = suggestions
-}
-
-func TestCompleterWithClearPrefix(t *testing.T) {
-	suggestions := completer(prompt.Document{Text: "cl "})
-	_ = suggestions
-}
-
-func TestCompleterWithEmptyText(t *testing.T) {
-	suggestions := completer(prompt.Document{Text: ""})
-	if suggestions != nil {
-		t.Errorf("completer with empty text should return nil, got %d suggestions", len(suggestions))
-	}
-}
-
-func TestCompleterWithAllCommands(t *testing.T) {
-	allCommands := []string{"help", "clear", "quit", "exit", "rpn", "calc"}
-	for _, cmd := range allCommands {
-		t.Run(cmd, func(t *testing.T) {
-			suggestions := completer(prompt.Document{Text: cmd + " "})
-			_ = suggestions
-		})
-	}
-}
-
-func TestCompleterWithNoPrefix(t *testing.T) {
-	suggestions := completer(prompt.Document{Text: "xyz "})
-	if len(suggestions) > 0 {
-		t.Errorf("completer(%q) should return no suggestions, got %d", "xyz", len(suggestions))
 	}
 }
 
@@ -412,25 +374,47 @@ func TestExecutorWithCalcPrefixMixed(t *testing.T) {
 	executor("calc 1 2 +")
 }
 
-func TestCompleterEdgeCases(t *testing.T) {
-	tests := []struct {
-		name string
-		doc  prompt.Document
-	}{
-		{"single character q", prompt.Document{Text: "q"}},
-		{"single character e", prompt.Document{Text: "e"}},
-		{"single character r", prompt.Document{Text: "r"}},
-		{"partial help", prompt.Document{Text: "he"}},
-		{"partial quit", prompt.Document{Text: "qui"}},
-		{"partial exit", prompt.Document{Text: "ex"}},
+func TestExecutorWithRatModeOn(t *testing.T) {
+	executor("rat on")
+	state := getRPNState()
+	if state.rpnCalc.GetMode() != rpn.RationalMode {
+		t.Errorf("Expected RationalMode after rat on, got %v", state.rpnCalc.GetMode())
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			suggestions := completer(tt.doc)
-			_ = suggestions
-		})
+func TestExecutorWithRatModeOff(t *testing.T) {
+	executor("rat off")
+	state := getRPNState()
+	if state.rpnCalc.GetMode() != rpn.FloatMode {
+		t.Errorf("Expected FloatMode after rat off, got %v", state.rpnCalc.GetMode())
 	}
+}
+
+func TestExecutorWithRatModeToggle(t *testing.T) {
+	// First toggle - should enable rational mode if currently float
+	executor("rat toggle")
+	state := getRPNState()
+	mode1 := state.rpnCalc.GetMode()
+
+	// Second toggle - should toggle back
+	executor("rat toggle")
+	state = getRPNState()
+	mode2 := state.rpnCalc.GetMode()
+
+	// Modes should be different after toggle
+	if mode1 == mode2 {
+		t.Errorf("Modes should be different after toggle: %v -> %v", mode1, mode2)
+	}
+}
+
+func TestExecutorWithRatModeInvalid(t *testing.T) {
+	// Just verify it doesn't panic
+	executor("rat invalid")
+}
+
+func TestExecutorWithRatModeNoArg(t *testing.T) {
+	// Just verify it doesn't panic
+	executor("rat")
 }
 
 func TestIsBuiltinCommandWithSubcommandHelp(t *testing.T) {
@@ -438,4 +422,164 @@ func TestIsBuiltinCommandWithSubcommandHelp(t *testing.T) {
 	if !ok {
 		t.Error("isBuiltinCommand('help') should return true")
 	}
+}
+
+func TestRPNHandlerWithUnknownInput(t *testing.T) {
+	// Test that unknown input falls through to next handler
+	chain := NewCommandChain()
+
+	// Create a minimal REPL
+	r := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  chain,
+	}
+
+	// Test unknown input - should not be handled by RPNHandler directly
+	// but will be handled by Error handler after RPNHandler passes it through
+	output, handled, err := chain.Handle(r, "unknowncommand")
+	if handled {
+		t.Errorf("Expected unknowncommand to be handled by error handler, got handled=%v, err=%v, output=%q", handled, err, output)
+	}
+}
+
+func TestRPNHandlerWithPercentageExpression(t *testing.T) {
+	// Test that percentage expressions are handled by PercentageHandler, not RPNHandler
+	chain := NewCommandChain()
+	r := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  chain,
+	}
+
+	// Test percentage expression
+	output, handled, err := chain.Handle(r, "20% of 150")
+	if !handled {
+		t.Errorf("Expected percentage expression to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
+	}
+	if err != nil {
+		t.Errorf("Expected no error for percentage expression, got %v", err)
+	}
+}
+
+func TestRPNHandlerWithRPNExpression(t *testing.T) {
+	// Test RPN expressions
+	chain := NewCommandChain()
+	r := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  chain,
+	}
+
+	// Test RPN expression
+	output, handled, err := chain.Handle(r, "3 4 +")
+	if !handled {
+		t.Errorf("Expected RPN expression to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
+	}
+	if err != nil {
+		t.Errorf("Expected no error for RPN expression, got %v", err)
+	}
+}
+
+func TestRPNHandlerWithSingleNumber(t *testing.T) {
+	// Test single number input (RPN - pushes number onto stack)
+	chain := NewCommandChain()
+	r := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  chain,
+	}
+
+	// Test single number
+	output, handled, err := chain.Handle(r, "42")
+	if !handled {
+		t.Errorf("Expected single number to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
+	}
+	if err != nil {
+		t.Errorf("Expected no error for single number, got %v", err)
+	}
+}
+
+// TestNewREPL tests that NewREPL creates a valid REPL instance.
+// Note: This test is skipped when not running in a TTY because the prompt
+// library requires TTY access.
+func TestNewREPL(t *testing.T) {
+	// Skip this test if not running in a TTY
+	ttyChecker := &TTYChecker{}
+	if !ttyChecker.IsTTY() {
+		t.Skip("Skipping test - not running in a TTY")
+	}
+
+	// Test that NewREPL creates a valid REPL instance without panicking
+	repl := NewREPL(nil, nil)
+	if repl == nil {
+		t.Fatal("Expected REPL to be created, got nil")
+	}
+	if repl.prompt == nil {
+		t.Error("Expected prompt to be set")
+	}
+	if repl.commandChain == nil {
+		t.Error("Expected commandChain to be set")
+	}
+	if repl.ttyChecker == nil {
+		t.Error("Expected ttyChecker to be set")
+	}
+	if repl.historyMgr == nil {
+		t.Error("Expected historyMgr to be set")
+	}
+	if repl.signalHandler == nil {
+		t.Error("Expected signalHandler to be set")
+	}
+}
+
+func TestDefaultCompleter(t *testing.T) {
+	// Test the default completer function directly
+	// Note: This test has limited coverage because defaultCompleter uses
+	// GetWordBeforeCursor() which requires proper cursor position.
+	// The actual completer logic is tested in completer_test.go
+
+	// Test with text that would match if cursor position was set correctly
+	// For now, just verify the function exists and doesn't panic
+	doc := prompt.Document{Text: "help"}
+	suggestions := defaultCompleter(&REPL{}, doc)
+
+	// When cursor is at position 0 (default), GetWordBeforeCursor returns empty
+	// The actual behavior depends on how the prompt library sets cursor position
+	_ = suggestions
+}
+
+func TestDefaultGetCommandDescription(t *testing.T) {
+	// Create a REPL and test the defaultGetCommandDescription method
+	repl := &REPL{}
+
+	tests := []struct {
+		cmd        string
+		wantPrefix string
+	}{
+		{"help", "Show"},
+		{"clear", "Clear"},
+		{"quit", "Exit"},
+		{"exit", "Exit"},
+		{"rpn", "Evaluate"},
+		{"calc", "Same"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.cmd, func(t *testing.T) {
+			desc := repl.defaultGetCommandDescription(tt.cmd)
+			if !strings.Contains(desc, tt.wantPrefix) {
+				t.Errorf("defaultGetCommandDescription(%q) = %q, should contain %q", tt.cmd, desc, tt.wantPrefix)
+			}
+		})
+	}
+}
+
+func TestExecutorWithUnknownCommand(t *testing.T) {
+	// Test that unknown commands are handled by the error handler
+	// This should exercise the "Not handled by any handler" path
+	executor("completelyunknowncommand123")
 }

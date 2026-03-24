@@ -13,6 +13,9 @@ type ArithmeticOperator interface {
 	Divide(stack *Stack) error
 	Power(stack *Stack) error
 	Modulo(stack *Stack) error
+	Log2(stack *Stack) error
+	Log10(stack *Stack) error
+	Ln(stack *Stack) error
 }
 
 // HyperOperator defines the interface for hyper operators.
@@ -23,6 +26,9 @@ type HyperOperator interface {
 	HyperDivide(stack *Stack) error
 	HyperPower(stack *Stack) error
 	HyperModulo(stack *Stack) error
+	HyperLog2(stack *Stack) error
+	HyperLog10(stack *Stack) error
+	HyperLn(stack *Stack) error
 }
 
 // StackOperator defines the interface for stack manipulation operators.
@@ -46,18 +52,27 @@ type Operator interface {
 	HyperOperator
 	StackOperator
 	VariableOperator
+	// SetMode sets the calculation mode for number formatting
+	SetMode(CalculationMode)
 }
 
 // Operations provides operator implementations and stack manipulation.
 type Operations struct {
 	vars VariableStore
+	mode CalculationMode
 }
 
 // NewOperations creates a new Operations instance with the given variable store.
 func NewOperations(vars VariableStore) *Operations {
 	return &Operations{
 		vars: vars,
+		mode: FloatMode, // default
 	}
+}
+
+// SetMode sets the calculation mode for the Operations instance.
+func (o *Operations) SetMode(mode CalculationMode) {
+	o.mode = mode
 }
 
 // OperatorHandler represents a function that handles an operator.
@@ -86,6 +101,9 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("/", func(stack *Stack) error { return op.Divide(stack) })
 	registry.registerStandardOperator("^", func(stack *Stack) error { return op.Power(stack) })
 	registry.registerStandardOperator("%", func(stack *Stack) error { return op.Modulo(stack) })
+	registry.registerStandardOperator("lg", func(stack *Stack) error { return op.Log2(stack) })
+	registry.registerStandardOperator("log", func(stack *Stack) error { return op.Log10(stack) })
+	registry.registerStandardOperator("ln", func(stack *Stack) error { return op.Ln(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -107,6 +125,9 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerHyperOperator("[/]", func(stack *Stack) error { return op.HyperDivide(stack) })
 	registry.registerHyperOperator("[^]", func(stack *Stack) error { return op.HyperPower(stack) })
 	registry.registerHyperOperator("[%]", func(stack *Stack) error { return op.HyperModulo(stack) })
+	registry.registerHyperOperator("[lg]", func(stack *Stack) error { return op.HyperLog2(stack) })
+	registry.registerHyperOperator("[log]", func(stack *Stack) error { return op.HyperLog10(stack) })
+	registry.registerHyperOperator("[ln]", func(stack *Stack) error { return op.HyperLn(stack) })
 
 	return registry
 }
@@ -275,6 +296,51 @@ func (o *Operations) Modulo(stack *Stack) error {
 	}
 
 	stack.Push(math.Mod(a, b))
+	return nil
+}
+
+// Log2 pops one value from stack, computes log base 2 (log₂(a)), and pushes result.
+func (o *Operations) Log2(stack *Stack) error {
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for lg: %w", err)
+	}
+
+	if a <= 0 {
+		return fmt.Errorf("log2 undefined for non-positive numbers")
+	}
+
+	stack.Push(math.Log2(a))
+	return nil
+}
+
+// Log10 pops one value from stack, computes log base 10 (log₁₀(a)), and pushes result.
+func (o *Operations) Log10(stack *Stack) error {
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for log: %w", err)
+	}
+
+	if a <= 0 {
+		return fmt.Errorf("log10 undefined for non-positive numbers")
+	}
+
+	stack.Push(math.Log10(a))
+	return nil
+}
+
+// Ln pops one value from stack, computes natural log (ln(a)), and pushes result.
+func (o *Operations) Ln(stack *Stack) error {
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for ln: %w", err)
+	}
+
+	if a <= 0 {
+		return fmt.Errorf("ln undefined for non-positive numbers")
+	}
+
+	stack.Push(math.Log(a))
 	return nil
 }
 
@@ -454,6 +520,108 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	return nil
 }
 
+// HyperLog2 pops all values from stack, computes sum of log2 for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLog2(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperlog2: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperlog2: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the log2 of all values
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		if values[i] <= 0 {
+			return fmt.Errorf("hyperlog2 undefined for non-positive numbers")
+		}
+		result += math.Log2(values[i])
+	}
+	stack.Push(result)
+	return nil
+}
+
+// HyperLog10 pops all values from stack, computes sum of log10 for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLog10(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperlog10: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperlog10: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the log10 of all values
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		if values[i] <= 0 {
+			return fmt.Errorf("hyperlog10 undefined for non-positive numbers")
+		}
+		result += math.Log10(values[i])
+	}
+	stack.Push(result)
+	return nil
+}
+
+// HyperLn pops all values from stack, computes sum of natural log for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLn(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperln: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []float64
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperln: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the natural log of all values
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		if values[i] <= 0 {
+			return fmt.Errorf("hyperln undefined for non-positive numbers")
+		}
+		result += math.Log(values[i])
+	}
+	stack.Push(result)
+	return nil
+}
+
 // stack manipulation operators
 
 // Dup duplicates the top stack value.
@@ -477,9 +645,13 @@ func (o *Operations) Swap(stack *Stack) error {
 	top := vals[len(vals)-1]
 	second := vals[len(vals)-2]
 
-	// Pop both (this won't fail because we checked stack.Len() >= 2 above)
-	_, _ = stack.Pop()
-	_, _ = stack.Pop()
+	// Pop both values - we know this won't fail because we checked stack.Len() >= 2 above
+	if _, err := stack.Pop(); err != nil {
+		return fmt.Errorf("swap: failed to pop top value: %w", err)
+	}
+	if _, err := stack.Pop(); err != nil {
+		return fmt.Errorf("swap: failed to pop second value: %w", err)
+	}
 
 	// Push in swapped order
 	stack.Push(top)
@@ -496,7 +668,7 @@ func (o *Operations) Pop(stack *Stack) error {
 	return nil
 }
 
-// Show returns the current stack as a formatted string.
+// Show returns the current stack as a formatted string using the Number interface.
 func (o *Operations) Show(stack *Stack) (string, error) {
 	if stack.Len() == 0 {
 		return "Stack is empty", nil
@@ -508,7 +680,9 @@ func (o *Operations) Show(stack *Stack) (string, error) {
 		if i > 0 {
 			result += " "
 		}
-		result += fmt.Sprintf("%.10g", val)
+		// Use Number interface for consistent formatting with the current mode
+		num := NewNumber(val, o.mode)
+		result += num.String()
 	}
 	return result, nil
 }
