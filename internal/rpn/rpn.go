@@ -8,11 +8,11 @@ import (
 
 // RPN represents the RPN parser and evaluator.
 type RPN struct {
-	vars           VariableStore
-	ops            Operator
-	opRegistry     *OperatorRegistry
-	maxStack       int
-	currentStack   *Stack
+	vars         VariableStore
+	ops          Operator
+	opRegistry   *OperatorRegistry
+	maxStack     int
+	currentStack *Stack
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
@@ -70,15 +70,8 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 			continue
 		}
 
-		// Check for hyperoperators
-		if handled, result, err := r.handleHyperOperatorWithRegistry(stack, token); err != nil {
-			return "", err
-		} else if handled {
-			return result, nil
-		}
-
-		// Check for standard operators
-		if result, handled, err := r.opRegistry.HandleStandardOperator(stack, token); err != nil {
+		// Handle operator (common logic from executeOperator)
+		if result, handled, err := r.executeOperator(stack, token); err != nil {
 			// If the error is not "unknown token", return it
 			// Otherwise, fall through to check for variable
 			if !strings.Contains(err.Error(), "unknown token") {
@@ -110,27 +103,14 @@ func (r *RPN) EvalOperator(op string) (string, error) {
 		r.currentStack = NewStack()
 	}
 
-	// Check for hyperoperators
-	if handled, result, err := r.handleHyperOperatorWithRegistry(r.currentStack, op); err != nil {
+	// Handle operator (common logic from executeOperator)
+	if result, handled, err := r.executeOperator(r.currentStack, op); err != nil {
 		return "", err
 	} else if handled {
 		if result != "" {
 			return result, nil
 		}
-		stackShow, err := r.ops.Show(r.currentStack)
-		if err != nil {
-			return "", fmt.Errorf("show stack: %w", err)
-		}
-		return stackShow, nil
-	}
-
-	// Check for standard operators
-	if result, handled, err := r.opRegistry.HandleStandardOperator(r.currentStack, op); err != nil {
-		return "", err
-	} else if handled {
-		if result != "" {
-			return result, nil
-		}
+		// For EvalOperator, show the stack after operation
 		stackShow, err := r.ops.Show(r.currentStack)
 		if err != nil {
 			return "", fmt.Errorf("show stack: %w", err)
@@ -228,15 +208,8 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		return "", nil
 	}
 
-	// Check for hyperoperators
-	if handled, result, err := r.handleHyperOperatorWithRegistry(stack, token); err != nil {
-		return "", err
-	} else if handled {
-		return result, nil
-	}
-
-	// Handle standard operators
-	if result, handled, err := r.opRegistry.HandleStandardOperator(stack, token); err != nil {
+	// Handle standard operators (common logic extracted for DRY)
+	if result, handled, err := r.executeOperator(stack, token); err != nil {
 		return "", err
 	} else if handled {
 		return result, nil
@@ -245,13 +218,18 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 	return "", fmt.Errorf("unknown token '%s'", token)
 }
 
-// handleHyperOperatorWithRegistry handles hyperoperators and returns (handled, result, error).
-func (r *RPN) handleHyperOperatorWithRegistry(stack *Stack, token string) (bool, string, error) {
-	if !r.opRegistry.IsHyperOperator(token) {
-		return false, "", nil
+// executeOperator handles operator execution (standard or hyper) and returns (result string, handled bool, error error).
+// This is a helper to avoid code duplication between handleOperator and EvalOperator.
+func (r *RPN) executeOperator(stack *Stack, token string) (string, bool, error) {
+	// Check for hyperoperators first
+	if r.opRegistry.IsHyperOperator(token) {
+		result, handled, err := r.opRegistry.HandleHyperOperator(stack, token)
+		return result, handled, err
 	}
-	result, handled, err := r.opRegistry.HandleHyperOperator(stack, token)
-	return handled, result, err
+
+	// Then check standard operators
+	result, handled, err := r.opRegistry.HandleStandardOperator(stack, token)
+	return result, handled, err
 }
 
 // handleAssignment checks if the input is an assignment format and handles it.
