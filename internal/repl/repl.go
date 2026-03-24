@@ -10,6 +10,19 @@ import (
 	"github.com/c-bata/go-prompt"
 )
 
+// RPNState holds the state for RPN operations in REPL.
+// Note: This struct should never be copied - use pointer receivers only.
+type RPNState struct {
+	vars    rpn.VariableStore
+	rpnCalc *rpn.RPN
+}
+
+// rpnState holds the singleton RPN state for REPL operations.
+var rpnState *RPNState
+
+// rpnStateOnce ensures rpnState is initialized exactly once.
+var rpnStateOnce sync.Once
+
 // REPL manages the interactive command-line interface.
 type REPL struct {
 	ttyChecker    *TTYChecker
@@ -168,21 +181,8 @@ func executor(input string) {
 	defaultExecutor(r, input)
 }
 
-// RPNState holds the state for RPN operations in REPL
-// Note: This struct should never be copied - use pointer receivers only
-type RPNState struct {
-	vars    rpn.VariableStore
-	rpnCalc *rpn.RPN
-}
-
-// rpnState holds the singleton RPN state for REPL operations
-var rpnState *RPNState
-
-// rpnStateOnce ensures rpnState is initialized exactly once
-var rpnStateOnce sync.Once
-
-// getRPNState returns or creates the RPN state
-// Thread-safe implementation using sync.Once for simpler singleton initialization
+// getRPNState returns or creates the RPN state.
+// Thread-safe implementation using sync.Once for simpler singleton initialization.
 func getRPNState() *RPNState {
 	rpnStateOnce.Do(func() {
 		vars := rpn.NewVariables()
