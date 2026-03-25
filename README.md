@@ -140,11 +140,33 @@ gt pi 3.14159 = pi 2 *  # 2 * π
 gt vars            # List all variables
 # x = 5
 
-gt name d          # Delete variable
+gt delete x        # Delete a specific variable
 # Variable removed
 
 gt clear           # Clear all variables
 # All variables cleared
+```
+
+### Working with Variables
+
+Variables persist across commands in REPL mode but are cleared when exiting. In bare mode (single command), variables are only available within that command's execution context.
+
+Example:
+```bash
+# In bare mode, variables don't persist between commands
+gt x 5 =           # Assign x = 5 (in this command only)
+# → x = 5
+
+gt x               # x is not defined in this separate command
+# Error: variable not found
+
+# In REPL mode, variables persist
+> x 5 =            # Assign x = 5
+> x                # x is still 5
+5
+> clear            # Clear all variables
+> x                # x is now undefined
+# Error: variable not found
 ```
 
 #### Stack Operations
