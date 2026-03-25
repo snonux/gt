@@ -6,32 +6,6 @@
 
 A simple AI-engineered command-line percentage calculator written in Go.
 
-## Rational Number Mode (Optional)
-
-The calculator supports precise rational number calculations using Go's `*big.Rat` type. By default, calculations use float64 for performance.
-
-### Enabling Rational Mode
-
-In REPL mode, you can switch between float64 and rational number modes:
-
-```
-> rat on           # Enable rational number mode
-Rational mode enabled
-
-> rat off          # Disable rational number mode (default)
-Rational mode disabled (using float64)
-
-> rat toggle       # Switch to the other mode
-Rational mode enabled
-```
-
-When rational mode is enabled:
-- Results are calculated with arbitrary precision
-- Output is displayed as a decimal approximation
-- Use `rat off` to return to standard float64 calculations
-
-## Installation
-
 ## Installation
 
 ```bash
@@ -278,6 +252,30 @@ Or for RPN-specific tests:
 ```bash
 mage testRPN
 ```
+
+## Rational Number Mode (Optional)
+
+The calculator supports precise rational number calculations using Go's `*big.Rat` type. By default, calculations use float64 for performance.
+
+### Enabling Rational Mode
+
+In REPL mode, you can switch between float64 and rational number modes:
+
+```
+> rat on           # Enable rational number mode
+Rational mode enabled
+
+> rat off          # Disable rational number mode (default)
+Rational mode disabled (using float64)
+
+> rat toggle       # Switch to the other mode
+Rational mode enabled
+```
+
+When rational mode is enabled:
+- Results are calculated with arbitrary precision
+- Output is displayed as a decimal approximation
+- Use `rat off` to return to standard float64 calculations
 
 ## License
 
