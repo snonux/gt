@@ -63,7 +63,7 @@ jobs:
         go-version: '1.22'
 
     - name: Build
-      run: go build -o perc ./cmd/perc
+      run: go build -o gt ./cmd/gt
 
     - name: Test build
-      run: ./perc version
+      run: ./gt version
