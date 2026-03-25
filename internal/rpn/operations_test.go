@@ -668,6 +668,205 @@ func TestLn(t *testing.T) {
 	}
 }
 
+func TestLog2WithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test with boolean true (should be converted to 1, log₂(1) = 0)
+	stack.Push(NewFloatFromBool(true))
+	err := o.Log2(stack)
+	if err != nil {
+		t.Errorf("Log2(true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() != 0.0 {
+		t.Errorf("Log2(true) = %f, want 0.0 (log₂(1) = 0)", val.Float64())
+	}
+
+	// Test with boolean false (should be converted to 0, log₂(0) should error)
+	stack.Push(NewFloatFromBool(false))
+	err = o.Log2(stack)
+	if err == nil {
+		t.Errorf("Log2(false) should return error for log₂(0), got nil")
+	}
+}
+
+func TestLog10WithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test with boolean true (should be converted to 1, log₁₀(1) = 0)
+	stack.Push(NewFloatFromBool(true))
+	err := o.Log10(stack)
+	if err != nil {
+		t.Errorf("Log10(true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() != 0.0 {
+		t.Errorf("Log10(true) = %f, want 0.0 (log₁₀(1) = 0)", val.Float64())
+	}
+
+	// Test with boolean false (should be converted to 0, log₁₀(0) should error)
+	stack.Push(NewFloatFromBool(false))
+	err = o.Log10(stack)
+	if err == nil {
+		t.Errorf("Log10(false) should return error for log₁₀(0), got nil")
+	}
+}
+
+func TestLnWithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test with boolean true (should be converted to 1, ln(1) = 0)
+	stack.Push(NewFloatFromBool(true))
+	err := o.Ln(stack)
+	if err != nil {
+		t.Errorf("Ln(true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() != 0.0 {
+		t.Errorf("Ln(true) = %f, want 0.0 (ln(1) = 0)", val.Float64())
+	}
+
+	// Test with boolean false (should be converted to 0, ln(0) should error)
+	stack.Push(NewFloatFromBool(false))
+	err = o.Ln(stack)
+	if err == nil {
+		t.Errorf("Ln(false) should return error for ln(0), got nil")
+	}
+}
+
+func TestLnEdgeCases(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test ln(negative) should error
+	stack.Push(NewNumber(-1.0, FloatMode))
+	err := o.Ln(stack)
+	if err == nil {
+		t.Errorf("Ln(-1) should return error, got nil")
+	}
+
+	// Test ln(0) should error
+	stack.Push(NewNumber(0.0, FloatMode))
+	err = o.Ln(stack)
+	if err == nil {
+		t.Errorf("Ln(0) should return error, got nil")
+	}
+
+	// Test ln(very small positive) should work
+	stack.Push(NewNumber(0.001, FloatMode))
+	err = o.Ln(stack)
+	if err != nil {
+		t.Errorf("Ln(0.001) should not return error, got: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() > -6.0 || val.Float64() < -7.0 {
+		t.Errorf("Ln(0.001) = %f, want ~-6.9 (ln(0.001))", val.Float64())
+	}
+}
+
+func TestHyperLog2WithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperlog₂(4, true) = log₂(4) + log₂(1) = 2 + 0 = 2
+	// true should be converted to 1
+	stack.Push(NewNumber(4.0, FloatMode))
+	stack.Push(NewFloatFromBool(true))
+	err := o.HyperLog2(stack)
+	if err != nil {
+		t.Errorf("HyperLog2(4, true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() != 2.0 {
+		t.Errorf("HyperLog2(4, true) = %f, want 2.0 (log₂(4) + log₂(1) = 2 + 0)", val.Float64())
+	}
+
+	// Test hyperlog₂(4, false) = log₂(4) + log₂(0) should error
+	// false should be converted to 0, which is undefined for log₂
+	stack.Push(NewNumber(4.0, FloatMode))
+	stack.Push(NewFloatFromBool(false))
+	err = o.HyperLog2(stack)
+	if err == nil {
+		t.Errorf("HyperLog2(4, false) should return error for log₂(0), got nil")
+	}
+}
+
+func TestHyperLog10WithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperlog₁₀(10, true) = log₁₀(10) + log₁₀(1) = 1 + 0 = 1
+	// true should be converted to 1
+	stack.Push(NewNumber(10.0, FloatMode))
+	stack.Push(NewFloatFromBool(true))
+	err := o.HyperLog10(stack)
+	if err != nil {
+		t.Errorf("HyperLog10(10, true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if val.Float64() != 1.0 {
+		t.Errorf("HyperLog10(10, true) = %f, want 1.0 (log₁₀(10) + log₁₀(1) = 1 + 0)", val.Float64())
+	}
+
+	// Test hyperlog₁₀(10, false) = log₁₀(10) + log₁₀(0) should error
+	stack.Push(NewNumber(10.0, FloatMode))
+	stack.Push(NewFloatFromBool(false))
+	err = o.HyperLog10(stack)
+	if err == nil {
+		t.Errorf("HyperLog10(10, false) should return error for log₁₀(0), got nil")
+	}
+}
+
+func TestHyperLnWithBoolean(t *testing.T) {
+	o := NewOperations(NewVariables())
+	stack := NewStack()
+
+	// Test hyperln(e, true) = ln(e) + ln(1) = 1 + 0 = 1
+	// true should be converted to 1
+	stack.Push(NewNumber(math.E, FloatMode))
+	stack.Push(NewFloatFromBool(true))
+	err := o.HyperLn(stack)
+	if err != nil {
+		t.Errorf("HyperLn(e, true) returned error: %v", err)
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		t.Errorf("Pop() returned error: %v", err)
+	}
+	if math.Abs(val.Float64()-1.0) > 0.0001 {
+		t.Errorf("HyperLn(e, true) = %f, want ~1.0 (ln(e) + ln(1) = 1 + 0)", val.Float64())
+	}
+
+	// Test hyperln(e, false) = ln(e) + ln(0) should error
+	stack.Push(NewNumber(math.E, FloatMode))
+	stack.Push(NewFloatFromBool(false))
+	err = o.HyperLn(stack)
+	if err == nil {
+		t.Errorf("HyperLn(e, false) should return error for ln(0), got nil")
+	}
+}
+
 func TestHyperLog2(t *testing.T) {
 	o := NewOperations(NewVariables())
 	stack := NewStack()
@@ -721,7 +920,7 @@ func TestHyperLn(t *testing.T) {
 
 	// Test hyperln(e, e²) = ln(e) + ln(e²) = 1 + 2 = 3
 	stack.Push(NewNumber(math.E, FloatMode))
-	stack.Push(NewNumber(math.E * math.E, FloatMode))
+	stack.Push(NewNumber(math.E*math.E, FloatMode))
 	err := o.HyperLn(stack)
 	if err != nil {
 		t.Errorf("HyperLn() returned error: %v", err)
@@ -732,5 +931,83 @@ func TestHyperLn(t *testing.T) {
 	}
 	if math.Abs(val.Float64()-3.0) > 0.0001 {
 		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", val.Float64())
+	}
+}
+
+func TestOperatorRegistry(t *testing.T) {
+	o := NewOperations(NewVariables())
+	registry := NewOperatorRegistry(o)
+
+	// Test IsStandardOperator with valid operators
+	validOperators := []string{"+", "-", "*", "/", "^", "%", "lg", "log", "ln", "gt", "lt", "gte", "lte", "eq", "neq", "dup", "swap", "pop", "show", "showstack", "print", "vars", "clear"}
+	for _, op := range validOperators {
+		if !registry.IsStandardOperator(op) {
+			t.Errorf("IsStandardOperator(%q) = false, want true", op)
+		}
+	}
+
+	// Test IsStandardOperator with invalid operators
+	invalidOperators := []string{"invalid", "xyz", "123"}
+	for _, op := range invalidOperators {
+		if registry.IsStandardOperator(op) {
+			t.Errorf("IsStandardOperator(%q) = true, want false", op)
+		}
+	}
+
+	// Test IsHyperOperator with valid operators
+	hyperOperators := []string{"[+]", "[-]", "[*]", "[/]", "[^]", "[%]", "[lg]", "[log]", "[ln]"}
+	for _, op := range hyperOperators {
+		if !registry.IsHyperOperator(op) {
+			t.Errorf("IsHyperOperator(%q) = false, want true", op)
+		}
+	}
+
+	// Test IsHyperOperator with invalid operators
+	for _, op := range invalidOperators {
+		if registry.IsHyperOperator(op) {
+			t.Errorf("IsHyperOperator(%q) = true, want false", op)
+		}
+	}
+}
+
+func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
+	o := NewOperations(NewVariables())
+	registry := NewOperatorRegistry(o)
+	stack := NewStack()
+
+	// Test standard operator handling
+	testCases := []struct {
+		name     string
+		token    string
+		prepare  func()
+		expected float64
+	}{
+		{"Addition", "+", func() { stack.Push(NewNumber(3.0, FloatMode)); stack.Push(NewNumber(4.0, FloatMode)) }, 7.0},
+		{"Subtraction", "-", func() { stack.Push(NewNumber(10.0, FloatMode)); stack.Push(NewNumber(4.0, FloatMode)) }, 6.0},
+		{"Multiplication", "*", func() { stack.Push(NewNumber(5.0, FloatMode)); stack.Push(NewNumber(3.0, FloatMode)) }, 15.0},
+		{"Division", "/", func() { stack.Push(NewNumber(20.0, FloatMode)); stack.Push(NewNumber(4.0, FloatMode)) }, 5.0},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.prepare()
+			result, handled, err := registry.HandleStandardOperator(stack, tc.token)
+			if err != nil {
+				t.Errorf("HandleStandardOperator(%q) returned error: %v", tc.token, err)
+			}
+			if !handled {
+				t.Errorf("HandleStandardOperator(%q) = false, want true", tc.token)
+			}
+			if result != "" {
+				t.Errorf("HandleStandardOperator(%q) returned non-empty result: %q", tc.token, result)
+			}
+			val, err := stack.Pop()
+			if err != nil {
+				t.Errorf("Pop() returned error: %v", err)
+			}
+			if val.Float64() != tc.expected {
+				t.Errorf("Result = %f, want %f", val.Float64(), tc.expected)
+			}
+		})
 	}
 }

@@ -239,29 +239,29 @@ func TestMixedBooleanNumericArithmetic(t *testing.T) {
 // TestBooleanShowFormat tests that Show command displays boolean values as true/false
 func TestBooleanShowFormat(t *testing.T) {
 	tests := []struct {
-		name     string
+		name       string
 		expression string
-		expected string
+		expected   string
 	}{
 		{
-			name:     "show true",
+			name:       "show true",
 			expression: "true show",
-			expected: "true",
+			expected:   "true",
 		},
 		{
-			name:     "show false",
+			name:       "show false",
 			expression: "false show",
-			expected: "false",
+			expected:   "false",
 		},
 		{
-			name:     "show mixed stack",
+			name:       "show mixed stack",
 			expression: "1 true 2 show",
-			expected: "1 true 2",
+			expected:   "1 true 2",
 		},
 		{
-			name:     "show comparison result",
+			name:       "show comparison result",
 			expression: "5 3 gt show",
-			expected: "true",
+			expected:   "true",
 		},
 	}
 

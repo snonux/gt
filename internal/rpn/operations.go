@@ -340,7 +340,8 @@ func (o *Operations) Log2(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lg: %w", err)
 	}
 
-	// Check if value is zero or negative
+	// Use Float64() to convert value to float64, handling boolean values:
+	// - true → 1, false → 0
 	val := a.Float64()
 	if val <= 0 {
 		return fmt.Errorf("log2 undefined for non-positive numbers")
@@ -358,7 +359,8 @@ func (o *Operations) Log10(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for log: %w", err)
 	}
 
-	// Check if value is zero or negative
+	// Use Float64() to convert value to float64, handling boolean values:
+	// - true → 1, false → 0
 	val := a.Float64()
 	if val <= 0 {
 		return fmt.Errorf("log10 undefined for non-positive numbers")
@@ -376,7 +378,8 @@ func (o *Operations) Ln(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for ln: %w", err)
 	}
 
-	// Check if value is zero or negative
+	// Use Float64() to convert value to float64, handling boolean values:
+	// - true → 1, false → 0
 	val := a.Float64()
 	if val <= 0 {
 		return fmt.Errorf("ln undefined for non-positive numbers")
@@ -587,7 +590,8 @@ func (o *Operations) HyperLog2(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the log2 of all values with Number interface
+	// Sum the log2 of all values using Float64() for value conversion:
+	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val := values[i].Float64()
@@ -624,7 +628,8 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the log10 of all values
+	// Sum the log10 of all values using Float64() for value conversion:
+	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val := values[i].Float64()
@@ -661,7 +666,8 @@ func (o *Operations) HyperLn(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the natural log of all values with Number interface
+	// Sum the natural log of all values using Float64() for value conversion:
+	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val := values[i].Float64()
@@ -830,7 +836,7 @@ func (o *Operations) Show(stack *Stack) (string, error) {
 		if i > 0 {
 			result += " "
 		}
-		// Use Value.String() to format values correctly:
+		// Use val.String() to format values correctly:
 		// - Boolean values show as "true"/"false"
 		// - Number values show with appropriate precision
 		result += val.String()

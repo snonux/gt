@@ -26,9 +26,9 @@ var (
 // arithmetic expressions (e.g., "5 3 == 1 +" where "5 3 ==" produces false=0,
 // and "0 + 1" produces 1).
 type Value struct {
-	isBool bool
+	isBool  bool
 	boolVal bool
-	numVal float64
+	numVal  float64
 }
 
 // NewNumberValue creates a new Value containing a float64 number.
@@ -56,7 +56,21 @@ func (v Value) Bool() bool {
 	return v.boolVal
 }
 
-// Number returns the float64 value, or 0 if the value is not a number.
+// Float64 returns the float64 value.
+// If the value is a boolean, true returns 1 and false returns 0.
+// If the value is a number, it returns the numeric value directly.
+func (v Value) Float64() float64 {
+	if v.isBool {
+		if v.boolVal {
+			return 1
+		}
+		return 0
+	}
+	return v.numVal
+}
+
+// Number returns the float64 value (deprecated, use Float64 instead).
+// If the value is a boolean, this returns 0 (the numeric value is not used for booleans).
 func (v Value) Number() float64 {
 	return v.numVal
 }
