@@ -6,6 +6,23 @@ import (
 	"math/big"
 )
 
+// toNumber converts a Value to float64.
+// If the value is a boolean, true returns 1 and false returns 0.
+// If the value is a number, it returns the numeric value directly.
+// This enables automatic coercion of booleans to numbers in arithmetic operations.
+//
+// v: the Value to convert
+// Returns the float64 representation
+func toNumber(v Value) float64 {
+	if v.isBool {
+		if v.boolVal {
+			return 1
+		}
+		return 0
+	}
+	return v.numVal
+}
+
 // Number represents a number that can be used in RPN calculations.
 // It can be either a float64 or a *big.Rat for precise rational calculations.
 type Number interface {

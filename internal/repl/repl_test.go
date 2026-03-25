@@ -596,19 +596,19 @@ func TestDefaultExecutorCodePaths(t *testing.T) {
 	// 3. Handled=true with output (prints output, returns at line 124)
 	// 4. Handled=false with error (prints error at line 130)
 	// 5. Handled=false without error (does nothing)
-	
+
 	// Path 1: Empty input
 	executor("")
-	
+
 	// Path 2: Built-in command with error (clear should not error but let's verify)
 	executor("clear")
-	
+
 	// Path 3: Built-in command with output (help returns help text)
 	executor("help")
-	
+
 	// Path 4: Unknown command (error handler returns handled=false, err!=nil)
 	executor("completelyunknowncommand123")
-	
+
 	// Path 5: Whitespace only (trimmed to empty, returns early)
 	executor("   ")
 }

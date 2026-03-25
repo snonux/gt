@@ -9,24 +9,38 @@ import (
 	"codeberg.org/snonux/perc/internal/rpn"
 )
 
-// CommandHandler represents a handler in the chain of responsibility
-// Each handler can process a command or pass it to the next handler
+// CommandHandler represents a handler in the chain of responsibility pattern.
+// Each handler can process a command or pass it to the next handler in the chain.
+//
+// Handlers implement the Handle method to process REPL commands and expressions.
+// If a handler cannot process the input, it calls Next() to forward to the next handler.
 type CommandHandler interface {
 	Handle(repl *REPL, input string) (output string, handled bool, err error)
 	SetNext(next CommandHandler)
 }
 
-// BaseHandler provides common functionality for all handlers
+// BaseHandler provides common functionality for all handlers in the chain.
+// It stores a reference to the next handler and provides the Next() method
+// for forwarding requests.
 type BaseHandler struct {
 	next CommandHandler
 }
 
-// SetNext sets the next handler in the chain
+// SetNext sets the next handler in the chain.
+// This enables building a chain of responsibility by linking handlers together.
+//
+// next: the next CommandHandler in the chain
 func (h *BaseHandler) SetNext(next CommandHandler) {
 	h.next = next
 }
 
-// Next forwards the request to the next handler in the chain
+// Next forwards the request to the next handler in the chain.
+// If there is no next handler, it returns (false, nil) indicating the request
+// was not handled.
+//
+// repl: the REPL instance
+// input: the command string to process
+// Returns: (output string, handled bool, err error)
 func (h *BaseHandler) Next(repl *REPL, input string) (output string, handled bool, err error) {
 	if h.next == nil {
 		return "", false, nil
@@ -34,12 +48,22 @@ func (h *BaseHandler) Next(repl *REPL, input string) (output string, handled boo
 	return h.next.Handle(repl, input)
 }
 
-// BuiltInCommandHandler handles built-in commands like help, clear, quit, exit
+// BuiltInCommandHandler handles built-in commands like help, clear, quit, exit.
+// It also handles special commands that require RPN state access (e.g., "rat").
+// If the input doesn't match a built-in command, it forwards to the next handler.
 type BuiltInCommandHandler struct {
 	BaseHandler
 }
 
-// Handle processes built-in commands
+// Handle processes built-in commands from the input string.
+// It first checks if the input starts with a built-in command using isBuiltinCommand.
+// Special handling is provided for the "rat" command which requires RPN state access.
+// If the command is handled, it returns the output and sets handled=true.
+// Otherwise, it forwards to the next handler in the chain.
+//
+// repl: the REPL instance
+// input: the command string to process
+// Returns: (output string, handled bool, err error)
 func (h *BuiltInCommandHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
 	if cmd, ok := isBuiltinCommand(input); ok {
 		args := strings.Fields(cmd)
@@ -60,6 +84,16 @@ func (h *BuiltInCommandHandler) Handle(repl *REPL, input string) (output string,
 }
 
 // handleRatCommand handles the rat mode command with access to RPN state.
+// It allows switching between float64 and rational number modes for RPN calculations.
+//
+// Valid modes:
+//   - "on":  Enable rational number mode
+//   - "off": Disable rational mode (use float64)
+//   - "toggle": Switch between the two modes
+//
+// repl: the REPL instance (provides access to RPN state)
+// input: the full command string (e.g., "rat on")
+// Returns: (output string, handled bool, err error)
 func handleRatCommand(repl *REPL, input string) (string, bool, error) {
 	args := strings.Fields(input)
 	if len(args) < 2 {
@@ -89,12 +123,25 @@ func handleRatCommand(repl *REPL, input string) (string, bool, error) {
 	}
 }
 
-// RPNHandler handles RPN expressions and RPN-related commands
+// RPNHandler handles RPN (Reverse Polish Notation) expressions and RPN-related commands.
+// It processes commands with "rpn" or "calc" prefixes, bare RPN expressions,
+// and single RPN operators (e.g., "+", "dup", "swap", "show").
 type RPNHandler struct {
 	BaseHandler
 }
 
-// Handle processes RPN commands and expressions
+// Handle processes RPN commands and expressions.
+// It handles:
+//   - Commands with "rpn" or "calc" prefix
+//   - Bare RPN expressions (e.g., "3 4 +")
+//   - Single RPN operators on the current stack
+//   - Single numbers (push onto stack)
+//
+// If the input doesn't match any RPN pattern, it forwards to the next handler.
+//
+// repl: the REPL instance (provides access to RPN state)
+// input: the command string to process
+// Returns: (output string, handled bool, err error)
 func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
 	// Check for rpn/calc prefix
 	lowerInput := strings.ToLower(input)
@@ -155,12 +202,23 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	return h.Next(repl, input)
 }
 
-// PercentageHandler handles percentage calculations
+// PercentageHandler handles percentage calculation expressions.
+// It uses the calculator.Parse function to evaluate expressions like:
+//   - "20% of 150"
+//   - "what is 20% of 150"
+//   - "30 is what % of 150"
+//   - "30 is 20% of what"
 type PercentageHandler struct {
 	BaseHandler
 }
 
-// Handle processes percentage calculation expressions
+// Handle processes percentage calculation expressions.
+// If the input matches a percentage expression pattern, it evaluates and returns
+// the result. Otherwise, it forwards to the next handler.
+//
+// repl: the REPL instance
+// input: the command string to process
+// Returns: (output string, handled bool, err error)
 func (h *PercentageHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
 	// Run the percentage calculation
 	result, err := calculator.Parse(input)
@@ -171,18 +229,31 @@ func (h *PercentageHandler) Handle(repl *REPL, input string) (output string, han
 	return result, true, nil
 }
 
-// ErrorHandler handles unknown commands
+// ErrorHandler handles unknown commands and invalid expressions.
+// It returns an error indicating that the input was not recognized.
 type ErrorHandler struct {
 	BaseHandler
 }
 
-// Handle processes unknown commands by returning an error
+// Handle processes unknown commands by returning an error.
+// This is typically the last handler in the chain.
+//
+// repl: the REPL instance
+// input: the command string that was not handled by previous handlers
+// Returns: ("", false, error) with an error describing the unknown command
 func (h *ErrorHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
 	// Unknown command - return error
 	return "", false, fmt.Errorf("unknown command or invalid expression: %s", input)
 }
 
-// NewCommandChain creates and returns the complete command handling chain
+// NewCommandChain creates and returns the complete command handling chain.
+// The chain is built in the following order:
+//  1. BuiltInCommandHandler: handles built-in commands (help, clear, quit, exit, rat)
+//  2. RPNHandler: handles RPN expressions and operators
+//  3. PercentageHandler: handles percentage calculations
+//  4. ErrorHandler: handles unknown commands (returns error)
+//
+// Returns a CommandHandler representing the first handler in the chain
 func NewCommandChain() CommandHandler {
 	// Create handlers
 	builtInHandler := &BuiltInCommandHandler{}

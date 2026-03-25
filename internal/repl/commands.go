@@ -7,19 +7,30 @@ import (
 
 // builtinCommandsList is the list of built-in REPL commands.
 // It's exposed as a variable to allow for dependency injection in tests.
+// Commands: help, clear, quit, exit, rpn, calc, rat
 var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc", "rat"}
 
 // builtinCommands returns the list of built-in commands.
+// This is a package-level wrapper for backward compatibility.
+//
+// Returns a slice of built-in command names
 func builtinCommands() []string {
 	return builtinCommandsList
 }
 
 // Commands returns the list of built-in command names supported by the REPL.
+// This is a public function that exposes the built-in command list.
+//
+// Returns a slice of built-in command names (e.g., "help", "clear", "quit")
 func Commands() []string {
 	return builtinCommands()
 }
 
-// ExecuteCommand runs a built-in command and returns its output or error
+// ExecuteCommand runs a built-in command and returns its output or error.
+// It dispatches to the appropriate command handler based on the command name.
+//
+// cmd: the full command string (e.g., "help", "clear", "rpn 3 4 +")
+// Returns the command output string and an error if the command failed
 func ExecuteCommand(cmd string) (string, error) {
 	args := strings.Fields(cmd)
 	if len(args) == 0 {
@@ -44,6 +55,12 @@ func ExecuteCommand(cmd string) (string, error) {
 	}
 }
 
+// cmdHelp returns help text for built-in commands.
+// When called with no subcommands, it returns comprehensive help for all commands.
+// When called with a subcommand, it returns specific help for that command.
+//
+// subCmds: optional slice of subcommand arguments (e.g., ["help"] for "help help")
+// Returns the help text as a string
 func cmdHelp(subCmds []string) string {
 	helpText := `PERC - Percentage Calculator REPL
 
@@ -106,12 +123,20 @@ Press Ctrl+D or type 'quit'/'exit' to exit.
 	}
 }
 
+// cmdClear clears the terminal screen using ANSI escape sequences.
+// It prints \033[2J\033[H to clear all content and move the cursor to (0,0).
+//
+// Returns nil on success
 func cmdClear() error {
 	// Clear screen using ANSI escape sequence
 	fmt.Print("\033[2J\033[H")
 	return nil
 }
 
+// cmdQuit displays a farewell message and signals REPL exit.
+// It's called when the user enters "quit" or "exit" commands.
+//
+// Returns nil (exit is handled by the REPL itself)
 func cmdQuit() error {
 	fmt.Println("Goodbye!")
 	return nil

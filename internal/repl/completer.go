@@ -7,6 +7,13 @@ import (
 )
 
 // completer provides auto-completion for built-in commands.
+// It returns suggestions for commands that match the current word being typed.
+// The matching is case-insensitive and includes descriptions for each command.
+//
+// This function is typically used as the completer function for the prompt.Prompt.
+//
+// d: the current prompt.Document containing cursor position and text
+// Returns a slice of prompt.Suggest for matching built-in commands
 func completer(d prompt.Document) []prompt.Suggest {
 	text := d.GetWordBeforeCursor()
 
@@ -44,7 +51,11 @@ func completer(d prompt.Document) []prompt.Suggest {
 	return suggestions
 }
 
-// getCommandDescription returns the description for a command.
+// getCommandDescription returns the description for a built-in command.
+// It's used by the completer function to provide helpful descriptions during tab-completion.
+//
+// cmd: the built-in command name (e.g., "help", "clear", "quit")
+// Returns the description string for the command, or empty string if not found
 func getCommandDescription(cmd string) string {
 	descriptions := map[string]string{
 		"help":  "Show help information",

@@ -10,7 +10,9 @@ import (
 	"github.com/c-bata/go-prompt"
 )
 
-// RPNState holds the state for RPN operations in REPL.
+// RPNState holds the state for RPN (Reverse Polish Notation) operations in the REPL.
+// It maintains a variable store and RPN calculator instance.
+//
 // Note: This struct should never be copied - use pointer receivers only.
 type RPNState struct {
 	vars    rpn.VariableStore
@@ -18,12 +20,22 @@ type RPNState struct {
 }
 
 // rpnState holds the singleton RPN state for REPL operations.
+// It is initialized lazily using sync.Once to ensure thread-safe initialization.
 var rpnState *RPNState
 
 // rpnStateOnce ensures rpnState is initialized exactly once.
+// It's used by getRPNState to guarantee lazy singleton initialization.
 var rpnStateOnce sync.Once
 
-// REPL manages the interactive command-line interface.
+// REPL manages the interactive command-line interface for the percentage calculator.
+// It provides an interactive prompt with history, tab-completion, signal handling,
+// and command processing through a chain of responsibility pattern.
+//
+// The REPL integrates various components:
+//   - TTYChecker: validates stdin is a terminal
+//   - HistoryManager: manages command history persistence
+//   - SignalHandler: handles SIGINT (Ctrl+C)
+//   - commandChain: processes commands via chain of responsibility
 type REPL struct {
 	ttyChecker    *TTYChecker
 	historyMgr    *HistoryManager
@@ -33,8 +45,11 @@ type REPL struct {
 }
 
 // NewREPL creates a new REPL instance with default components.
-// If executor is nil, it uses a default executor.
-// If completer is nil, it uses a default completer.
+// If executor is nil, it uses defaultExecutor which processes input through commandChain.
+// If completer is nil, it uses defaultCompleter which provides built-in command suggestions.
+//
+// The executor function is called for each non-empty input line.
+// The completer function provides tab-completion suggestions for the prompt.
 func NewREPL(executor func(string), completer func(prompt.Document) []prompt.Suggest) *REPL {
 	repl := &REPL{
 		ttyChecker:    &TTYChecker{},
@@ -93,7 +108,16 @@ func (r *REPL) Run() error {
 	return nil
 }
 
-// defaultExecutor is the default executor function.
+// defaultExecutor is the default executor function used when no custom executor is provided.
+// It processes input through the command chain of responsibility pattern.
+// It includes panic recovery to gracefully handle unexpected errors during command execution.
+//
+// Input processing:
+//   - Trims whitespace from input
+//   - Skips empty input
+//   - Routes to commandChain for processing
+//   - Displays output and errors appropriately
+//   - Adds handled commands to history
 func defaultExecutor(r *REPL, input string) {
 	// Add panic recovery for better resilience
 	defer func() {
@@ -128,7 +152,12 @@ func defaultExecutor(r *REPL, input string) {
 	}
 }
 
-// defaultCompleter is the default completer function.
+// defaultCompleter is the default completer function used when no custom completer is provided.
+// It provides tab-completion suggestions for built-in REPL commands.
+// Suggestions are case-insensitive and include descriptions.
+//
+// d: the current prompt.Document containing cursor position and text
+// Returns a slice of prompt.Suggest for matching built-in commands
 func defaultCompleter(r *REPL, d prompt.Document) []prompt.Suggest {
 	text := d.GetWordBeforeCursor()
 	if text == "" {
@@ -147,7 +176,11 @@ func defaultCompleter(r *REPL, d prompt.Document) []prompt.Suggest {
 	return suggestions
 }
 
-// defaultGetCommandDescription returns the description for a command.
+// defaultGetCommandDescription returns the description for a built-in command.
+// It's used by the default completer to provide helpful descriptions during tab-completion.
+//
+// cmd: the built-in command name (e.g., "help", "clear", "quit")
+// Returns the description string for the command, or empty string if not found
 func (r *REPL) defaultGetCommandDescription(cmd string) string {
 	descriptions := map[string]string{
 		"help":  "Show help information",
@@ -160,16 +193,25 @@ func (r *REPL) defaultGetCommandDescription(cmd string) string {
 	return descriptions[cmd]
 }
 
-// RunREPL starts the interactive REPL.
-// This is a convenience wrapper around NewREPL().Run().
+// RunREPL starts the interactive REPL with default components.
+// This is a convenience wrapper around NewREPL(nil, nil).Run().
+// It's typically used when the standard REPL behavior is sufficient.
+//
+// Returns an error if the REPL cannot start (e.g., stdin is not a TTY)
 func RunREPL() error {
 	repl := NewREPL(nil, nil)
 	return repl.Run()
 }
 
 // executor runs a calculation command and returns the result.
-// This is a package-level wrapper for backward compatibility.
-// It creates a minimal REPL instance without a prompt for testing purposes.
+// This is a package-level wrapper for backward compatibility and testing.
+// It creates a minimal REPL instance without building a prompt, allowing
+// calculation execution in non-interactive contexts.
+//
+// input: the calculation or command string to execute
+// The function processes the input through defaultExecutor, which handles
+// commands via the chain of responsibility pattern, including percentage
+// calculations, RPN expressions, and built-in commands.
 func executor(input string) {
 	// Create a minimal REPL instance without building a prompt
 	r := &REPL{
@@ -181,8 +223,11 @@ func executor(input string) {
 	defaultExecutor(r, input)
 }
 
-// getRPNState returns or creates the RPN state.
-// Thread-safe implementation using sync.Once for simpler singleton initialization.
+// getRPNState returns or creates the RPN state using lazy initialization.
+// It's thread-safe using sync.Once to ensure the RPN state is initialized exactly once.
+// The RPN state is shared across all REPL instances.
+//
+// Returns the RPNState instance for performing RPN calculations
 func getRPNState() *RPNState {
 	rpnStateOnce.Do(func() {
 		vars := rpn.NewVariables()
@@ -195,45 +240,67 @@ func getRPNState() *RPNState {
 }
 
 // getRPNState returns the RPN state.
-// This is a REPL instance method for backward compatibility.
+// This is a REPL instance method for backward compatibility that delegates to the package-level getRPNState.
+//
+// Returns the RPNState instance for performing RPN calculations
 func (r *REPL) getRPNState() *RPNState {
 	return getRPNState()
 }
 
-// runRPN parses and evaluates an RPN expression.
+// runRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
+// It uses the shared RPN state to maintain stack state across multiple calls.
+//
+// input: the RPN expression to evaluate (e.g., "3 4 +" or "x 5 = x x +")
+// Returns the result string and an error if the expression is invalid
 func runRPN(input string) (string, error) {
 	state := getRPNState()
 	return state.rpnCalc.ParseAndEvaluate(input)
 }
 
-// runRPN parses and evaluates an RPN expression.
-// This is a REPL instance method for backward compatibility.
+// runRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
+// This is a REPL instance method for backward compatibility that delegates to the package-level runRPN.
+//
+// input: the RPN expression to evaluate
+// Returns the result string and an error if the expression is invalid
 func (r *REPL) runRPN(input string) (string, error) {
 	return runRPN(input)
 }
 
-// getHistoryPath returns the path to the history file.
+// getHistoryPath returns the absolute path to the history file.
 // This is a package-level wrapper for backward compatibility.
+// The history file is stored in the user's home directory.
+//
+// Returns the full path to the history file, or empty string on error
 func getHistoryPath() string {
 	historyMgr := NewHistoryManager(".gt_history")
 	return historyMgr.Path()
 }
 
-// loadHistory loads history from file.
-// This is a package-level wrapper for backward compatibility.
+// loadHistory loads history from the history file.
+// This is a package-level wrapper for backward compatibility that uses NewHistoryManager.
+//
+// Returns a slice of history entries, or nil if the file doesn't exist
 func loadHistory() []string {
 	historyMgr := NewHistoryManager(".gt_history")
 	return historyMgr.Load()
 }
 
-// saveHistory saves history to file.
-// This is a package-level wrapper for backward compatibility.
+// saveHistory saves history to the history file.
+// This is a package-level wrapper for backward compatibility that uses NewHistoryManager.
+//
+// history: the slice of history entries to save
+// Returns an error if the file cannot be written
 func saveHistory(history []string) error {
 	historyMgr := NewHistoryManager(".gt_history")
 	return historyMgr.Save(history)
 }
 
-// isBuiltinCommand checks if input starts with a built-in command
+// isBuiltinCommand checks if input starts with a built-in command.
+// It performs case-insensitive matching against known built-in commands.
+//
+// input: the command string to check
+// Returns the input string and true if it starts with a built-in command,
+// or empty string and false otherwise
 func isBuiltinCommand(input string) (string, bool) {
 	args := strings.Fields(input)
 	if len(args) == 0 {

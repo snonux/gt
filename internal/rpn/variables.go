@@ -13,28 +13,79 @@ var (
 	ErrInvalidVariableName = fmt.Errorf("invalid variable name")
 )
 
-// Stack represents a simple float64 stack for RPN calculations.
+// Value represents a variant type that can hold either a number (float64) or a boolean.
+type Value struct {
+	isBool bool
+	boolVal bool
+	numVal float64
+}
+
+// NewNumberValue creates a new Value containing a float64 number.
+func NewNumberValue(n float64) Value {
+	return Value{isBool: false, numVal: n}
+}
+
+// NewBoolValue creates a new Value containing a boolean.
+func NewBoolValue(b bool) Value {
+	return Value{isBool: true, boolVal: b}
+}
+
+// IsBool returns true if the value is a boolean.
+func (v Value) IsBool() bool {
+	return v.isBool
+}
+
+// IsNumber returns true if the value is a number.
+func (v Value) IsNumber() bool {
+	return !v.isBool
+}
+
+// Bool returns the boolean value, or false if the value is not a boolean.
+func (v Value) Bool() bool {
+	return v.boolVal
+}
+
+// Number returns the float64 value, or 0 if the value is not a number.
+func (v Value) Number() float64 {
+	return v.numVal
+}
+
+// String returns the string representation of the value.
+// For booleans, it returns "true" or "false".
+// For numbers, it returns the formatted float64 value.
+func (v Value) String() string {
+	if v.isBool {
+		if v.boolVal {
+			return "true"
+		}
+		return "false"
+	}
+	return fmt.Sprintf("%.10g", v.numVal)
+}
+
+// Stack represents a variant stack for RPN calculations.
+// It can hold both number and boolean values.
 type Stack struct {
-	values []float64
+	values []Value
 }
 
 // NewStack creates a new empty stack.
 func NewStack() *Stack {
 	return &Stack{
-		values: make([]float64, 0),
+		values: make([]Value, 0),
 	}
 }
 
 // Push adds a value to the top of the stack.
-func (s *Stack) Push(val float64) {
+func (s *Stack) Push(val Value) {
 	s.values = append(s.values, val)
 }
 
 // Pop removes and returns the top value from the stack.
 // Returns an error if the stack is empty.
-func (s *Stack) Pop() (float64, error) {
+func (s *Stack) Pop() (Value, error) {
 	if len(s.values) == 0 {
-		return 0, fmt.Errorf("stack is empty")
+		return Value{}, fmt.Errorf("stack is empty")
 	}
 
 	val := s.values[len(s.values)-1]
@@ -44,9 +95,9 @@ func (s *Stack) Pop() (float64, error) {
 
 // Peek returns the top value without removing it.
 // Returns an error if the stack is empty.
-func (s *Stack) Peek() (float64, error) {
+func (s *Stack) Peek() (Value, error) {
 	if len(s.values) == 0 {
-		return 0, fmt.Errorf("stack is empty")
+		return Value{}, fmt.Errorf("stack is empty")
 	}
 	return s.values[len(s.values)-1], nil
 }
@@ -57,8 +108,8 @@ func (s *Stack) Len() int {
 }
 
 // Values returns a copy of all stack values (top-to-bottom order).
-func (s *Stack) Values() []float64 {
-	vals := make([]float64, len(s.values))
+func (s *Stack) Values() []Value {
+	vals := make([]Value, len(s.values))
 	copy(vals, s.values)
 	return vals
 }
@@ -113,6 +164,9 @@ func NewVariables() *Variables {
 
 // isValidVariableName checks if a variable name is valid.
 // Variable names must be non-empty and contain only alphanumeric characters and underscores.
+//
+// name: the variable name to validate
+// Returns true if the name is valid, false otherwise
 func isValidVariableName(name string) bool {
 	if name == "" {
 		return false
