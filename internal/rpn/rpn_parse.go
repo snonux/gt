@@ -84,12 +84,29 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name
 		shouldPushName := false
+		
 		if i+1 < len(tokens) {
 			nextToken := tokens[i+1]
 			if nextToken == ":=" || nextToken == "=:" {
-				// This token is a variable name
-				// Only push as StringNum if it's not a number
-				if _, err := strconv.ParseFloat(token, 64); err != nil {
+				// Check if this is a stack assignment (e.g., "x =:" or "x :=")
+				// Stack assignment: exactly 2 tokens, first is variable name, second is operator
+				if len(tokens) == 2 && i == 0 {
+					// This is a stack assignment. Pop the value from stack and assign to variable.
+					// Don't push the name as StringNum because the operator expects stack: [value, name]
+					// but for stack assignment, the value is already on stack and we just have the name token.
+					// Instead, we handle it inline: pop value, assign to name (from token).
+					val, err := stack.Pop()
+					if err != nil {
+						return "", fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
+					}
+					if err := r.vars.SetVariable(token, val.Float64()); err != nil {
+						return "", fmt.Errorf("failed to set variable %q: %w", token, err)
+					}
+					// Skip the operator token (next one) since we handled it inline
+					// We've consumed both tokens, so we're done
+					return "", nil
+				} else if _, err := strconv.ParseFloat(token, 64); err != nil {
+					// This token is a variable name (not a number)
 					shouldPushName = true
 				}
 			}
