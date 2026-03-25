@@ -711,8 +711,7 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 	}
 
 	// Convert Value to float64 for variable storage
-	o.vars.SetVariable(name, toNumber(val))
-	return nil
+	return o.vars.SetVariable(name, toNumber(val))
 }
 
 // UseVariable pushes a variable's value onto the stack.

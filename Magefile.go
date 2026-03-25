@@ -53,6 +53,19 @@ func Install() error {
 	return sh.RunV("go", "install", "./cmd/gt")
 }
 
+// Lint runs golangci-lint for code quality checks.
+func Lint() error {
+	fmt.Println("Running golangci-lint...")
+	return sh.RunV("golangci-lint", "run", "./...")
+}
+
+// Release builds and packages the release for all platforms.
+func Release() error {
+	fmt.Println("Creating release...")
+	fmt.Println("Note: Requires goreleaser to be installed and configured.")
+	return sh.RunV("goreleaser", "release", "--clean")
+}
+
 // Repl starts the REPL mode.
 func Repl() error {
 	return sh.RunV("go", "run", "./cmd/gt", "--repl")
