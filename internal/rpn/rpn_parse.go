@@ -54,11 +54,11 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 		// Check if it's a boolean literal
 		if token == "true" {
-			stack.Push(NewBoolValue(true))
+			stack.Push(NewFloatFromBool(true))
 			continue
 		}
 		if token == "false" {
-			stack.Push(NewBoolValue(false))
+			stack.Push(NewFloatFromBool(false))
 			continue
 		}
 
@@ -67,7 +67,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(NewNumberValue(num))
+			stack.Push(NewNumber(num, r.mode))
 			continue
 		}
 
@@ -115,7 +115,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 
 	// Check if it's a variable reference first (before operators)
 	if val, exists := r.vars.GetVariable(token); exists {
-		stack.Push(NewNumberValue(val))
+		stack.Push(NewNumber(val, r.mode))
 		return "", nil
 	}
 

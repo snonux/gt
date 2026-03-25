@@ -74,29 +74,29 @@ func (v Value) String() string {
 	return fmt.Sprintf("%.10g", v.numVal)
 }
 
-// Stack represents a variant stack for RPN calculations.
-// It can hold both number and boolean values.
+// Stack represents a stack for RPN calculations using the Number interface.
+// It can hold both number and boolean values through the Number interface.
 type Stack struct {
-	values []Value
+	values []Number
 }
 
 // NewStack creates a new empty stack.
 func NewStack() *Stack {
 	return &Stack{
-		values: make([]Value, 0),
+		values: make([]Number, 0),
 	}
 }
 
 // Push adds a value to the top of the stack.
-func (s *Stack) Push(val Value) {
+func (s *Stack) Push(val Number) {
 	s.values = append(s.values, val)
 }
 
 // Pop removes and returns the top value from the stack.
 // Returns an error if the stack is empty.
-func (s *Stack) Pop() (Value, error) {
+func (s *Stack) Pop() (Number, error) {
 	if len(s.values) == 0 {
-		return Value{}, fmt.Errorf("stack is empty")
+		return nil, fmt.Errorf("stack is empty")
 	}
 
 	val := s.values[len(s.values)-1]
@@ -106,9 +106,9 @@ func (s *Stack) Pop() (Value, error) {
 
 // Peek returns the top value without removing it.
 // Returns an error if the stack is empty.
-func (s *Stack) Peek() (Value, error) {
+func (s *Stack) Peek() (Number, error) {
 	if len(s.values) == 0 {
-		return Value{}, fmt.Errorf("stack is empty")
+		return nil, fmt.Errorf("stack is empty")
 	}
 	return s.values[len(s.values)-1], nil
 }
@@ -119,8 +119,8 @@ func (s *Stack) Len() int {
 }
 
 // Values returns a copy of all stack values (top-to-bottom order).
-func (s *Stack) Values() []Value {
-	vals := make([]Value, len(s.values))
+func (s *Stack) Values() []Number {
+	vals := make([]Number, len(s.values))
 	copy(vals, s.values)
 	return vals
 }

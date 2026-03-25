@@ -756,7 +756,7 @@ func TestRPNGetCurrentStack(t *testing.T) {
 		t.Errorf("Stack length = %d, want 3", len(stack))
 	}
 	// Use Number() method to compare values
-	if stack[0].Number() != 1 || stack[1].Number() != 2 || stack[2].Number() != 3 {
+	if stack[0].Float64() != 1 || stack[1].Float64() != 2 || stack[2].Float64() != 3 {
 		t.Errorf("Stack = %v, want [1 2 3]", stack)
 	}
 }
@@ -1211,7 +1211,7 @@ func TestRPNStackPreservation(t *testing.T) {
 
 	// Stack should preserve 3
 	stack := rpnCalc.GetCurrentStack()
-	if len(stack) != 1 || stack[0].Number() != 3.0 {
+	if len(stack) != 1 || stack[0].Float64() != 3.0 {
 		t.Errorf("Stack should be [3], got %v", stack)
 	}
 

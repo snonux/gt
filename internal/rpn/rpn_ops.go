@@ -22,12 +22,22 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 	stack := NewStack()
 
 	for _, token := range tokens {
+		// Check if it's a boolean literal
+		if token == "true" {
+			stack.Push(NewFloatFromBool(true))
+			continue
+		}
+		if token == "false" {
+			stack.Push(NewFloatFromBool(false))
+			continue
+		}
+
 		// Check if it's a number
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(NewNumberValue(num))
+			stack.Push(NewNumber(num, r.mode))
 			continue
 		}
 
@@ -48,7 +58,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 		// Check if it's a variable reference (push its value)
 		val, exists := r.vars.GetVariable(token)
 		if exists {
-			stack.Push(NewNumberValue(val))
+			stack.Push(NewNumber(val, r.mode))
 		} else {
 			return "", fmt.Errorf("unknown token '%s'", token)
 		}

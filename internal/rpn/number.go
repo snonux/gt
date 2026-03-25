@@ -28,6 +28,7 @@ func toNumber(v Value) float64 {
 
 // Number represents a number that can be used in RPN calculations.
 // It can be either a float64 or a *big.Rat for precise rational calculations.
+// Booleans are also supported through IsBool() and Bool() methods.
 type Number interface {
 	// String returns the string representation of the number.
 	String() string
@@ -53,6 +54,10 @@ type Number interface {
 	IsNegative() bool
 	// Compare returns -1, 0, or 1 if this number is less than, equal to, or greater than another.
 	Compare(other Number) int
+	// IsBool returns true if this number represents a boolean value.
+	IsBool() bool
+	// Bool returns the boolean value, or false if not a boolean.
+	Bool() bool
 }
 
 // NewNumber creates a Number from a float64 value.
@@ -61,42 +66,75 @@ func NewNumber(value float64, mode CalculationMode) Number {
 	if mode == RationalMode {
 		return NewRat(value)
 	}
-	return &Float{n: value}
+	return NewFloat(value)
 }
 
 // Float is a Number implementation using float64.
+// It can also represent boolean values (true=1, false=0).
 type Float struct {
-	n float64
+	n       float64
+	isBool  bool
+	boolVal bool
 }
 
 // NewFloat creates a new Float number.
 func NewFloat(n float64) *Float {
-	return &Float{n: n}
+	return &Float{n: n, isBool: false, boolVal: false}
+}
+
+// NewFloatFromBool creates a new Float representing a boolean.
+func NewFloatFromBool(b bool) *Float {
+	return &Float{n: 0, isBool: true, boolVal: b}
 }
 
 // String returns the string representation of the float.
 func (f *Float) String() string {
+	if f.isBool {
+		if f.boolVal {
+			return "true"
+		}
+		return "false"
+	}
 	return fmt.Sprintf("%.10g", f.n)
 }
 
 // Float64 returns the float64 value.
 func (f *Float) Float64() float64 {
+	if f.isBool {
+		if f.boolVal {
+			return 1
+		}
+		return 0
+	}
 	return f.n
+}
+
+// IsBool returns true if this number represents a boolean value.
+func (f *Float) IsBool() bool {
+	return f.isBool
+}
+
+// Bool returns the boolean value, or false if not a boolean.
+func (f *Float) Bool() bool {
+	return f.boolVal
 }
 
 // Add returns the sum of two float numbers.
 func (f *Float) Add(other Number) Number {
-	return NewFloat(f.n + other.Float64())
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(f.Float64() + other.Float64())
 }
 
 // Sub returns the difference of two float numbers.
 func (f *Float) Sub(other Number) Number {
-	return NewFloat(f.n - other.Float64())
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(f.Float64() - other.Float64())
 }
 
 // Mul returns the product of two float numbers.
 func (f *Float) Mul(other Number) Number {
-	return NewFloat(f.n * other.Float64())
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(f.Float64() * other.Float64())
 }
 
 // Div returns the quotient of two float numbers.
@@ -104,12 +142,14 @@ func (f *Float) Div(other Number) (Number, error) {
 	if other.IsZero() {
 		return nil, fmt.Errorf("division by zero")
 	}
-	return NewFloat(f.n / other.Float64()), nil
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(f.Float64() / other.Float64()), nil
 }
 
 // Pow returns this float raised to the power of another.
 func (f *Float) Pow(other Number) Number {
-	return NewFloat(math.Pow(f.n, other.Float64()))
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(math.Pow(f.Float64(), other.Float64()))
 }
 
 // Mod returns the remainder of this float divided by another.
@@ -117,12 +157,14 @@ func (f *Float) Mod(other Number) (Number, error) {
 	if other.IsZero() {
 		return nil, fmt.Errorf("modulo by zero")
 	}
-	return NewFloat(math.Mod(f.n, other.Float64())), nil
+	// Use Float64() to handle both regular numbers and boolean values
+	return NewFloat(math.Mod(f.Float64(), other.Float64())), nil
 }
 
 // IsZero returns true if the float is zero.
+// For boolean values, false (0) is zero, true (1) is not zero.
 func (f *Float) IsZero() bool {
-	return f.n == 0
+	return f.Float64() == 0
 }
 
 // IsNegative returns true if the float is negative.
@@ -143,15 +185,29 @@ func (f *Float) Compare(other Number) int {
 }
 
 // Rat is a Number implementation using *big.Rat.
+// It can also represent boolean values (true=1, false=0).
 type Rat struct {
-	n *big.Rat
+	n       *big.Rat
+	isBool  bool
+	boolVal bool
 }
 
 // NewRat creates a new Rat number from a float64.
 func NewRat(n float64) *Rat {
 	r := &big.Rat{}
 	r.SetFloat64(n)
-	return &Rat{n: r}
+	return &Rat{n: r, isBool: false, boolVal: false}
+}
+
+// NewRatFromBool creates a new Rat representing a boolean.
+func NewRatFromBool(b bool) *Rat {
+	r := &big.Rat{}
+	if b {
+		r.SetInt64(1)
+	} else {
+		r.SetInt64(0)
+	}
+	return &Rat{n: r, isBool: true, boolVal: b}
 }
 
 // NewRatFromString creates a new Rat number from a string representation.
@@ -166,6 +222,12 @@ func NewRatFromString(s string) (*Rat, error) {
 
 // String returns the string representation of the rational number.
 func (r *Rat) String() string {
+	if r.isBool {
+		if r.boolVal {
+			return "true"
+		}
+		return "false"
+	}
 	// Format as decimal for consistency with Float
 	// Use a reasonable precision
 	return r.n.FloatString(10)
@@ -173,8 +235,24 @@ func (r *Rat) String() string {
 
 // Float64 returns the float64 representation.
 func (r *Rat) Float64() float64 {
+	if r.isBool {
+		if r.boolVal {
+			return 1
+		}
+		return 0
+	}
 	f, _ := r.n.Float64()
 	return f
+}
+
+// IsBool returns true if this number represents a boolean value.
+func (r *Rat) IsBool() bool {
+	return r.isBool
+}
+
+// Bool returns the boolean value, or false if not a boolean.
+func (r *Rat) Bool() bool {
+	return r.boolVal
 }
 
 // Add returns the sum of two rational numbers.
