@@ -14,6 +14,14 @@ var (
 )
 
 // Value represents a variant type that can hold either a number (float64) or a boolean.
+//
+// When used in arithmetic operations, boolean values are automatically coerced:
+//   - true → 1
+//   - false → 0
+//
+// This allows boolean results from comparison operations to be used directly in
+// arithmetic expressions (e.g., "5 3 == 1 +" where "5 3 ==" produces false=0,
+// and "0 + 1" produces 1).
 type Value struct {
 	isBool bool
 	boolVal bool
