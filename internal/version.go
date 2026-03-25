@@ -48,4 +48,4 @@ package internal
 // Example output:
 //   $ gt version
 //   v0.3.0
-const Version = "v0.3.0"
+const Version = "v0.2.2"
