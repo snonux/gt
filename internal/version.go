@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Paul Buetow
+
 // Package internal provides version information for the gt application.
 //
 // This package contains internal constants that are used across the gt project.

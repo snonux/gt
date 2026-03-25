@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Paul Buetow
+
 // Package gt provides a command-line percentage calculator with RPN support.
 //
 // gt is a versatile calculator that supports both percentage calculations and
