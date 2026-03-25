@@ -57,7 +57,8 @@ type StackOperator interface {
 type VariableOperator interface {
 	ListVariables() (string, error)
 	ClearVariables()
-	AssignVariableFromStack(stack *Stack) error
+	AssignLeft(stack *Stack) error
+	AssignRight(stack *Stack) error
 }
 
 // Operator is the combined interface for all operator implementations.
@@ -70,6 +71,10 @@ type Operator interface {
 	VariableOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
+	// AssignLeft assigns a value to a variable (for := operator)
+	AssignLeft(stack *Stack) error
+	// AssignRight assigns a value to a variable (for =: operator)
+	AssignRight(stack *Stack) error
 }
 
 // Operations provides operator implementations and stack manipulation.
@@ -148,7 +153,9 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
 	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
-	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignVariableFromStack(stack) })
+	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignLeft(stack) })
+	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignLeft(stack) })
+	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignRight(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -941,31 +948,41 @@ func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
 }
 
-// AssignVariableFromStack assigns a value from the stack to a variable.
-// It pops the variable name from the stack first, then pops the value.
-// Usage: `name value =` or `x value =` (where x is on stack as a string)
-func (o *Operations) AssignVariableFromStack(stack *Stack) error {
-	if stack.Len() < 1 {
-		return fmt.Errorf("insufficient operands for assignment: need variable name")
-	}
-
-	nameVal, err := stack.Pop()
+// AssignLeft assigns a value to a variable (for := and = operators).
+// Pops variable name from stack, pops value from stack, assigns value to name.
+// For := operator, the stack order is: value name := (value on bottom, name on top).
+// This function pops name first (top of stack), then value.
+// Usage: `value name :=`
+func (o *Operations) AssignLeft(stack *Stack) error {
+	name, err := stack.Pop()
 	if err != nil {
-		return err
-	}
-
-	// Get the variable name from the popped value
-	name := nameVal.String()
-
-	if stack.Len() < 1 {
-		return fmt.Errorf("insufficient operands for assignment: need value")
+		return fmt.Errorf("insufficient operands for assignment: need variable name")
 	}
 
 	val, err := stack.Pop()
 	if err != nil {
-		return err
+		return fmt.Errorf("insufficient operands for assignment: need value")
 	}
 
-	// Convert to float64 for variable storage
-	return o.vars.SetVariable(name, val.Float64())
+	return o.vars.SetVariable(name.String(), val.Float64())
+}
+
+
+// AssignRight assigns a value to a variable (for =: operator).
+// Pops value from stack first, then pops variable name.
+// For =: operator, the stack order is: name value =: (name on bottom, value on top).
+// This function pops value first (top of stack), then name.
+// Usage: `name value =:`
+func (o *Operations) AssignRight(stack *Stack) error {
+	val, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for assignment: need value")
+	}
+
+	name, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for assignment: need variable name")
+	}
+
+	return o.vars.SetVariable(name.String(), val.Float64())
 }

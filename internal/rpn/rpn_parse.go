@@ -39,12 +39,12 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 		return "", fmt.Errorf("rpn: no valid tokens found in input: %q", input)
 	}
 
-	return r.evaluate(tokens)
+	return r.evaluate(input, tokens)
 }
 
 // evaluate evaluates a list of tokens and returns the result.
 // This method is thread-safe for concurrent execution.
-func (r *RPN) evaluate(tokens []string) (string, error) {
+func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	
@@ -80,6 +80,29 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 			continue
 		}
 
+		// Check if this is a variable name for assignment (:= or =:)
+		// For := (left assignment): value name := - peek ahead to see if next token is := or =:
+		// For =: (right assignment): name value =: - first token is always a variable name
+		shouldPushName := false
+		if i+1 < len(tokens) {
+			nextToken := tokens[i+1]
+			if nextToken == ":=" || nextToken == "=:" {
+				// This token is a variable name (for := case)
+				shouldPushName = true
+			}
+		}
+		
+		// Special case: first token in =: expression (e.g., "x 5 =:")
+		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == "=:" {
+			shouldPushName = true
+		}
+		
+		if shouldPushName {
+			// This token is a variable name, push as StringNum
+			stack.Push(NewStringNum(token))
+			continue
+		}
+
 		// Handle special operators and commands
 		if result, err := r.handleOperator(stack, token, i); err != nil {
 			return "", fmt.Errorf("rpn: failed to handle operator '%s' at position %d: %w", token, i, err)
@@ -90,6 +113,12 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 	// Check final stack state
 	if stack.Len() == 0 {
+		// Empty stack might be valid for assignment operators (:= or =:)
+		// Check if the input was an assignment expression
+		if strings.Contains(input, ":=") || strings.Contains(input, "=:") {
+			// Assignment expression - empty stack is valid (side effect is variable assignment)
+			return "", nil
+		}
 		return "", fmt.Errorf("empty result: expression evaluated to nothing")
 	}
 
@@ -141,8 +170,63 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 // handleAssignment checks if the input is an assignment format and handles it.
 // Returns (result string, isAssignment bool, error error).
 func (r *RPN) handleAssignment(input string) (string, bool, error) {
-	// Check for assignment format (name = value or name value = expression)
-	// We look for either " = " (with trailing space) or " =" (just space before equals)
+	// Handle := operator
+	if strings.Contains(input, ":=") {
+		pos := strings.Index(input, ":=")
+		if pos >= 0 {
+			before := strings.TrimSpace(input[:pos])
+			after := strings.TrimSpace(input[pos+2:])
+
+			beforeFields := strings.Fields(before)
+			if len(beforeFields) == 2 {
+				// value name := (for := operator)
+				name := beforeFields[1]
+				valueStr := beforeFields[0]
+
+				val, err := strconv.ParseFloat(valueStr, 64)
+				if err == nil {
+					if err := r.vars.SetVariable(name, val); err != nil {
+						return "", false, err
+					}
+					if after == "" {
+						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+					}
+					result, err := r.evaluate(input, strings.Fields(after))
+					return result, true, err
+				}
+			}
+		}
+	}
+
+	// Handle =: operator
+	if strings.Contains(input, "=:") {
+		pos := strings.Index(input, "=:")
+		if pos >= 0 {
+			before := strings.TrimSpace(input[:pos])
+			after := strings.TrimSpace(input[pos+2:])
+
+			beforeFields := strings.Fields(before)
+			if len(beforeFields) == 2 {
+				// name value =: (for =: operator)
+				name := beforeFields[0]
+				valueStr := beforeFields[1]
+
+				val, err := strconv.ParseFloat(valueStr, 64)
+				if err == nil {
+					if err := r.vars.SetVariable(name, val); err != nil {
+						return "", false, err
+					}
+					if after == "" {
+						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+					}
+					result, err := r.evaluate(input, strings.Fields(after))
+					return result, true, err
+				}
+			}
+		}
+	}
+
+	// Check for standard assignment format (name = value or name value = expression)
 	hasAssignment := strings.Contains(input, " = ") || strings.Contains(input, " =")
 	if !hasAssignment {
 		return "", false, nil
@@ -197,7 +281,7 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 				if after == "" {
 					return fmt.Sprintf("%s = %.10g", name, val), true, nil
 				}
-				result, err := r.evaluate(strings.Fields(after))
+				result, err := r.evaluate(input, strings.Fields(after))
 				return result, true, err
 			}
 		}

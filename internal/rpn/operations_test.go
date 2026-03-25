@@ -1011,3 +1011,88 @@ func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
 		})
 	}
 }
+
+
+func TestAssignLeft(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// For "5 x :=":
+	// Stack order is: value name := (value on bottom, name on top)
+	// Push value first (will be popped second), then name (will be popped first)
+	s.Push(NewNumber(5, FloatMode))  // value
+	s.Push(NewStringNum("x"))  // name
+
+	err := o.AssignLeft(s)
+	if err != nil {
+		t.Errorf("AssignLeft() error = %v", err)
+	}
+
+	// Check that x = 5
+	val, exists := v.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after assignment")
+	}
+	if val != 5 {
+		t.Errorf("Variable x = %v, want 5", val)
+	}
+
+	// Stack should be empty
+	if s.Len() != 0 {
+		t.Errorf("Stack length = %d, want 0", s.Len())
+	}
+}
+
+func TestAssignRight(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// For "x 5 =:":
+	// Stack order is: name value =: (name on bottom, value on top)
+	// Push name first (will be popped second), then value (will be popped first)
+	s.Push(NewStringNum("x"))  // name
+	s.Push(NewNumber(5, FloatMode))  // value
+
+	err := o.AssignRight(s)
+	if err != nil {
+		t.Errorf("AssignRight() error = %v", err)
+	}
+
+	// Check that x = 5
+	val, exists := v.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after assignment")
+	}
+	if val != 5 {
+		t.Errorf("Variable x = %v, want 5", val)
+	}
+
+	// Stack should be empty
+	if s.Len() != 0 {
+		t.Errorf("Stack length = %d, want 0", s.Len())
+	}
+}
+
+func TestAssignLeftErrorCases(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	err := o.AssignLeft(s)
+	if err == nil {
+		t.Error("AssignLeft() should return error when stack is empty")
+	}
+}
+
+func TestAssignRightErrorCases(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	err := o.AssignRight(s)
+	if err == nil {
+		t.Error("AssignRight() should return error when stack is empty")
+	}
+}

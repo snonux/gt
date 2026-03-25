@@ -322,3 +322,41 @@ func ToRat(n Number) *big.Rat {
 func ToFloat(n Number) float64 {
 	return n.Float64()
 }
+
+// StringNum represents a string value on the stack for variable names.
+type StringNum struct {
+	value string
+}
+
+// NewStringNum creates a new StringNum from a string.
+func NewStringNum(s string) *StringNum {
+	return &StringNum{value: s}
+}
+
+// String returns the string representation.
+func (s *StringNum) String() string {
+	return s.value
+}
+
+// Float64 returns 0 for string numbers (not numeric).
+func (s *StringNum) Float64() float64 {
+	panic("string not supported for Float64()")
+}
+
+// IsString returns true for StringNum.
+func (s *StringNum) IsString() bool {
+	return true
+}
+
+// Other methods panic as they're not supported for strings
+func (s *StringNum) Add(other Number) Number        { panic("string not supported for addition") }
+func (s *StringNum) Sub(other Number) Number        { panic("string not supported for subtraction") }
+func (s *StringNum) Mul(other Number) Number        { panic("string not supported for multiplication") }
+func (s *StringNum) Div(other Number) (Number, error) { panic("string not supported for division") }
+func (s *StringNum) Pow(other Number) Number        { panic("string not supported for power") }
+func (s *StringNum) Mod(other Number) (Number, error) { panic("string not supported for modulo") }
+func (s *StringNum) IsZero() bool                   { return false }
+func (s *StringNum) IsNegative() bool               { return false }
+func (s *StringNum) Compare(other Number) int       { panic("string not supported for comparison") }
+func (s *StringNum) Bool() bool                     { panic("string not supported for Bool()") }
+func (s *StringNum) IsBool() bool                   { panic("string not supported for IsBool()") }
