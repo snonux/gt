@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Paul Buetow
 
-package calculator
+package perc
 
 import (
 	"strings"

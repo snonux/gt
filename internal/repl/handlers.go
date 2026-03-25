@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/snonux/perc/internal/calculator"
+	"codeberg.org/snonux/perc/internal/perc"
 	"codeberg.org/snonux/perc/internal/rpn"
 )
 
@@ -224,7 +224,7 @@ type PercentageHandler struct {
 // Returns: (output string, handled bool, err error)
 func (h *PercentageHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
 	// Run the percentage calculation
-	result, err := calculator.Parse(input)
+	result, err := perc.Parse(input)
 	if err != nil {
 		// Not a percentage expression, pass to next handler
 		return h.Next(repl, input)

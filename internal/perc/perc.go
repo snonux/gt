@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Paul Buetow
 
-package calculator
+package perc
 
 import (
 	"fmt"
@@ -100,10 +100,10 @@ func Parse(input string) (string, error) {
 		return calc.Format(), nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("calculator: unable to parse input %q: %w", input, err)
+		return "", fmt.Errorf("perc: unable to parse input %q: %w", input, err)
 	}
 
-	return "", fmt.Errorf("calculator: unable to parse input %q: unknown error", input)
+	return "", fmt.Errorf("perc: unable to parse input %q: unknown error", input)
 }
 
 // ParseCalculation parses a percentage calculation input string and returns the Calculation object.
@@ -128,7 +128,7 @@ func ParseCalculation(input string) (*Calculation, error) {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("calculator: unable to parse input %q. See usage for examples", input)
+	return nil, fmt.Errorf("perc: unable to parse input %q. See usage for examples", input)
 }
 
 // parseXPercentOfY calculates "X% of Y" and returns a Calculation.

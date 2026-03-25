@@ -52,7 +52,7 @@ import (
 	"strings"
 
 	"codeberg.org/snonux/perc/internal"
-	"codeberg.org/snonux/perc/internal/calculator"
+	"codeberg.org/snonux/perc/internal/perc"
 	"codeberg.org/snonux/perc/internal/repl"
 	"codeberg.org/snonux/perc/internal/rpn"
 	"github.com/mattn/go-isatty"
@@ -100,7 +100,7 @@ func runCommand(args []string) (string, error) {
 	}
 
 	// Fall back to percentage calculation
-	result, err := calculator.Parse(input)
+	result, err := perc.Parse(input)
 	if err != nil {
 		return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
 	}
