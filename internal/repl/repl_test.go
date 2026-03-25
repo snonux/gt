@@ -684,3 +684,45 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 		t.Errorf("Variable z = %v, want 3", val)
 	}
 }
+
+// TestExecutorWithSimpleIncrementalAssignment tests x =: after 2 in REPL
+func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
+	// First execute 2 to put it on the stack
+	executor("2")
+	state := getRPNState()
+	
+	// Then use x =: to assign the top of stack to variable x
+	executor("x =:")
+	state = getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after x =:")
+	}
+	if val != 2 {
+		t.Errorf("Variable x = %v, want 2", val)
+	}
+}
+
+// TestExecutorWithExactUserScenario tests the exact user scenario: 2 then x =:
+func TestExecutorWithExactUserScenario(t *testing.T) {
+	// This test replicates the exact user interaction:
+	// > 2
+	// > x =:
+	// The variable should be assigned the value 2
+
+	executor("2")
+	state := getRPNState()
+	
+	// Verify stack has 2
+	// (can't directly check stack without exposing it, but next command will fail if stack is empty)
+	
+	executor("x =:")
+	state = getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after x =:")
+	}
+	if val != 2 {
+		t.Errorf("Variable x = %v, want 2", val)
+	}
+}
