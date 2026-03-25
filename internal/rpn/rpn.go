@@ -183,6 +183,16 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 			return "", fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
 		}
 
+		// Check if it's a boolean literal
+		if token == "true" {
+			stack.Push(NewBoolValue(true))
+			continue
+		}
+		if token == "false" {
+			stack.Push(NewBoolValue(false))
+			continue
+		}
+
 		// Check if it's a number
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
 			if stack.Len() >= r.maxStack {
@@ -209,7 +219,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	// Create a copy of the stack to preserve it
 	r.currentStack = NewStack()
 	for _, val := range stack.Values() {
-		r.currentStack.Push(NewNumberValue(toNumber(val)))
+		r.currentStack.Push(val)
 	}
 
 	// Get the final result
@@ -224,7 +234,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 	// Single value - return it
 	val, _ := stack.Pop()
-	return fmt.Sprintf("%.10g", toNumber(val)), nil
+	return val.String(), nil
 }
 
 // handleOperator handles operators and special commands using the operator registry.
