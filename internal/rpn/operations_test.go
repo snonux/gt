@@ -20,9 +20,9 @@ func TestStackNewStack(t *testing.T) {
 
 func TestStackPushPop(t *testing.T) {
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	if s.Len() != 3 {
 		t.Errorf("Length after 3 pushes = %d, want 3", s.Len())
@@ -32,7 +32,7 @@ func TestStackPushPop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() returned error: %v", err)
 	}
-	if val != 3.0 {
+	if val.Number() != 3.0 {
 		t.Errorf("Pop() = %v, want 3.0", val)
 	}
 
@@ -43,13 +43,13 @@ func TestStackPushPop(t *testing.T) {
 
 func TestStackPeek(t *testing.T) {
 	s := NewStack()
-	s.Push(5.0)
+	s.Push(NewNumberValue(5.0))
 
 	val, err := s.Peek()
 	if err != nil {
 		t.Fatalf("Peek() returned error: %v", err)
 	}
-	if val != 5.0 {
+	if val.Number() != 5.0 {
 		t.Errorf("Peek() = %v, want 5.0", val)
 	}
 
@@ -80,9 +80,9 @@ func TestStackPopEmpty(t *testing.T) {
 
 func TestStackValues(t *testing.T) {
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	vals := s.Values()
 	if len(vals) != 3 {
@@ -91,16 +91,16 @@ func TestStackValues(t *testing.T) {
 
 	// Values() returns values in storage order (bottom-to-top)
 	// Push order: 1, 2, 3 so storage is [1, 2, 3] with 3 on top
-	if vals[0] != 1.0 || vals[1] != 2.0 || vals[2] != 3.0 {
+	if vals[0].Number() != 1.0 || vals[1].Number() != 2.0 || vals[2].Number() != 3.0 {
 		t.Errorf("Values() = %v, want [1 2 3] (bottom-to-top)", vals)
 	}
 }
 
 func TestStackClear(t *testing.T) {
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	s.Clear()
 
@@ -113,8 +113,8 @@ func TestOperationsAdd(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(3.0)
-	s.Push(4.0)
+	s.Push(NewNumberValue(3.0))
+	s.Push(NewNumberValue(4.0))
 
 	err := o.Add(s)
 	if err != nil {
@@ -125,7 +125,7 @@ func TestOperationsAdd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Add() returned error: %v", err)
 	}
-	if val != 7.0 {
+	if val.Number() != 7.0 {
 		t.Errorf("Add result = %v, want 7.0", val)
 	}
 }
@@ -134,8 +134,8 @@ func TestOperationsSubtract(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(10.0)
-	s.Push(4.0)
+	s.Push(NewNumberValue(10.0))
+	s.Push(NewNumberValue(4.0))
 
 	err := o.Subtract(s)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestOperationsSubtract(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Subtract() returned error: %v", err)
 	}
-	if val != 6.0 {
+	if val.Number() != 6.0 {
 		t.Errorf("Subtract result = %v, want 6.0 (10 - 4)", val)
 	}
 }
@@ -155,8 +155,8 @@ func TestOperationsMultiply(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(5.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(5.0))
+	s.Push(NewNumberValue(3.0))
 
 	err := o.Multiply(s)
 	if err != nil {
@@ -167,7 +167,7 @@ func TestOperationsMultiply(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Multiply() returned error: %v", err)
 	}
-	if val != 15.0 {
+	if val.Number() != 15.0 {
 		t.Errorf("Multiply result = %v, want 15.0", val)
 	}
 }
@@ -176,8 +176,8 @@ func TestOperationsDivide(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(20.0)
-	s.Push(4.0)
+	s.Push(NewNumberValue(20.0))
+	s.Push(NewNumberValue(4.0))
 
 	err := o.Divide(s)
 	if err != nil {
@@ -188,7 +188,7 @@ func TestOperationsDivide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Divide() returned error: %v", err)
 	}
-	if val != 5.0 {
+	if val.Number() != 5.0 {
 		t.Errorf("Divide result = %v, want 5.0", val)
 	}
 }
@@ -197,8 +197,8 @@ func TestOperationsDivideByZero(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(10.0)
-	s.Push(0.0)
+	s.Push(NewNumberValue(10.0))
+	s.Push(NewNumberValue(0.0))
 
 	err := o.Divide(s)
 	if err == nil {
@@ -213,8 +213,8 @@ func TestOperationsPower(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	err := o.Power(s)
 	if err != nil {
@@ -225,7 +225,7 @@ func TestOperationsPower(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Power() returned error: %v", err)
 	}
-	if val != 8.0 {
+	if val.Number() != 8.0 {
 		t.Errorf("Power result = %v, want 8.0 (2^3)", val)
 	}
 }
@@ -234,8 +234,8 @@ func TestOperationsModulo(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(10.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(10.0))
+	s.Push(NewNumberValue(3.0))
 
 	err := o.Modulo(s)
 	if err != nil {
@@ -246,7 +246,7 @@ func TestOperationsModulo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Modulo() returned error: %v", err)
 	}
-	if val != 1.0 {
+	if val.Number() != 1.0 {
 		t.Errorf("Modulo result = %v, want 1.0 (10 %% 3)", val)
 	}
 }
@@ -255,8 +255,8 @@ func TestOperationsModuloByZero(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(10.0)
-	s.Push(0.0)
+	s.Push(NewNumberValue(10.0))
+	s.Push(NewNumberValue(0.0))
 
 	err := o.Modulo(s)
 	if err == nil {
@@ -268,7 +268,7 @@ func TestOperationsInsufficientOperands(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(5.0)
+	s.Push(NewNumberValue(5.0))
 
 	// Try to add with only one operand
 	err := o.Add(s)
@@ -281,7 +281,7 @@ func TestOperationsDup(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(7.0)
+	s.Push(NewNumberValue(7.0))
 
 	err := o.Dup(s)
 	if err != nil {
@@ -294,7 +294,7 @@ func TestOperationsDup(t *testing.T) {
 
 	val1, _ := s.Pop()
 	val2, _ := s.Pop()
-	if val1 != 7.0 || val2 != 7.0 {
+	if val1.Number() != 7.0 || val2.Number() != 7.0 {
 		t.Errorf("Dup values = %v, %v, want both 7.0", val1, val2)
 	}
 }
@@ -303,8 +303,8 @@ func TestOperationsSwap(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
 
 	err := o.Swap(s)
 	if err != nil {
@@ -313,7 +313,7 @@ func TestOperationsSwap(t *testing.T) {
 
 	val1, _ := s.Pop()
 	val2, _ := s.Pop()
-	if val1 != 1.0 || val2 != 2.0 {
+	if val1.Number() != 1.0 || val2.Number() != 2.0 {
 		t.Errorf("After Swap, values = %v, %v, want 1.0, 2.0 (swapped)", val1, val2)
 	}
 }
@@ -322,7 +322,7 @@ func TestOperationsSwapInsufficient(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(5.0)
+	s.Push(NewNumberValue(5.0))
 
 	err := o.Swap(s)
 	if err == nil {
@@ -334,9 +334,9 @@ func TestOperationsPop(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	err := o.Pop(s)
 	if err != nil {
@@ -363,9 +363,9 @@ func TestOperationsShow(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(1.0)
-	s.Push(2.0)
-	s.Push(3.0)
+	s.Push(NewNumberValue(1.0))
+	s.Push(NewNumberValue(2.0))
+	s.Push(NewNumberValue(3.0))
 
 	result, err := o.Show(s)
 	if err != nil {
@@ -396,7 +396,7 @@ func TestOperationsAssignVariable(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
 	s := NewStack()
-	s.Push(5.0)
+	s.Push(NewNumberValue(5.0))
 
 	err := o.AssignVariable(s, "x")
 	if err != nil {
@@ -446,7 +446,7 @@ func TestOperationsUseVariable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after UseVariable() returned error: %v", err)
 	}
-	if val != 3.14159 {
+	if val.Number() != 3.14159 {
 		t.Errorf("Variable value pushed to stack = %v, want 3.14159", val)
 	}
 }
@@ -542,7 +542,7 @@ func TestOperationsConcurrent(t *testing.T) {
 		go func(id int) {
 			name := fmt.Sprintf("concurrent%d", id)
 			s := NewStack()
-			s.Push(float64(id))
+			s.Push(NewNumberValue(float64(id)))
 			if err := o.AssignVariable(s, name); err != nil {
 				t.Errorf("AssignVariable() returned error: %v", err)
 			}
@@ -564,7 +564,7 @@ func TestLog2(t *testing.T) {
 	stack := NewStack()
 
 	// Test log₂(8) = 3
-	stack.Push(8)
+	stack.Push(NewNumberValue(8))
 	err := o.Log2(stack)
 	if err != nil {
 		t.Errorf("Log2() returned error: %v", err)
@@ -573,12 +573,12 @@ func TestLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 3.0 {
-		t.Errorf("Log2(8) = %f, want 3.0", val)
+	if val.Number() != 3.0 {
+		t.Errorf("Log2(8) = %f, want 3.0)", val.Number())
 	}
 
 	// Test log₂(1) = 0
-	stack.Push(1)
+	stack.Push(NewNumberValue(1))
 	err = o.Log2(stack)
 	if err != nil {
 		t.Errorf("Log2(1) returned error: %v", err)
@@ -587,12 +587,12 @@ func TestLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 0.0 {
-		t.Errorf("Log2(1) = %f, want 0.0", val)
+	if val.Number() != 0.0 {
+		t.Errorf("Log2(1) = %f, want 0.0)", val.Number())
 	}
 
 	// Test log₂(0) should error
-	stack.Push(0)
+	stack.Push(NewNumberValue(0))
 	err = o.Log2(stack)
 	if err == nil {
 		t.Errorf("Log2(0) should return error, got nil")
@@ -604,7 +604,7 @@ func TestLog10(t *testing.T) {
 	stack := NewStack()
 
 	// Test log₁₀(100) = 2
-	stack.Push(100)
+	stack.Push(NewNumberValue(100))
 	err := o.Log10(stack)
 	if err != nil {
 		t.Errorf("Log10() returned error: %v", err)
@@ -613,12 +613,12 @@ func TestLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 2.0 {
-		t.Errorf("Log10(100) = %f, want 2.0", val)
+	if val.Number() != 2.0 {
+		t.Errorf("Log10(100) = %f, want 2.0)", val.Number())
 	}
 
 	// Test log₁₀(1) = 0
-	stack.Push(1)
+	stack.Push(NewNumberValue(1))
 	err = o.Log10(stack)
 	if err != nil {
 		t.Errorf("Log10(1) returned error: %v", err)
@@ -627,8 +627,8 @@ func TestLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 0.0 {
-		t.Errorf("Log10(1) = %f, want 0.0", val)
+	if val.Number() != 0.0 {
+		t.Errorf("Log10(1) = %f, want 0.0)", val.Number())
 	}
 }
 
@@ -637,7 +637,7 @@ func TestLn(t *testing.T) {
 	stack := NewStack()
 
 	// Test ln(e) ≈ 1
-	stack.Push(math.E)
+	stack.Push(NewNumberValue(math.E))
 	err := o.Ln(stack)
 	if err != nil {
 		t.Errorf("Ln() returned error: %v", err)
@@ -646,12 +646,12 @@ func TestLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if math.Abs(val-1.0) > 0.0001 {
-		t.Errorf("ln(e) = %f, want ~1.0", val)
+	if math.Abs(val.Number()-1.0) > 0.0001 {
+		t.Errorf("ln(e) = %f, want ~1.0", val.Number())
 	}
 
 	// Test ln(1) = 0
-	stack.Push(1)
+	stack.Push(NewNumberValue(1))
 	err = o.Ln(stack)
 	if err != nil {
 		t.Errorf("Ln(1) returned error: %v", err)
@@ -660,8 +660,8 @@ func TestLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 0.0 {
-		t.Errorf("Ln(1) = %f, want 0.0", val)
+	if val.Number() != 0.0 {
+		t.Errorf("Ln(1) = %f, want 0.0)", val.Number())
 	}
 }
 
@@ -670,8 +670,8 @@ func TestHyperLog2(t *testing.T) {
 	stack := NewStack()
 
 	// Test hyperlog₂(4, 16) = log₂(4) + log₂(16) = 2 + 4 = 6
-	stack.Push(4)
-	stack.Push(16)
+	stack.Push(NewNumberValue(4))
+	stack.Push(NewNumberValue(16))
 	err := o.HyperLog2(stack)
 	if err != nil {
 		t.Errorf("HyperLog2() returned error: %v", err)
@@ -680,12 +680,12 @@ func TestHyperLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 6.0 {
-		t.Errorf("HyperLog2(4, 16) = %f, want 6.0", val)
+	if val.Number() != 6.0 {
+		t.Errorf("HyperLog2(4, 16) = %f, want 6.0)", val.Number())
 	}
 
 	// Test with single value (should error, like other hyper operators)
-	stack.Push(8)
+	stack.Push(NewNumberValue(8))
 	err = o.HyperLog2(stack)
 	if err == nil {
 		t.Errorf("HyperLog2 with single value should return error, got nil")
@@ -697,8 +697,8 @@ func TestHyperLog10(t *testing.T) {
 	stack := NewStack()
 
 	// Test hyperlog₁₀(10, 100) = log₁₀(10) + log₁₀(100) = 1 + 2 = 3
-	stack.Push(10)
-	stack.Push(100)
+	stack.Push(NewNumberValue(10))
+	stack.Push(NewNumberValue(100))
 	err := o.HyperLog10(stack)
 	if err != nil {
 		t.Errorf("HyperLog10() returned error: %v", err)
@@ -707,8 +707,8 @@ func TestHyperLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val != 3.0 {
-		t.Errorf("HyperLog10(10, 100) = %f, want 3.0", val)
+	if val.Number() != 3.0 {
+		t.Errorf("HyperLog10(10, 100) = %f, want 3.0)", val.Number())
 	}
 }
 
@@ -717,8 +717,8 @@ func TestHyperLn(t *testing.T) {
 	stack := NewStack()
 
 	// Test hyperln(e, e²) = ln(e) + ln(e²) = 1 + 2 = 3
-	stack.Push(math.E)
-	stack.Push(math.E * math.E)
+	stack.Push(NewNumberValue(math.E))
+	stack.Push(NewNumberValue(math.E * math.E))
 	err := o.HyperLn(stack)
 	if err != nil {
 		t.Errorf("HyperLn() returned error: %v", err)
@@ -727,7 +727,7 @@ func TestHyperLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if math.Abs(val-3.0) > 0.0001 {
-		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", val)
+	if math.Abs(val.Number()-3.0) > 0.0001 {
+		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", val.Number())
 	}
 }

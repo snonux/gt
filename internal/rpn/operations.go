@@ -389,9 +389,9 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 		if err != nil {
 			return fmt.Errorf("hypermultiply: %w", err)
 		}
-		product *= val
+		product *= toNumber(val)
 	}
-	stack.Push(product)
+	stack.Push(NewNumberValue(product))
 	return nil
 }
 
@@ -402,7 +402,7 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -416,12 +416,12 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative
-	result := values[0]
+	// Process left-associative with toNumber coercion
+	result := toNumber(values[0])
 	for i := 1; i < len(values); i++ {
-		result -= values[i]
+		result -= toNumber(values[i])
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -432,7 +432,7 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -446,15 +446,15 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative
-	result := values[0]
+	// Process left-associative with toNumber coercion
+	result := toNumber(values[0])
 	for i := 1; i < len(values); i++ {
-		if values[i] == 0 {
+		if toNumber(values[i]) == 0 {
 			return fmt.Errorf("division by zero")
 		}
-		result /= values[i]
+		result /= toNumber(values[i])
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -465,7 +465,7 @@ func (o *Operations) HyperPower(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -479,12 +479,12 @@ func (o *Operations) HyperPower(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative
-	result := values[0]
+	// Process left-associative with toNumber coercion
+	result := toNumber(values[0])
 	for i := 1; i < len(values); i++ {
-		result = math.Pow(result, values[i])
+		result = math.Pow(result, toNumber(values[i]))
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -495,7 +495,7 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -509,15 +509,15 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative
-	result := values[0]
+	// Process left-associative with toNumber coercion
+	result := toNumber(values[0])
 	for i := 1; i < len(values); i++ {
-		if values[i] == 0 {
+		if toNumber(values[i]) == 0 {
 			return fmt.Errorf("modulo by zero")
 		}
-		result = math.Mod(result, values[i])
+		result = math.Mod(result, toNumber(values[i]))
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -529,7 +529,7 @@ func (o *Operations) HyperLog2(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -543,15 +543,15 @@ func (o *Operations) HyperLog2(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the log2 of all values
+	// Sum the log2 of all values with toNumber coercion
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		if values[i] <= 0 {
+		if toNumber(values[i]) <= 0 {
 			return fmt.Errorf("hyperlog2 undefined for non-positive numbers")
 		}
-		result += math.Log2(values[i])
+		result += math.Log2(toNumber(values[i]))
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -563,7 +563,7 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -577,15 +577,15 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the log10 of all values
+	// Sum the log10 of all values with toNumber coercion
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		if values[i] <= 0 {
+		if toNumber(values[i]) <= 0 {
 			return fmt.Errorf("hyperlog10 undefined for non-positive numbers")
 		}
-		result += math.Log10(values[i])
+		result += math.Log10(toNumber(values[i]))
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -597,7 +597,7 @@ func (o *Operations) HyperLn(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -611,15 +611,15 @@ func (o *Operations) HyperLn(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the natural log of all values
+	// Sum the natural log of all values with toNumber coercion
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		if values[i] <= 0 {
+		if toNumber(values[i]) <= 0 {
 			return fmt.Errorf("hyperln undefined for non-positive numbers")
 		}
-		result += math.Log(values[i])
+		result += math.Log(toNumber(values[i]))
 	}
-	stack.Push(result)
+	stack.Push(NewNumberValue(result))
 	return nil
 }
 
@@ -682,7 +682,7 @@ func (o *Operations) Show(stack *Stack) (string, error) {
 			result += " "
 		}
 		// Use Number interface for consistent formatting with the current mode
-		num := NewNumber(val, o.mode)
+		num := NewNumber(toNumber(val), o.mode)
 		result += num.String()
 	}
 	return result, nil
@@ -706,7 +706,9 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 		return err
 	}
 
-	return o.vars.SetVariable(name, val)
+	// Convert Value to float64 for variable storage
+	o.vars.SetVariable(name, toNumber(val))
+	return nil
 }
 
 // UseVariable pushes a variable's value onto the stack.
@@ -721,7 +723,7 @@ func (o *Operations) UseVariable(stack *Stack, name string) error {
 		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
 	}
 
-	stack.Push(val)
+	stack.Push(NewNumberValue(val))
 	return nil
 }
 
