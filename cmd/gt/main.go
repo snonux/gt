@@ -125,6 +125,15 @@ func runREPL() error {
 func runRPN(input string) (string, error) {
 	vars := rpn.NewVariables()
 	rpnCalc := rpn.NewRPN(vars)
+
+	// Strip "rpn " or "calc " prefix if present
+	input = strings.TrimSpace(input)
+	if strings.HasPrefix(input, "rpn ") {
+		input = strings.TrimPrefix(input, "rpn ")
+	} else if strings.HasPrefix(input, "calc ") {
+		input = strings.TrimPrefix(input, "calc ")
+	}
+
 	return rpnCalc.ParseAndEvaluate(input)
 }
 

@@ -651,15 +651,18 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 	}
 }
 
+
 func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 	// Test that assignment works after a calculation
-	executor("1 2 + x =:")
+	// Note: This test uses a fresh variable name to avoid conflicts with previous tests
+	// that may have set x=5 from TestExecutorWithAssignmentRight
+	executor("1 2 + z =:")
 	state := getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	val, exists := state.vars.GetVariable("z")
 	if !exists {
-		t.Errorf("Variable x should exist")
+		t.Errorf("Variable z should exist")
 	}
 	if val != 3 {
-		t.Errorf("Variable x = %v, want 3", val)
+		t.Errorf("Variable z = %v, want 3", val)
 	}
 }

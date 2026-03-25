@@ -594,7 +594,7 @@ func TestResultStackErrors(t *testing.T) {
 		{
 			name:          "insufficient operands for =",
 			input:         []string{"="},
-			expectedError: "insufficient operands for assignment",
+			expectedError: "insufficient operands for =:",
 		},
 	}
 
@@ -1334,26 +1334,26 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 		expectedValue float64
 	}{
 		{
-			name:          "5 x := (left assignment)",
-			input:         "5 x :=",
+			name:          "5 x =: (left assignment)",
+			input:         "5 x =:",
 			expectedVar:   "x",
 			expectedValue: 5,
 		},
 		{
-			name:          "x 5 =: (right assignment)",
-			input:         "x 5 =:",
+			name:          "x 5 := (right assignment)",
+			input:         "x 5 :=",
 			expectedVar:   "x",
 			expectedValue: 5,
 		},
 		{
-			name:          "3 y := (left assignment)",
-			input:         "3 y :=",
+			name:          "3 y =: (left assignment)",
+			input:         "3 y =:",
 			expectedVar:   "y",
 			expectedValue: 3,
 		},
 		{
-			name:          "y 3 =: (right assignment)",
-			input:         "y 3 =:",
+			name:          "y 3 := (right assignment)",
+			input:         "y 3 :=",
 			expectedVar:   "y",
 			expectedValue: 3,
 		},
@@ -1375,9 +1375,6 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
 			}
 
-			// For assignment, result may be empty (side effect is variable setting)
-			// The important thing is the variable was set correctly
-
 			// Verify variable was set
 			val, exists := v.GetVariable(tt.expectedVar)
 			if !exists {
@@ -1390,7 +1387,6 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 	}
 }
 
-// TestRPNIncrementalAssignment tests assignment with incremental operations
 func TestRPNIncrementalAssignment(t *testing.T) {
 	v := NewVariables()
 	r := NewRPN(v)

@@ -81,19 +81,22 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		}
 
 		// Check if this is a variable name for assignment (:= or =:)
-		// For := (left assignment): value name := - peek ahead to see if next token is := or =:
-		// For =: (right assignment): name value =: - first token is always a variable name
+		// For := (right assignment): name value := - first token is always a variable name
+		// For =: (left assignment): value name =: - token before =: is a variable name
 		shouldPushName := false
 		if i+1 < len(tokens) {
 			nextToken := tokens[i+1]
 			if nextToken == ":=" || nextToken == "=:" {
-				// This token is a variable name (for := case)
-				shouldPushName = true
+				// This token is a variable name
+				// Only push as StringNum if it's not a number
+				if _, err := strconv.ParseFloat(token, 64); err != nil {
+					shouldPushName = true
+				}
 			}
 		}
 		
-		// Special case: first token in =: expression (e.g., "x 5 =:")
-		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == "=:" {
+		// Special case: first token in := expression (e.g., "x 5 :=")
+		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == ":=" {
 			shouldPushName = true
 		}
 		
@@ -171,6 +174,8 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 // Returns (result string, isAssignment bool, error error).
 func (r *RPN) handleAssignment(input string) (string, bool, error) {
 	// Handle := operator
+	// Format 1: value name := (value on bottom, name on top)
+	// Format 2: name value := (name on bottom, value on top) - for compatibility
 	if strings.Contains(input, ":=") {
 		pos := strings.Index(input, ":=")
 		if pos >= 0 {
@@ -179,11 +184,27 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 			beforeFields := strings.Fields(before)
 			if len(beforeFields) == 2 {
-				// value name := (for := operator)
+				// Try value name := format first
 				name := beforeFields[1]
 				valueStr := beforeFields[0]
 
 				val, err := strconv.ParseFloat(valueStr, 64)
+				if err == nil {
+					if err := r.vars.SetVariable(name, val); err != nil {
+						return "", false, err
+					}
+					if after == "" {
+						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+					}
+					result, err := r.evaluate(input, strings.Fields(after))
+					return result, true, err
+				}
+
+				// Try name value := format (for backward compatibility)
+				name = beforeFields[0]
+				valueStr = beforeFields[1]
+
+				val, err = strconv.ParseFloat(valueStr, 64)
 				if err == nil {
 					if err := r.vars.SetVariable(name, val); err != nil {
 						return "", false, err
@@ -199,6 +220,8 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 	}
 
 	// Handle =: operator
+	// Format 1: value name =: (value on bottom, name on top)
+	// Format 2: name value =: (name on bottom, value on top) - for compatibility
 	if strings.Contains(input, "=:") {
 		pos := strings.Index(input, "=:")
 		if pos >= 0 {
@@ -207,11 +230,27 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 			beforeFields := strings.Fields(before)
 			if len(beforeFields) == 2 {
-				// name value =: (for =: operator)
-				name := beforeFields[0]
-				valueStr := beforeFields[1]
+				// Try value name =: format first
+				name := beforeFields[1]
+				valueStr := beforeFields[0]
 
 				val, err := strconv.ParseFloat(valueStr, 64)
+				if err == nil {
+					if err := r.vars.SetVariable(name, val); err != nil {
+						return "", false, err
+					}
+					if after == "" {
+						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+					}
+					result, err := r.evaluate(input, strings.Fields(after))
+					return result, true, err
+				}
+
+				// Try name value =: format (for backward compatibility)
+				name = beforeFields[0]
+				valueStr = beforeFields[1]
+
+				val, err = strconv.ParseFloat(valueStr, 64)
 				if err == nil {
 					if err := r.vars.SetVariable(name, val); err != nil {
 						return "", false, err

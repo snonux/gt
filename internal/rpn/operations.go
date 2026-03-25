@@ -154,8 +154,8 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignLeft(stack) })
-	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignLeft(stack) })
-	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignRight(stack) })
+	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
+	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -948,49 +948,11 @@ func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
 }
 
-// AssignLeft assigns a value to a variable (for := and = operators).
-// Pops variable name from stack, pops value from stack, assigns value to name.
-// For := operator, the stack order is: value name := (value on bottom, name on top).
+// AssignLeft assigns a value to a variable (for =: operator).
+// Stack order: value name =: (value on bottom, name on top).
 // This function pops name first (top of stack), then value.
-// Usage: `value name :=`
+// Usage: `value name =:` (e.g., `5 x =:`)
 func (o *Operations) AssignLeft(stack *Stack) error {
-	val, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for assignment: need value")
-	}
-
-	name, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for assignment: need variable name")
-	}
-
-	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
-	varName := ""
-	switch v := name.(type) {
-	case *StringNum:
-		varName = v.String()
-	default:
-		varName = name.String()
-	}
-
-	return o.vars.SetVariable(varName, val.Float64())
-}
-
-
-
-// AssignRight assigns a value to a variable (for =: operator).
-// For =: operator, the stack order is: name value =: (name on bottom, value on top).
-// This function pops value first (top of stack), then name (below it).
-// Usage: `name value =:` (e.g., `x 5 =:`)
-
-// AssignRight assigns a value to a variable (for =: operator).
-// For =: operator, the stack order is: name value =: (name on bottom, value on top).
-// This function pops name first (top of stack), then value.
-// Usage: `name value =:` (e.g., `x 5 =:`)
-// Note: When called via the RPN parser, the name is pushed as StringNum.
-// We pop name first (StringNum), then value (Number).
-func (o *Operations) AssignRight(stack *Stack) error {
-	// Pop name first (top of stack), then value
 	name, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for =: : need variable name")
@@ -1010,8 +972,32 @@ func (o *Operations) AssignRight(stack *Stack) error {
 		varName = name.String()
 	}
 
-	// Get the value as float64
-	varValue := val.Float64()
+	return o.vars.SetVariable(varName, val.Float64())
+}
 
-	return o.vars.SetVariable(varName, varValue)
+// AssignRight assigns a value to a variable (for := operator).
+// Stack order: name value := (name on bottom, value on top).
+// This function pops value first (top of stack), then name.
+// Usage: `name value :=` (e.g., `x 5 :=`)
+func (o *Operations) AssignRight(stack *Stack) error {
+	val, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for := : need value")
+	}
+
+	name, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for := : need variable name")
+	}
+
+	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
+	varName := ""
+	switch v := name.(type) {
+	case *StringNum:
+		varName = v.String()
+	default:
+		varName = name.String()
+	}
+
+	return o.vars.SetVariable(varName, val.Float64())
 }
