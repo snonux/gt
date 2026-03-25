@@ -990,13 +990,12 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 // Note: When called via the RPN parser, the name is pushed as StringNum.
 // We pop name first (StringNum), then value (Number).
 func (o *Operations) AssignRight(stack *Stack) error {
-	// Pop name first (top of stack), which should be StringNum
+	// Pop name first (top of stack), then value
 	name, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for =: : need variable name")
 	}
 
-	// Pop value (below name on stack)
 	val, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for =: : need value")

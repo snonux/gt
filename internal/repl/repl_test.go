@@ -627,3 +627,39 @@ func TestDefaultExecutorCodePaths(t *testing.T) {
 	// Path 5: Whitespace only (trimmed to empty, returns early)
 	executor("   ")
 }
+
+func TestExecutorWithAssignmentRight(t *testing.T) {
+	// Test := and =: operators
+	executor("5 x :=")
+	state := getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after x :=")
+	}
+	if val != 5 {
+		t.Errorf("Variable x = %v, want 5", val)
+	}
+
+	executor("y 3 =:")
+	state = getRPNState()
+	val, exists = state.vars.GetVariable("y")
+	if !exists {
+		t.Errorf("Variable y should exist after y =:")
+	}
+	if val != 3 {
+		t.Errorf("Variable y = %v, want 3", val)
+	}
+}
+
+func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
+	// Test that assignment works after a calculation
+	executor("1 2 + x =:")
+	state := getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist")
+	}
+	if val != 3 {
+		t.Errorf("Variable x = %v, want 3", val)
+	}
+}

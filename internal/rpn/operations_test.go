@@ -1019,7 +1019,7 @@ func TestAssignLeft(t *testing.T) {
 	s := NewStack()
 
 	// For "5 x :=":
-	// Stack should have value (5) on top, name ("x") below
+	// AssignLeft pops val first, then name
 	// Push name first (will be popped second), then value (will be popped first)
 	s.Push(NewStringNum("x"))  // name (will be popped second)
 	s.Push(NewNumber(5, FloatMode))  // value (will be popped first)
@@ -1050,7 +1050,7 @@ func TestAssignRight(t *testing.T) {
 	s := NewStack()
 
 	// For "x 5 =:":
-	// Stack should have name ("x") on top, value (5) below
+	// AssignRight pops name first, then value
 	// Push value first (will be popped second), then name (will be popped first)
 	s.Push(NewNumber(5, FloatMode))  // value (will be popped second)
 	s.Push(NewStringNum("x"))  // name (will be popped first)
