@@ -2,6 +2,22 @@
 
 A simple AI-engineered command-line percentage calculator written in Go.
 
+```
+     ┌────────────────────────────────┐
+     │       G T Calculator           │
+     │                                │
+     │       (o.o)                    │
+     │      /|   | \   5  6  *        │
+     │     / |   |  \  _______        │
+     │    /  |   |   \ / G T  \       │
+     │   (   |   |    )%  +   |       │
+     │    \  |   |  / | RPN   |       │
+     │     \ |   | /  | Calc  |       │
+     │      \|___|/   |_______|       │
+     │        Result: 30              │
+     └────────────────────────────────┘
+```
+
 ## Installation
 
 ```bash
