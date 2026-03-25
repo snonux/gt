@@ -954,35 +954,65 @@ func (o *Operations) ClearVariables() {
 // This function pops name first (top of stack), then value.
 // Usage: `value name :=`
 func (o *Operations) AssignLeft(stack *Stack) error {
-	name, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for assignment: need variable name")
-	}
-
 	val, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for assignment: need value")
 	}
 
-	return o.vars.SetVariable(name.String(), val.Float64())
+	name, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for assignment: need variable name")
+	}
+
+	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
+	varName := ""
+	switch v := name.(type) {
+	case *StringNum:
+		varName = v.String()
+	default:
+		varName = name.String()
+	}
+
+	return o.vars.SetVariable(varName, val.Float64())
 }
 
 
-// AssignRight assigns a value to a variable (for =: operator).
-// Pops value from stack first, then pops variable name.
-// For =: operator, the stack order is: name value =: (name on bottom, value on top).
-// This function pops value first (top of stack), then name.
-// Usage: `name value =:`
-func (o *Operations) AssignRight(stack *Stack) error {
-	val, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for assignment: need value")
-	}
 
+// AssignRight assigns a value to a variable (for =: operator).
+// For =: operator, the stack order is: name value =: (name on bottom, value on top).
+// This function pops value first (top of stack), then name (below it).
+// Usage: `name value =:` (e.g., `x 5 =:`)
+
+// AssignRight assigns a value to a variable (for =: operator).
+// For =: operator, the stack order is: name value =: (name on bottom, value on top).
+// This function pops name first (top of stack), then value.
+// Usage: `name value =:` (e.g., `x 5 =:`)
+// Note: When called via the RPN parser, the name is pushed as StringNum.
+// We pop name first (StringNum), then value (Number).
+func (o *Operations) AssignRight(stack *Stack) error {
+	// Pop name first (top of stack), which should be StringNum
 	name, err := stack.Pop()
 	if err != nil {
-		return fmt.Errorf("insufficient operands for assignment: need variable name")
+		return fmt.Errorf("insufficient operands for =: : need variable name")
 	}
 
-	return o.vars.SetVariable(name.String(), val.Float64())
+	// Pop value (below name on stack)
+	val, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for =: : need value")
+	}
+
+	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
+	varName := ""
+	switch v := name.(type) {
+	case *StringNum:
+		varName = v.String()
+	default:
+		varName = name.String()
+	}
+
+	// Get the value as float64
+	varValue := val.Float64()
+
+	return o.vars.SetVariable(varName, varValue)
 }

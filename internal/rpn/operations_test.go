@@ -1019,10 +1019,10 @@ func TestAssignLeft(t *testing.T) {
 	s := NewStack()
 
 	// For "5 x :=":
-	// Stack order is: value name := (value on bottom, name on top)
-	// Push value first (will be popped second), then name (will be popped first)
-	s.Push(NewNumber(5, FloatMode))  // value
-	s.Push(NewStringNum("x"))  // name
+	// Stack should have value (5) on top, name ("x") below
+	// Push name first (will be popped second), then value (will be popped first)
+	s.Push(NewStringNum("x"))  // name (will be popped second)
+	s.Push(NewNumber(5, FloatMode))  // value (will be popped first)
 
 	err := o.AssignLeft(s)
 	if err != nil {
@@ -1050,10 +1050,10 @@ func TestAssignRight(t *testing.T) {
 	s := NewStack()
 
 	// For "x 5 =:":
-	// Stack order is: name value =: (name on bottom, value on top)
-	// Push name first (will be popped second), then value (will be popped first)
-	s.Push(NewStringNum("x"))  // name
-	s.Push(NewNumber(5, FloatMode))  // value
+	// Stack should have name ("x") on top, value (5) below
+	// Push value first (will be popped second), then name (will be popped first)
+	s.Push(NewNumber(5, FloatMode))  // value (will be popped second)
+	s.Push(NewStringNum("x"))  // name (will be popped first)
 
 	err := o.AssignRight(s)
 	if err != nil {

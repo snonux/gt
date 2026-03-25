@@ -1389,3 +1389,33 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 		})
 	}
 }
+
+// TestRPNIncrementalAssignment tests assignment with incremental operations
+func TestRPNIncrementalAssignment(t *testing.T) {
+	v := NewVariables()
+	r := NewRPN(v)
+
+	// First, evaluate "1" to push 1 to stack
+	result, err := r.ParseAndEvaluate("1")
+	if err != nil {
+		t.Fatalf("First evaluation failed: %v", err)
+	}
+	if result != "1" {
+		t.Errorf("First result = %q, want '1'", result)
+	}
+
+	// Now try x =: - should assign 1 to variable x
+	result, err = r.ParseAndEvaluate("x =:")
+	if err != nil {
+		t.Fatalf("Assignment failed: %v", err)
+	}
+
+	// Check if x was set to 1
+	val, exists := v.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after assignment")
+	}
+	if val != 1 {
+		t.Errorf("Variable x = %v, want 1", val)
+	}
+}
