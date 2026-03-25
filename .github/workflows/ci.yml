@@ -18,8 +18,19 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Run tests
-      run: go test ./...
+    - name: Run tests with coverage
+      run: |
+        go test -coverprofile=coverage.out ./...
+        if [ "$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')" -lt 60 ]; then
+          echo "Coverage below 60%"
+          exit 1
+        fi
+
+    - name: Upload coverage to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.out
 
   lint:
     runs-on: ubuntu-latest
