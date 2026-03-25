@@ -39,16 +39,12 @@ func (r *RPN) SetMode(mode CalculationMode) {
 }
 
 // GetCurrentStack returns a copy of the current stack for inspection.
-func (r *RPN) GetCurrentStack() []float64 {
+// Returns []Value to preserve value types (numbers and booleans).
+func (r *RPN) GetCurrentStack() []Value {
 	if r.currentStack == nil {
 		return nil
 	}
-	values := r.currentStack.Values()
-	result := make([]float64, len(values))
-	for i, v := range values {
-		result[i] = v.Number()
-	}
-	return result
+	return r.currentStack.Values()
 }
 
 // SetCurrentStack sets the current stack from a slice of values.
