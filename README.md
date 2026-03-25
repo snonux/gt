@@ -179,6 +179,30 @@ To show the current stack without modifying it:
 45
 ```
 
+## Boolean-to-Number Coercion
+
+Boolean values are automatically coerced to numbers when used in arithmetic operations:
+- `true` is treated as `1`
+- `false` is treated as `0`
+
+This enables mixed boolean-numeric expressions:
+
+```bash
+gt 5 3 == 1 +      # 5 == 3 is false (0), 0 + 1 = 1
+# → 1
+
+gt 0 false +       # false is 0, 0 + 0 = 0
+# → 0
+
+gt true 2 *        # true is 1, 1 * 2 = 2
+# → 2
+
+gt 9 3 > 4 5 < +   # 9 > 3 is true (1), 4 < 5 is true (1), 1 + 1 = 2
+# → 2
+```
+
+Note: The boolean result is shown as `true`/`false` when printed, but when used as an operand it behaves as the corresponding numeric value.
+
 ## Hyper Operators
 
 Hyper operators work on all values on the stack simultaneously:
