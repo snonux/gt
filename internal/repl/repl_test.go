@@ -666,3 +666,21 @@ func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 		t.Errorf("Variable z = %v, want 3", val)
 	}
 }
+
+func TestExecutorWithIncrementalAssignment(t *testing.T) {
+	// Test that assignment works after a calculation with separate commands
+	// This should use the value from the stack for assignment
+	executor("1 2 +")
+	state := getRPNState()
+	
+	// Now use z =: to assign the top of stack (3) to variable z
+	executor("z =:")
+	state = getRPNState()
+	val, exists := state.vars.GetVariable("z")
+	if !exists {
+		t.Errorf("Variable z should exist after z =:")
+	}
+	if val != 3 {
+		t.Errorf("Variable z = %v, want 3", val)
+	}
+}
