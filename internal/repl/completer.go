@@ -50,20 +50,3 @@ func completer(d prompt.Document) []prompt.Suggest {
 	}
 	return suggestions
 }
-
-// getCommandDescription returns the description for a built-in command.
-// It's used by the completer function to provide helpful descriptions during tab-completion.
-//
-// cmd: the built-in command name (e.g., "help", "clear", "quit")
-// Returns the description string for the command, or empty string if not found
-func getCommandDescription(cmd string) string {
-	descriptions := map[string]string{
-		"help":  "Show help information",
-		"clear": "Clear the screen",
-		"quit":  "Exit the REPL",
-		"exit":  "Exit the REPL",
-		"rpn":   "Evaluate an RPN (postfix notation) expression",
-		"calc":  "Same as rpn - evaluate an RPN expression",
-	}
-	return descriptions[cmd]
-}
