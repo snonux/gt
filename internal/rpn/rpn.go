@@ -90,7 +90,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(num)
+			stack.Push(NewNumberValue(num))
 			continue
 		}
 
@@ -111,7 +111,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 		// Check if it's a variable reference (push its value)
 		val, exists := r.vars.GetVariable(token)
 		if exists {
-			stack.Push(val)
+			stack.Push(NewNumberValue(val))
 		} else {
 			return "", fmt.Errorf("unknown token '%s'", token)
 		}
@@ -150,7 +150,12 @@ func (r *RPN) GetCurrentStack() []float64 {
 	if r.currentStack == nil {
 		return nil
 	}
-	return r.currentStack.Values()
+	values := r.currentStack.Values()
+	result := make([]float64, len(values))
+	for i, v := range values {
+		result[i] = v.Number()
+	}
+	return result
 }
 
 // Tokenize splits the input string into tokens (numbers, operators, variables).
@@ -177,12 +182,10 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 		// Check if it's a number
 		if num, err := strconv.ParseFloat(token, 64); err == nil {
-			// Create Number based on mode, but push float64 for backward compatibility
-			// In a future refactoring, Stack would use Number interface
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(num)
+			stack.Push(NewNumberValue(num))
 			continue
 		}
 
@@ -203,7 +206,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 	// Create a copy of the stack to preserve it
 	r.currentStack = NewStack()
 	for _, val := range stack.Values() {
-		r.currentStack.Push(val)
+		r.currentStack.Push(NewNumberValue(toNumber(val)))
 	}
 
 	// Get the final result
@@ -218,7 +221,7 @@ func (r *RPN) evaluate(tokens []string) (string, error) {
 
 	// Single value - return it
 	val, _ := stack.Pop()
-	return fmt.Sprintf("%.10g", val), nil
+	return fmt.Sprintf("%.10g", toNumber(val)), nil
 }
 
 // handleOperator handles operators and special commands using the operator registry.
@@ -230,7 +233,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 
 	// Check if it's a variable reference first (before operators)
 	if val, exists := r.vars.GetVariable(token); exists {
-		stack.Push(val)
+		stack.Push(NewNumberValue(val))
 		return "", nil
 	}
 
