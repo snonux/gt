@@ -6,6 +6,7 @@ package rpn
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -591,9 +592,9 @@ func TestResultStackErrors(t *testing.T) {
 			expectedError: "insufficient operands",
 		},
 		{
-			name:          "invalid assignment syntax in ResultStack",
+			name:          "insufficient operands for =",
 			input:         []string{"="},
-			expectedError: "unknown token '='",
+			expectedError: "insufficient operands for assignment",
 		},
 	}
 
@@ -1226,4 +1227,100 @@ func TestRPNStackPreservation(t *testing.T) {
 	if len(stack) != 2 {
 		t.Errorf("Stack should have 2 values, got %d", len(stack))
 	}
+}
+
+// TestRPNModeThreadSafety verifies that mode changes are thread-safe
+func TestRPNModeThreadSafety(t *testing.T) {
+	r := NewRPN(NewVariables())
+
+	// Run multiple goroutines that change mode and perform operations
+	done := make(chan bool, 100)
+	for i := 0; i < 100; i++ {
+		go func() {
+			// Toggle mode
+			r.SetMode(FloatMode)
+			r.SetMode(RationalMode)
+			
+			// Perform an evaluation while mode might be changing
+			_, _ = r.ParseAndEvaluate("1 2 +")
+			done <- true
+		}()
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < 100; i++ {
+		<-done
+	}
+}
+
+// TestRPNModeDirectAccess verifies direct mode access doesn't have race conditions
+func TestRPNModeDirectAccess(t *testing.T) {
+	r := NewRPN(NewVariables())
+	
+	var wg sync.WaitGroup
+	iterations := 100
+	
+	// Goroutine 1: Direct mode reads (simulating evaluate, ResultStack, EvalOperator)
+	// This simulates what happens in evaluate() - reading mode while holding lock
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			// Simulate evaluate() - acquire lock, read mode, then release lock
+			r.mu.RLock()
+			_ = r.mode
+			r.mu.RUnlock()
+			_, _ = r.ParseAndEvaluate("1 2 +")
+		}
+	}()
+	
+	// Goroutine 2: SetMode (simulating handleRatCommand)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			r.SetMode(FloatMode)
+			r.SetMode(RationalMode)
+		}
+	}()
+	
+	// Goroutine 3: GetMode (mutex-protected)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			_ = r.GetMode()
+		}
+	}()
+	
+	wg.Wait()
+}
+
+// TestRPNConcurrentModeAndEval tests concurrent mode changes and evaluations
+func TestRPNConcurrentModeAndEval(t *testing.T) {
+	r := NewRPN(NewVariables())
+	
+	var wg sync.WaitGroup
+	iterations := 50
+	
+	// Goroutine 1: Change mode
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			r.SetMode(FloatMode)
+			r.SetMode(RationalMode)
+		}
+	}()
+	
+	// Goroutine 2: Evaluate expressions
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			_, _ = r.ParseAndEvaluate("1 2 +")
+		}
+	}()
+	
+	wg.Wait()
 }

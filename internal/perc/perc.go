@@ -120,12 +120,12 @@ func ParseCalculation(input string) (*Calculation, error) {
 	registry.register(parseXIsWhatPercentOfY)
 	registry.register(parseXIsYPercentOfWhat)
 
-	calc, ok, err := registry.parse(input)
-	if ok {
-		return calc, nil
-	}
+	calc, _, err := registry.parse(input)
 	if err != nil {
 		return nil, err
+	}
+	if calc != nil {
+		return calc, nil
 	}
 
 	return nil, fmt.Errorf("perc: unable to parse input %q. See usage for examples", input)

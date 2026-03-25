@@ -39,7 +39,7 @@
 //
 // The package uses a layered architecture:
 //   - main.go: Entry point and command routing
-//   - calculator/: Handles percentage calculation parsing
+//   - perc/: Handles percentage calculation parsing
 //   - rpn/: Handles RPN expression parsing and evaluation
 //   - repl/: Provides interactive Read-Eval-Print Loop mode
 //

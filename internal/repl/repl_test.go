@@ -470,11 +470,17 @@ func TestRPNHandlerWithPercentageExpression(t *testing.T) {
 func TestRPNHandlerWithRPNExpression(t *testing.T) {
 	// Test RPN expressions
 	chain := NewCommandChain()
+	vars := rpn.NewVariables()
+	rpnState := &RPNState{
+		vars:    vars,
+		rpnCalc: rpn.NewRPN(vars),
+	}
 	r := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  chain,
+		rpnState:      rpnState,
 	}
 
 	// Test RPN expression
@@ -490,11 +496,17 @@ func TestRPNHandlerWithRPNExpression(t *testing.T) {
 func TestRPNHandlerWithSingleNumber(t *testing.T) {
 	// Test single number input (RPN - pushes number onto stack)
 	chain := NewCommandChain()
+	vars := rpn.NewVariables()
+	rpnState := &RPNState{
+		vars:    vars,
+		rpnCalc: rpn.NewRPN(vars),
+	}
 	r := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  chain,
+		rpnState:      rpnState,
 	}
 
 	// Test single number

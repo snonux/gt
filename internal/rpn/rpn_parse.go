@@ -11,15 +11,20 @@ import (
 
 // ParseAndEvaluate parses and evaluates an RPN expression.
 // Returns the result as a formatted string or an error.
+// This method is thread-safe for concurrent execution.
 func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	// Validate input and initialize
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return "", fmt.Errorf("rpn: empty expression")
 	}
+
+	// Lock for write operations on currentStack
+	r.mu.Lock()
 	if r.currentStack == nil {
 		r.currentStack = NewStack()
 	}
+	r.mu.Unlock()
 
 	// Handle assignment formats
 	if assignmentResult, isAssignment, err := r.handleAssignment(input); err != nil {
@@ -38,7 +43,11 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 }
 
 // evaluate evaluates a list of tokens and returns the result.
+// This method is thread-safe for concurrent execution.
 func (r *RPN) evaluate(tokens []string) (string, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	
 	// Use the current stack for evaluation to preserve state
 	// This allows incremental operations in REPL mode
 	if r.currentStack == nil {

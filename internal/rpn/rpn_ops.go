@@ -19,6 +19,10 @@ func Tokenize(input string) []string {
 // ResultStack returns the final stack state after evaluation.
 // This is useful for commands that need to show the stack without consuming it.
 func (r *RPN) ResultStack(tokens []string) (string, error) {
+	r.mu.RLock()
+	mode := r.mode
+	r.mu.RUnlock()
+
 	stack := NewStack()
 
 	for _, token := range tokens {
@@ -37,7 +41,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(NewNumber(num, r.mode))
+			stack.Push(NewNumber(num, mode))
 			continue
 		}
 
@@ -58,7 +62,7 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 		// Check if it's a variable reference (push its value)
 		val, exists := r.vars.GetVariable(token)
 		if exists {
-			stack.Push(NewNumber(val, r.mode))
+			stack.Push(NewNumber(val, mode))
 		} else {
 			return "", fmt.Errorf("unknown token '%s'", token)
 		}

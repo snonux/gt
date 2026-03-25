@@ -216,9 +216,9 @@ func getRPNState() *RPNState {
 
 ---
 
-## Fix #5: Improved Error Context in Calculator
+## Fix #5: Improved Error Context in Percentage Calculator
 
-**File:** `internal/calculator/calculator.go`  
+**File:** `internal/perc/perc.go`  
 **Issue:** Errors not wrapped with context  
 **Location:** Various places
 
@@ -226,7 +226,7 @@ func getRPNState() *RPNState {
 ```go
 func Parse(input string) (string, error) {
     // ...
-    result, err := calculator.Parse(input)
+    result, err := perc.Parse(input)
     if err != nil {
         return "", err  // Missing context
     }
@@ -238,7 +238,7 @@ func Parse(input string) (string, error) {
 ```go
 func Parse(input string) (string, error) {
     // ...
-    result, err := calculator.Parse(input)
+    result, err := perc.Parse(input)
     if err != nil {
         return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
     }
@@ -371,7 +371,7 @@ golangci-lint run
 | #1 | `rpn.go` | Error wrapping | Better debugging |
 | #3 | `repl.go` | Proper resource cleanup | No resource leaks |
 | #4 | `repl.go` | Mutex safety | Thread safety |
-| #5 | `calculator.go` | Error context | Better error messages |
+| #5 | `perc.go` | Error context | Better error messages |
 | #6 | `variables.go` | Slice handling | Memory management |
 | #7 | `variables.go` | Performance optimization | Reduced allocations |
 

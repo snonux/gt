@@ -22,13 +22,25 @@ type RPNState struct {
 	rpnCalc *rpn.RPN
 }
 
-// rpnState holds the singleton RPN state for REPL operations.
-// It is initialized lazily using sync.Once to ensure thread-safe initialization.
-var rpnState *RPNState
+// executorREPL holds the REPL instance created by the executor function.
+// This is used for backward compatibility with tests that need to access RPN state
+// after calling executor(). It's not part of the main REPL architecture.
+// Thread safety: Use executorREPLOnce for lazy initialization and executorREPLMu for access.
+var executorREPL *REPL
+var executorREPLOnce sync.Once
+var executorREPLMu sync.Mutex
 
-// rpnStateOnce ensures rpnState is initialized exactly once.
-// It's used by getRPNState to guarantee lazy singleton initialization.
-var rpnStateOnce sync.Once
+// ResetExecutorREPL resets the executorREPL for clean test isolation.
+// This should be called between tests that use executor() and getRPNState()
+// to ensure each test starts with a fresh RPN state.
+//
+// Note: This function is intended for test use only and should not be used
+// in production code. For production use, create new REPL instances with NewREPL().
+func ResetExecutorREPL() {
+	executorREPLMu.Lock()
+	defer executorREPLMu.Unlock()
+	executorREPL = nil
+}
 
 // REPL manages the interactive command-line interface for the percentage calculator.
 // It provides an interactive prompt with history, tab-completion, signal handling,
@@ -39,12 +51,14 @@ var rpnStateOnce sync.Once
 //   - HistoryManager: manages command history persistence
 //   - SignalHandler: handles SIGINT (Ctrl+C)
 //   - commandChain: processes commands via chain of responsibility
+//   - rpnState: provides RPN state for calculations
 type REPL struct {
 	ttyChecker    *TTYChecker
 	historyMgr    *HistoryManager
 	signalHandler *SignalHandler
 	prompt        *prompt.Prompt
 	commandChain  CommandHandler
+	rpnState      *RPNState
 }
 
 // NewREPL creates a new REPL instance with default components.
@@ -54,11 +68,19 @@ type REPL struct {
 // The executor function is called for each non-empty input line.
 // The completer function provides tab-completion suggestions for the prompt.
 func NewREPL(executor func(string), completer func(prompt.Document) []prompt.Suggest) *REPL {
+	// Initialize RPN state via dependency injection
+	vars := rpn.NewVariables()
+	rpnState := &RPNState{
+		vars:    vars,
+		rpnCalc: rpn.NewRPN(vars),
+	}
+
 	repl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
+		rpnState:      rpnState,
 	}
 
 	// Set up executor - if nil, use default
@@ -226,58 +248,67 @@ func RunREPL() error {
 // commands via the chain of responsibility pattern, including percentage
 // calculations, RPN expressions, and built-in commands.
 func executor(input string) {
-	// Create a minimal REPL instance without building a prompt
-	r := &REPL{
-		ttyChecker:    &TTYChecker{},
-		historyMgr:    NewHistoryManager(".gt_history"),
-		signalHandler: NewSignalHandler(),
-		commandChain:  NewCommandChain(),
-	}
-	defaultExecutor(r, input)
-}
-
-// getRPNState returns or creates the RPN state using lazy initialization.
-// It's thread-safe using sync.Once to ensure the RPN state is initialized exactly once.
-// The RPN state is shared across all REPL instances.
-//
-// Returns the RPNState instance for performing RPN calculations
-func getRPNState() *RPNState {
-	rpnStateOnce.Do(func() {
+	// Initialize executorREPL only once using sync.Once for thread-safe lazy initialization
+	executorREPLOnce.Do(func() {
 		vars := rpn.NewVariables()
-		rpnState = &RPNState{
+		rpnState := &RPNState{
 			vars:    vars,
 			rpnCalc: rpn.NewRPN(vars),
 		}
+
+		// Create a minimal REPL instance without building a prompt
+		executorREPL = &REPL{
+			ttyChecker:    &TTYChecker{},
+			historyMgr:    NewHistoryManager(".gt_history"),
+			signalHandler: NewSignalHandler(),
+			commandChain:  NewCommandChain(),
+			rpnState:      rpnState,
+		}
 	})
-	return rpnState
-}
 
-// getRPNState returns the RPN state.
-// This is a REPL instance method for backward compatibility that delegates to the package-level getRPNState.
-//
-// Returns the RPNState instance for performing RPN calculations
-func (r *REPL) getRPNState() *RPNState {
-	return getRPNState()
-}
+	// Use mutex to protect access to executorREPL during execution
+	executorREPLMu.Lock()
+	repl := executorREPL
+	executorREPLMu.Unlock()
 
-// runRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
-// It uses the shared RPN state to maintain stack state across multiple calls.
-//
-// input: the RPN expression to evaluate (e.g., "3 4 +" or "x 5 = x x +")
-// Returns the result string and an error if the expression is invalid
-func runRPN(input string) (string, error) {
-	state := getRPNState()
-	return state.rpnCalc.ParseAndEvaluate(input)
+	defaultExecutor(repl, input)
 }
 
 // runRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
-// This is a REPL instance method for backward compatibility that delegates to the package-level runRPN.
+// This is a package-level wrapper for backward compatibility that delegates to
+// the executor's REPL runRPN method.
 //
 // input: the RPN expression to evaluate
 // Returns the result string and an error if the expression is invalid
-func (r *REPL) runRPN(input string) (string, error) {
-	return runRPN(input)
+func runRPN(input string) (string, error) {
+	executorREPLMu.Lock()
+	defer executorREPLMu.Unlock()
+
+	if executorREPL != nil {
+		return executorREPL.rpnState.rpnCalc.ParseAndEvaluate(input)
+	}
+	return "", fmt.Errorf("no executor REPL available - call executor() first")
 }
+
+// getRPNState returns the RPN state from the executor's REPL.
+// This is a package-level helper for backward compatibility with tests that need
+// to access RPN state after calling executor(). It's not part of the main REPL
+// architecture.
+//
+// Returns the RPNState instance from the last executor() call, or nil if executor() hasn't been called
+func getRPNState() *RPNState {
+	executorREPLMu.Lock()
+	defer executorREPLMu.Unlock()
+
+	if executorREPL != nil {
+		return executorREPL.rpnState
+	}
+	return nil
+}
+
+
+
+
 
 // getHistoryPath returns the absolute path to the history file.
 // This is a package-level wrapper for backward compatibility.

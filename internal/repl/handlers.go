@@ -104,7 +104,7 @@ func handleRatCommand(repl *REPL, input string) (string, bool, error) {
 	}
 
 	modeArg := strings.ToLower(args[1])
-	rpnState := repl.getRPNState()
+	rpnState := repl.rpnState
 
 	switch modeArg {
 	case "on":
@@ -151,7 +151,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if strings.HasPrefix(lowerInput, "rpn ") || strings.HasPrefix(lowerInput, "calc ") {
 		// Extract the expression after rpn/calc
 		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
-		result, err := repl.runRPN(rest)
+		result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(rest)
 		if err != nil {
 			return "", true, err
 		}
@@ -159,10 +159,10 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	}
 
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	if state := repl.getRPNState(); state != nil {
+	if state := repl.rpnState; state != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
-			result, err := repl.runRPN(input)
+			result, err := state.rpnCalc.ParseAndEvaluate(input)
 			if err == nil {
 				return result, true, nil
 			}
@@ -206,7 +206,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 }
 
 // PercentageHandler handles percentage calculation expressions.
-// It uses the calculator.Parse function to evaluate expressions like:
+// It uses the perc.Parse function to evaluate expressions like:
 //   - "20% of 150"
 //   - "what is 20% of 150"
 //   - "30 is what % of 150"

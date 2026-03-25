@@ -6,6 +6,7 @@ package rpn
 import (
 	"fmt"
 	"math"
+	"sync"
 )
 
 // ArithmeticOperator defines the interface for basic arithmetic operators.
@@ -56,6 +57,7 @@ type StackOperator interface {
 type VariableOperator interface {
 	ListVariables() (string, error)
 	ClearVariables()
+	AssignVariableFromStack(stack *Stack) error
 }
 
 // Operator is the combined interface for all operator implementations.
@@ -74,7 +76,13 @@ type Operator interface {
 type Operations struct {
 	vars VariableStore
 	mode CalculationMode
+	mu   sync.RWMutex
 }
+
+// Ensure Operations implements Operator at compile time.
+// This is an explicit interface satisfaction check that will fail to compile
+// if Operations doesn't implement all methods required by the Operator interface.
+var _ Operator = (*Operations)(nil)
 
 // NewOperations creates a new Operations instance with the given variable store.
 func NewOperations(vars VariableStore) *Operations {
@@ -85,8 +93,19 @@ func NewOperations(vars VariableStore) *Operations {
 }
 
 // SetMode sets the calculation mode for the Operations instance.
+// This method is thread-safe for writes.
 func (o *Operations) SetMode(mode CalculationMode) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	o.mode = mode
+}
+
+// GetMode returns the current calculation mode.
+// This method is thread-safe for reads.
+func (o *Operations) GetMode() CalculationMode {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+	return o.mode
 }
 
 // OperatorHandler represents a function that handles an operator.
@@ -129,6 +148,7 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
 	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
+	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignVariableFromStack(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -348,7 +368,8 @@ func (o *Operations) Log2(stack *Stack) error {
 	}
 
 	// Compute log2 using the number interface
-	stack.Push(NewNumber(math.Log2(val), o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(math.Log2(val), mode))
 	return nil
 }
 
@@ -367,7 +388,8 @@ func (o *Operations) Log10(stack *Stack) error {
 	}
 
 	// Compute log10 using the number interface
-	stack.Push(NewNumber(math.Log10(val), o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(math.Log10(val), mode))
 	return nil
 }
 
@@ -386,7 +408,8 @@ func (o *Operations) Ln(stack *Stack) error {
 	}
 
 	// Compute ln using the number interface
-	stack.Push(NewNumber(math.Log(val), o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(math.Log(val), mode))
 	return nil
 }
 
@@ -418,7 +441,8 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 	for i := 0; i < len(values); i++ {
 		sum += values[i].Float64()
 	}
-	stack.Push(NewNumber(sum, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(sum, mode))
 	return nil
 }
 
@@ -436,7 +460,8 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 		}
 		product *= val.Float64()
 	}
-	stack.Push(NewNumber(product, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(product, mode))
 	return nil
 }
 
@@ -466,7 +491,8 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 	for i := 1; i < len(values); i++ {
 		result -= values[i].Float64()
 	}
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -500,7 +526,8 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 		}
 		result /= val
 	}
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -530,7 +557,8 @@ func (o *Operations) HyperPower(stack *Stack) error {
 	for i := 1; i < len(values); i++ {
 		result = math.Pow(result, values[i].Float64())
 	}
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -564,7 +592,8 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		}
 		result = math.Mod(result, val)
 	}
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -602,7 +631,8 @@ func (o *Operations) HyperLog2(stack *Stack) error {
 	}
 
 	// Push the result as a Number
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -640,7 +670,8 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 	}
 
 	// Push the result as a Number
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -676,7 +707,8 @@ func (o *Operations) HyperLn(stack *Stack) error {
 		}
 		result += math.Log(val)
 	}
-	stack.Push(NewNumber(result, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
 	return nil
 }
 
@@ -878,7 +910,8 @@ func (o *Operations) UseVariable(stack *Stack, name string) error {
 		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
 	}
 
-	stack.Push(NewNumber(val, o.mode))
+	mode := o.GetMode()
+	stack.Push(NewNumber(val, mode))
 	return nil
 }
 
@@ -906,4 +939,33 @@ func (o *Operations) ListVariables() (string, error) {
 // Usage: `clear`
 func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
+}
+
+// AssignVariableFromStack assigns a value from the stack to a variable.
+// It pops the variable name from the stack first, then pops the value.
+// Usage: `name value =` or `x value =` (where x is on stack as a string)
+func (o *Operations) AssignVariableFromStack(stack *Stack) error {
+	if stack.Len() < 1 {
+		return fmt.Errorf("insufficient operands for assignment: need variable name")
+	}
+
+	nameVal, err := stack.Pop()
+	if err != nil {
+		return err
+	}
+
+	// Get the variable name from the popped value
+	name := nameVal.String()
+
+	if stack.Len() < 1 {
+		return fmt.Errorf("insufficient operands for assignment: need value")
+	}
+
+	val, err := stack.Pop()
+	if err != nil {
+		return err
+	}
+
+	// Convert to float64 for variable storage
+	return o.vars.SetVariable(name, val.Float64())
 }
