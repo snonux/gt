@@ -195,19 +195,20 @@ func (r *OperatorRegistry) IsHyperOperator(token string) bool {
 
 // arithmetic operators
 
-// Add pops two values from stack, adds them, and pushes result.
+// Add pops two values from stack, adds them (with boolean-to-number coercion), and pushes result.
 func (o *Operations) Add(stack *Stack) error {
-	b, err := stack.Pop()
+	bVal, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for +: %w", err)
 	}
 
-	a, err := stack.Pop()
+	aVal, err := stack.Pop()
 	if err != nil {
 		return fmt.Errorf("insufficient operands for +: %w", err)
 	}
 
-	stack.Push(a + b)
+	// Use toNumber for automatic boolean-to-number coercion
+	stack.Push(NewNumberValue(toNumber(aVal) + toNumber(bVal)))
 	return nil
 }
 
@@ -223,7 +224,7 @@ func (o *Operations) Subtract(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for -: %w", err)
 	}
 
-	stack.Push(a - b)
+	stack.Push(NewNumberValue(toNumber(a) - toNumber(b)))
 	return nil
 }
 
@@ -239,7 +240,7 @@ func (o *Operations) Multiply(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for *: %w", err)
 	}
 
-	stack.Push(a * b)
+	stack.Push(NewNumberValue(toNumber(a) * toNumber(b)))
 	return nil
 }
 
@@ -255,11 +256,11 @@ func (o *Operations) Divide(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for /: %w", err)
 	}
 
-	if b == 0 {
+	if toNumber(b) == 0 {
 		return fmt.Errorf("division by zero")
 	}
 
-	stack.Push(a / b)
+	stack.Push(NewNumberValue(toNumber(a) / toNumber(b)))
 	return nil
 }
 
@@ -275,7 +276,7 @@ func (o *Operations) Power(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for ^: %w", err)
 	}
 
-	stack.Push(math.Pow(a, b))
+	stack.Push(NewNumberValue(math.Pow(toNumber(a), toNumber(b))))
 	return nil
 }
 
@@ -291,11 +292,11 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for %%: %w", err)
 	}
 
-	if b == 0 {
+	if toNumber(b) == 0 {
 		return fmt.Errorf("modulo by zero")
 	}
 
-	stack.Push(math.Mod(a, b))
+	stack.Push(NewNumberValue(math.Mod(toNumber(a), toNumber(b))))
 	return nil
 }
 
@@ -306,11 +307,11 @@ func (o *Operations) Log2(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lg: %w", err)
 	}
 
-	if a <= 0 {
+	if toNumber(a) <= 0 {
 		return fmt.Errorf("log2 undefined for non-positive numbers")
 	}
 
-	stack.Push(math.Log2(a))
+	stack.Push(NewNumberValue(math.Log2(toNumber(a))))
 	return nil
 }
 
@@ -321,11 +322,11 @@ func (o *Operations) Log10(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for log: %w", err)
 	}
 
-	if a <= 0 {
+	if toNumber(a) <= 0 {
 		return fmt.Errorf("log10 undefined for non-positive numbers")
 	}
 
-	stack.Push(math.Log10(a))
+	stack.Push(NewNumberValue(math.Log10(toNumber(a))))
 	return nil
 }
 
@@ -336,24 +337,24 @@ func (o *Operations) Ln(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for ln: %w", err)
 	}
 
-	if a <= 0 {
+	if toNumber(a) <= 0 {
 		return fmt.Errorf("ln undefined for non-positive numbers")
 	}
 
-	stack.Push(math.Log(a))
+	stack.Push(NewNumberValue(math.Log(toNumber(a))))
 	return nil
 }
 
 // Hyper operators - operate on all values on the stack
 
-// HyperAdd pops all values from stack, adds them left-associative, and pushes result.
+// HyperAdd pops all values from stack, adds them left-associative (with boolean-to-number coercion), and pushes result.
 func (o *Operations) HyperAdd(stack *Stack) error {
 	if stack.Len() < 2 {
 		return fmt.Errorf("insufficient operands for hyperadd: need at least 2 values")
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []float64
+	var values []Value
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -367,12 +368,12 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative
+	// Process left-associative with toNumber coercion
 	sum := 0.0
 	for i := 0; i < len(values); i++ {
-		sum += values[i]
+		sum += toNumber(values[i])
 	}
-	stack.Push(sum)
+	stack.Push(NewNumberValue(sum))
 	return nil
 }
 

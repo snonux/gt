@@ -7,13 +7,18 @@ import (
 	"path/filepath"
 )
 
-// HistoryManager handles history file operations.
+// HistoryManager handles history file operations for the REPL.
+// It provides methods to load, save, and manage command history with a maximum entry limit.
 type HistoryManager struct {
 	historyFile string
 	maxEntries  int
 }
 
 // NewHistoryManager creates a new history manager with the given file name.
+// The history manager will store up to maxEntries (default: 1000) in the history file.
+//
+// historyFile: the filename to use for history (without path)
+// Returns a new HistoryManager instance
 func NewHistoryManager(historyFile string) *HistoryManager {
 	return &HistoryManager{
 		historyFile: historyFile,
@@ -21,7 +26,10 @@ func NewHistoryManager(historyFile string) *HistoryManager {
 	}
 }
 
-// Path returns the path to the history file.
+// Path returns the absolute path to the history file.
+// The history file is stored in the user's home directory.
+//
+// Returns the full path to the history file, or empty string if the home directory cannot be determined
 func (h *HistoryManager) Path() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -30,7 +38,10 @@ func (h *HistoryManager) Path() string {
 	return filepath.Join(home, h.historyFile)
 }
 
-// Load reads history from file.
+// Load reads history from the history file.
+// It returns all entries from the file, or nil if the file doesn't exist.
+//
+// Returns a slice of history entries (each line is one entry), or nil on error
 func (h *HistoryManager) Load() []string {
 	path := h.Path()
 	if path == "" {
@@ -56,7 +67,12 @@ func (h *HistoryManager) Load() []string {
 	return history
 }
 
-// Save writes history to file, keeping only the most recent entries.
+// Save writes history to the history file, keeping only the most recent entries.
+// It ensures the file doesn't grow unlimited by keeping only the last maxEntries.
+// The function creates the file if it doesn't exist and truncates it if needed.
+//
+// history: the slice of history entries to save
+// Returns an error if the file cannot be written
 func (h *HistoryManager) Save(history []string) error {
 	path := h.Path()
 	if path == "" {
