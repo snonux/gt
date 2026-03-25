@@ -712,3 +712,65 @@ func TestIncrementalAssignmentRPN(t *testing.T) {
 		t.Errorf("Variable x = %v, want 2", val)
 	}
 }
+
+// TestParseAndEvaluateAssignmentLeftRight tests := and =: assignment operators in RPN
+func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedVar   string
+		expectedValue float64
+	}{
+		{
+			name:          "5 x =: (left assignment)",
+			input:         "5 x =:",
+			expectedVar:   "x",
+			expectedValue: 5,
+		},
+		{
+			name:          "x 5 := (right assignment)",
+			input:         "x 5 :=",
+			expectedVar:   "x",
+			expectedValue: 5,
+		},
+		{
+			name:          "3 y =: (left assignment)",
+			input:         "3 y =:",
+			expectedVar:   "y",
+			expectedValue: 3,
+		},
+		{
+			name:          "y 3 := (right assignment)",
+			input:         "y 3 :=",
+			expectedVar:   "y",
+			expectedValue: 3,
+		},
+		{
+			name:          "pi 3.14159 =: (assignment with constant)",
+			input:         "pi 3.14159 =:",
+			expectedVar:   "pi",
+			expectedValue: 3.14159,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables()
+			r := NewRPN(v)
+
+			_, err := r.ParseAndEvaluate(tt.input)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
+			}
+
+			// Verify variable was set
+			val, exists := v.GetVariable(tt.expectedVar)
+			if !exists {
+				t.Errorf("Variable %q should exist after assignment", tt.expectedVar)
+			}
+			if val != tt.expectedValue {
+				t.Errorf("Variable %q = %v, want %v", tt.expectedVar, val, tt.expectedValue)
+			}
+		})
+	}
+}
