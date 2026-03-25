@@ -21,6 +21,16 @@ type ArithmeticOperator interface {
 	Ln(stack *Stack) error
 }
 
+// BooleanOperator defines the interface for boolean comparison operators.
+type BooleanOperator interface {
+	GT(stack *Stack) error
+	LT(stack *Stack) error
+	GTE(stack *Stack) error
+	LTE(stack *Stack) error
+	EQ(stack *Stack) error
+	NEQ(stack *Stack) error
+}
+
 // HyperOperator defines the interface for hyper operators.
 type HyperOperator interface {
 	HyperAdd(stack *Stack) error
@@ -52,6 +62,7 @@ type VariableOperator interface {
 // This allows RPN to depend on an abstraction instead of the concrete Operations type.
 type Operator interface {
 	ArithmeticOperator
+	BooleanOperator
 	HyperOperator
 	StackOperator
 	VariableOperator
@@ -107,6 +118,17 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("lg", func(stack *Stack) error { return op.Log2(stack) })
 	registry.registerStandardOperator("log", func(stack *Stack) error { return op.Log10(stack) })
 	registry.registerStandardOperator("ln", func(stack *Stack) error { return op.Ln(stack) })
+	registry.registerStandardOperator("gt", func(stack *Stack) error { return op.GT(stack) })
+	registry.registerStandardOperator("lt", func(stack *Stack) error { return op.LT(stack) })
+	registry.registerStandardOperator(">", func(stack *Stack) error { return op.LT(stack) })
+	registry.registerStandardOperator("gte", func(stack *Stack) error { return op.GTE(stack) })
+	registry.registerStandardOperator(">=", func(stack *Stack) error { return op.GTE(stack) })
+	registry.registerStandardOperator("lte", func(stack *Stack) error { return op.LTE(stack) })
+	registry.registerStandardOperator("<=", func(stack *Stack) error { return op.LTE(stack) })
+	registry.registerStandardOperator("eq", func(stack *Stack) error { return op.EQ(stack) })
+	registry.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
+	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
+	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -623,6 +645,104 @@ func (o *Operations) HyperLn(stack *Stack) error {
 		result += math.Log(toNumber(values[i]))
 	}
 	stack.Push(NewNumberValue(result))
+	return nil
+}
+
+// Boolean operators
+
+// GT pops two values from stack, compares (a > b), and pushes a boolean result.
+func (o *Operations) GT(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for gt: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for gt: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) > toNumber(b)))
+	return nil
+}
+
+// LT pops two values from stack, compares (a < b), and pushes a boolean result.
+func (o *Operations) LT(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for lt: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for lt: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) < toNumber(b)))
+	return nil
+}
+
+// GTE pops two values from stack, compares (a >= b), and pushes a boolean result.
+func (o *Operations) GTE(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for gte: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for gte: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) >= toNumber(b)))
+	return nil
+}
+
+// LTE pops two values from stack, compares (a <= b), and pushes a boolean result.
+func (o *Operations) LTE(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for lte: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for lte: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) <= toNumber(b)))
+	return nil
+}
+
+// EQ pops two values from stack, compares (a == b), and pushes a boolean result.
+func (o *Operations) EQ(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for eq: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for eq: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) == toNumber(b)))
+	return nil
+}
+
+// NEQ pops two values from stack, compares (a != b), and pushes a boolean result.
+func (o *Operations) NEQ(stack *Stack) error {
+	b, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for neq: %w", err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return fmt.Errorf("insufficient operands for neq: %w", err)
+	}
+
+	stack.Push(NewBoolValue(toNumber(a) != toNumber(b)))
 	return nil
 }
 
