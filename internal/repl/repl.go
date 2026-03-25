@@ -182,6 +182,16 @@ func defaultCompleter(r *REPL, d prompt.Document) []prompt.Suggest {
 // cmd: the built-in command name (e.g., "help", "clear", "quit")
 // Returns the description string for the command, or empty string if not found
 func (r *REPL) defaultGetCommandDescription(cmd string) string {
+	return getCommandDescription(cmd)
+}
+
+// getCommandDescription returns the description for a built-in command.
+// This is a package-level function that provides a single source of truth
+// for command descriptions, used by defaultGetCommandDescription.
+//
+// cmd: the built-in command name (e.g., "help", "clear", "quit")
+// Returns the description string for the command, or empty string if not found
+func getCommandDescription(cmd string) string {
 	descriptions := map[string]string{
 		"help":  "Show help information",
 		"clear": "Clear the screen",
