@@ -136,7 +136,7 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 func (r *OperatorRegistry) registerStandardOperator(name string, handler func(*Stack) error) {
 	r.standardOperators[name] = func(stack *Stack) (string, bool, error) {
 		if err := handler(stack); err != nil {
-			return "", false, err
+			return "", false, fmt.Errorf("%s: %w", name, err)
 		}
 		return "", true, nil
 	}
@@ -147,7 +147,7 @@ func (r *OperatorRegistry) registerCommandOperator(name string, handler func(*St
 	r.standardOperators[name] = func(stack *Stack) (string, bool, error) {
 		result, err := handler(stack)
 		if err != nil {
-			return "", false, err
+			return "", false, fmt.Errorf("%s: %w", name, err)
 		}
 		return result, true, nil
 	}
@@ -157,7 +157,7 @@ func (r *OperatorRegistry) registerCommandOperator(name string, handler func(*St
 func (r *OperatorRegistry) registerHyperOperator(name string, handler func(*Stack) error) {
 	r.hyperOperators[name] = func(stack *Stack) (string, bool, error) {
 		if err := handler(stack); err != nil {
-			return "", false, err
+			return "", false, fmt.Errorf("%s: %w", name, err)
 		}
 		return "", true, nil
 	}

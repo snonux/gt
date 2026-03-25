@@ -97,10 +97,10 @@ func Parse(input string) (string, error) {
 		return calc.Format(), nil
 	}
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("calculator: unable to parse input %q: %w", input, err)
 	}
 
-	return "", fmt.Errorf("calculator: unable to parse input %q. See usage for examples", input)
+	return "", fmt.Errorf("calculator: unable to parse input %q: unknown error", input)
 }
 
 // ParseCalculation parses a percentage calculation input string and returns the Calculation object.
