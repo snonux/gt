@@ -684,9 +684,10 @@ func (o *Operations) Show(stack *Stack) (string, error) {
 		if i > 0 {
 			result += " "
 		}
-		// Use Number interface for consistent formatting with the current mode
-		num := NewNumber(toNumber(val), o.mode)
-		result += num.String()
+		// Use Value.String() to format values correctly:
+		// - Boolean values show as "true"/"false"
+		// - Number values show with appropriate precision
+		result += val.String()
 	}
 	return result, nil
 }
