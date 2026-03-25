@@ -1,5 +1,9 @@
 # gt
 
+[![CI](https://github.com/snonux/gt/actions/workflows/ci.yml/badge.svg)](https://github.com/snonux/gt/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/snonux/gt/refs/heads/main/coverage.json)](https://github.com/snonux/gt/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/codeberg.org/snonux/perc)](https://goreportcard.com/report/codeberg.org/snonux/perc)
+
 A simple AI-engineered command-line percentage calculator written in Go.
 
 ## Rational Number Mode (Optional)
