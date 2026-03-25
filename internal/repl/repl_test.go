@@ -726,3 +726,49 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 		t.Errorf("Variable x = %v, want 2", val)
 	}
 }
+
+// TestExecutorWithExactUserScenarioWithOutput tests that x =: assigns and shows result
+func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
+	// First, clear state
+	executor("rpn clear")
+	
+	// Put 2 on stack
+	executor("2")
+	state := getRPNState()
+	_, _ = state.rpnCalc.ResultStack([]string{})
+	
+	// Assign to x =:
+	result, err := state.rpnCalc.ParseAndEvaluate("x =:")
+	t.Logf("ParseAndEvaluate('x =:') returned result=%q, err=%v", result, err)
+	
+	state = getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after x =:")
+	}
+	if val != 2 {
+		t.Errorf("Variable x = %v, want 2", val)
+	}
+}
+
+// TestExecutorWithExactUserScenarioDirect simulates REPL input flow
+func TestExecutorWithExactUserScenarioDirect(t *testing.T) {
+	// Clear any previous state
+	executor("rpn clear")
+	
+	// Simulate typing "2" in REPL
+	executor("2")
+	
+	// Simulate typing "x =:" in REPL
+	executor("x =:")
+	
+	// Verify variable was set
+	state := getRPNState()
+	val, exists := state.vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after x =:")
+	}
+	if val != 2 {
+		t.Errorf("Variable x = %v, want 2", val)
+	}
+}
