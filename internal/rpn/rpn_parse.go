@@ -9,6 +9,252 @@ import (
 	"strings"
 )
 
+// assignmentHandler manages all assignment strategies.
+// It delegates assignment parsing to specialized handlers for :=, =:, and = operators.
+type assignmentHandler struct {
+	registry *assignmentRegistry
+}
+
+// assignmentRegistry maintains a registry of assignment strategies.
+type assignmentRegistry struct {
+	strategies []AssignmentStrategy
+}
+
+// AssignmentStrategy represents a function that attempts to parse and handle an assignment.
+// Returns (result string, handled bool, error error).
+type AssignmentStrategy func(input string, r *RPN) (string, bool, error)
+
+// newAssignmentRegistry creates a new assignment strategy registry.
+func newAssignmentRegistry() *assignmentRegistry {
+	return &assignmentRegistry{
+		strategies: make([]AssignmentStrategy, 0),
+	}
+}
+
+// register adds an assignment strategy to the registry.
+func (r *assignmentRegistry) register(strategy AssignmentStrategy) {
+	r.strategies = append(r.strategies, strategy)
+}
+
+// parse attempts to parse input using registered strategies in order.
+func (r *assignmentRegistry) parse(input string, rn *RPN) (string, bool, error) {
+	for _, strategy := range r.strategies {
+		if result, handled, err := strategy(input, rn); handled {
+			return result, true, err
+		}
+	}
+	return "", false, nil
+}
+
+// newAssignmentHandler creates a new assignment handler with all strategies registered.
+func newAssignmentHandler() *assignmentHandler {
+	h := &assignmentHandler{
+		registry: newAssignmentRegistry(),
+	}
+	h.registry.register(handleAssignRight)
+	h.registry.register(handleAssignLeft)
+	h.registry.register(handleStandardAssign)
+	return h
+}
+
+// handle attempts to parse input using registered assignment strategies.
+func (h *assignmentHandler) handle(input string, r *RPN) (string, bool, error) {
+	return h.registry.parse(input, r)
+}
+
+// assignRightHandler handles the := operator (right assignment).
+// Format: value name := (value on bottom, name on top) - stack variant
+// Or: name value := (name on bottom, value on top) - direct variant
+func handleAssignRight(input string, r *RPN) (string, bool, error) {
+	if !strings.Contains(input, ":=") {
+		return "", false, nil
+	}
+
+	pos := strings.Index(input, ":=")
+	if pos < 0 {
+		return "", false, nil
+	}
+
+	before := strings.TrimSpace(input[:pos])
+	after := strings.TrimSpace(input[pos+2:])
+
+	beforeFields := strings.Fields(before)
+	if len(beforeFields) != 2 {
+		return "", false, nil
+	}
+
+	// Try value name := format first (stack variant)
+	name := beforeFields[1]
+	valueStr := beforeFields[0]
+
+	val, err := strconv.ParseFloat(valueStr, 64)
+	if err == nil {
+		varName := extractVariableName(name)
+		if err := r.vars.SetVariable(varName, val); err != nil {
+			return "", false, err
+		}
+		if after == "" {
+			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+		}
+		result, err := r.evaluate(input, strings.Fields(after))
+		return result, true, err
+	}
+
+	// Try name value := format (for backward compatibility)
+	name = beforeFields[0]
+	valueStr = beforeFields[1]
+
+	val, err = strconv.ParseFloat(valueStr, 64)
+	if err == nil {
+		varName := extractVariableName(name)
+		if err := r.vars.SetVariable(varName, val); err != nil {
+			return "", false, err
+		}
+		if after == "" {
+			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+		}
+		result, err := r.evaluate(input, strings.Fields(after))
+		return result, true, err
+	}
+
+	return "", false, nil
+}
+
+// assignLeftHandler handles the =: operator (left assignment).
+// Format: value name =: (value on bottom, name on top) - stack variant
+// Or: name value =: (name on bottom, value on top) - direct variant
+func handleAssignLeft(input string, r *RPN) (string, bool, error) {
+	if !strings.Contains(input, "=:") {
+		return "", false, nil
+	}
+
+	pos := strings.Index(input, "=:")
+	if pos < 0 {
+		return "", false, nil
+	}
+
+	before := strings.TrimSpace(input[:pos])
+	after := strings.TrimSpace(input[pos+2:])
+
+	beforeFields := strings.Fields(before)
+	if len(beforeFields) != 2 {
+		return "", false, nil
+	}
+
+	// Try value name =: format first (stack variant)
+	name := beforeFields[1]
+	valueStr := beforeFields[0]
+
+	val, err := strconv.ParseFloat(valueStr, 64)
+	if err == nil {
+		varName := extractVariableName(name)
+		if err := r.vars.SetVariable(varName, val); err != nil {
+			return "", false, err
+		}
+		if after == "" {
+			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+		}
+		result, err := r.evaluate(input, strings.Fields(after))
+		return result, true, err
+	}
+
+	// Try name value =: format (for backward compatibility)
+	name = beforeFields[0]
+	valueStr = beforeFields[1]
+
+	val, err = strconv.ParseFloat(valueStr, 64)
+	if err == nil {
+		varName := extractVariableName(name)
+		if err := r.vars.SetVariable(varName, val); err != nil {
+			return "", false, err
+		}
+		if after == "" {
+			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+		}
+		result, err := r.evaluate(input, strings.Fields(after))
+		return result, true, err
+	}
+
+	return "", false, nil
+}
+
+// standardAssignHandler handles the standard = operator.
+// Format: name value = expression (value on bottom, expression after =)
+// Or: name = value (single assignment)
+func handleStandardAssign(input string, r *RPN) (string, bool, error) {
+	// Check for standard assignment format (name = value or name value = expression)
+	hasAssignment := strings.Contains(input, " = ")
+	if !hasAssignment {
+		// Check for " =" (space before equals) without space after
+		hasAssignment = strings.Contains(input, " =")
+		// Additional check: the = must not be followed by another = (i.e., not == or !=)
+		if hasAssignment && strings.Contains(input, "==") {
+			hasAssignment = false
+		}
+		if hasAssignment && strings.Contains(input, "!=") {
+			hasAssignment = false
+		}
+	}
+
+	if !hasAssignment {
+		return "", false, nil
+	}
+
+	// Handle single assignment: "name = value"
+	if parts := strings.SplitN(input, " = ", 2); len(parts) == 2 {
+		name := strings.TrimSpace(parts[0])
+		valueStr := strings.TrimSpace(parts[1])
+
+		// Validate name is a single word (variable name)
+		nameFields := strings.Fields(name)
+		if len(nameFields) == 1 {
+			// Validate value is a single number
+			valueFields := strings.Fields(valueStr)
+			if len(valueFields) == 1 {
+				val, err := strconv.ParseFloat(valueFields[0], 64)
+				if err != nil {
+					return "", false, fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
+				}
+				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
+					return "", false, err
+				}
+				return fmt.Sprintf("%s = %.10g", nameFields[0], val), true, nil
+			}
+		}
+	}
+
+	// Handle assignment with expression: "name value = expression..."
+	pos := strings.Index(input, " =")
+	if pos >= 0 {
+		before := strings.TrimSpace(input[:pos])
+		after := strings.TrimSpace(input[pos+2:])
+
+		beforeFields := strings.Fields(before)
+		if len(beforeFields) == 2 {
+			name := beforeFields[0]
+			valueStr := beforeFields[1]
+
+			// Try to parse value as a number
+			val, err := strconv.ParseFloat(valueStr, 64)
+			if err == nil {
+				// Valid assignment pattern: "name value = expr..." or "name value ="
+				if err := r.vars.SetVariable(name, val); err != nil {
+					return "", false, err
+				}
+
+				// If no expression after assignment, just return assignment info
+				if after == "" {
+					return fmt.Sprintf("%s = %.10g", name, val), true, nil
+				}
+				result, err := r.evaluate(input, strings.Fields(after))
+				return result, true, err
+			}
+		}
+	}
+
+	return "", false, nil
+}
+
 // ParseAndEvaluate parses and evaluates an RPN expression.
 // Returns the result as a formatted string or an error.
 // This method is thread-safe for concurrent execution.
@@ -26,8 +272,8 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	}
 	r.mu.Unlock()
 
-	// Handle assignment formats
-	if assignmentResult, isAssignment, err := r.handleAssignment(input); err != nil {
+	// Handle assignment formats using the new assignment handler
+	if assignmentResult, isAssignment, err := r.assignHandler.handle(input, r); err != nil {
 		return "", fmt.Errorf("rpn: failed to handle assignment: %w", err)
 	} else if isAssignment {
 		return assignmentResult, nil
@@ -283,180 +529,4 @@ func extractVariableName(token string) string {
 		return token[1:]
 	}
 	return token
-}
-
-// handleAssignment checks if the input is an assignment format and handles it.
-// Returns (result string, isAssignment bool, error error).
-func (r *RPN) handleAssignment(input string) (string, bool, error) {
-	// Handle := operator
-	// Format 1: value name := (value on bottom, name on top)
-	// Format 2: name value := (name on bottom, value on top) - for compatibility
-	if strings.Contains(input, ":=") {
-		pos := strings.Index(input, ":=")
-		if pos >= 0 {
-			before := strings.TrimSpace(input[:pos])
-			after := strings.TrimSpace(input[pos+2:])
-
-			beforeFields := strings.Fields(before)
-			if len(beforeFields) == 2 {
-				// Try value name := format first
-				name := beforeFields[1]
-				valueStr := beforeFields[0]
-
-				val, err := strconv.ParseFloat(valueStr, 64)
-				if err == nil {
-					// Extract variable name, stripping colon for symbols
-					varName := extractVariableName(name)
-					if err := r.vars.SetVariable(varName, val); err != nil {
-						return "", false, err
-					}
-					if after == "" {
-						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-					}
-					result, err := r.evaluate(input, strings.Fields(after))
-					return result, true, err
-				}
-
-				// Try name value := format (for backward compatibility)
-				name = beforeFields[0]
-				valueStr = beforeFields[1]
-
-				val, err = strconv.ParseFloat(valueStr, 64)
-				if err == nil {
-					// Extract variable name, stripping colon for symbols
-					varName := extractVariableName(name)
-					if err := r.vars.SetVariable(varName, val); err != nil {
-						return "", false, err
-					}
-					if after == "" {
-						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-					}
-					result, err := r.evaluate(input, strings.Fields(after))
-					return result, true, err
-				}
-			}
-		}
-	}
-
-	// Handle =: operator
-	// Format 1: value name =: (value on bottom, name on top)
-	// Format 2: name value =: (name on bottom, value on top) - for compatibility
-	if strings.Contains(input, "=:") {
-		pos := strings.Index(input, "=:")
-		if pos >= 0 {
-			before := strings.TrimSpace(input[:pos])
-			after := strings.TrimSpace(input[pos+2:])
-
-			beforeFields := strings.Fields(before)
-			if len(beforeFields) == 2 {
-				// Try value name =: format first
-				name := beforeFields[1]
-				valueStr := beforeFields[0]
-
-				val, err := strconv.ParseFloat(valueStr, 64)
-				if err == nil {
-					// Extract variable name, stripping colon for symbols
-					varName := extractVariableName(name)
-					if err := r.vars.SetVariable(varName, val); err != nil {
-						return "", false, err
-					}
-					if after == "" {
-						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-					}
-					result, err := r.evaluate(input, strings.Fields(after))
-					return result, true, err
-				}
-
-				// Try name value =: format (for backward compatibility)
-				name = beforeFields[0]
-				valueStr = beforeFields[1]
-
-				val, err = strconv.ParseFloat(valueStr, 64)
-				if err == nil {
-					// Extract variable name, stripping colon for symbols
-					varName := extractVariableName(name)
-					if err := r.vars.SetVariable(varName, val); err != nil {
-						return "", false, err
-					}
-					if after == "" {
-						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-					}
-					result, err := r.evaluate(input, strings.Fields(after))
-					return result, true, err
-				}
-			}
-		}
-	}
-
-	// Check for standard assignment format (name = value or name value = expression)
-	// Must check for " = " (with spaces) to avoid matching == or !=
-	// The pattern "name value = expr..." or "name value =" requires " =" followed by non-= character
-	hasAssignment := strings.Contains(input, " = ") || strings.Contains(input, " =") 
-	// Additional check: the = must not be followed by another = (i.e., not == or !=)
-	if hasAssignment && strings.Contains(input, "==") {
-		hasAssignment = false
-	}
-	if hasAssignment && strings.Contains(input, "!=") {
-		hasAssignment = false
-	}
-	if !hasAssignment {
-		return "", false, nil
-	}
-
-	// Handle single assignment: "name = value"
-	if parts := strings.SplitN(input, " = ", 2); len(parts) == 2 {
-		name := strings.TrimSpace(parts[0])
-		valueStr := strings.TrimSpace(parts[1])
-
-		// Validate name is a single word (variable name)
-		nameFields := strings.Fields(name)
-		if len(nameFields) == 1 {
-			// Validate value is a single number
-			valueFields := strings.Fields(valueStr)
-			if len(valueFields) == 1 {
-				val, err := strconv.ParseFloat(valueFields[0], 64)
-				if err != nil {
-					return "", false, fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
-				}
-				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
-					return "", false, err
-				}
-				return fmt.Sprintf("%s = %.10g", nameFields[0], val), true, nil
-			}
-		}
-	}
-
-	// Handle assignment with expression: "name value = expression..."
-	// Use " =" (space before equals) to find the boundary
-	pos := strings.Index(input, " =")
-	if pos >= 0 {
-		// Extract content before the assignment
-		before := strings.TrimSpace(input[:pos])
-		// Extract content after " =" (may be empty or contain expression)
-		after := strings.TrimSpace(input[pos+2:])
-
-		beforeFields := strings.Fields(before)
-		if len(beforeFields) == 2 {
-			name := beforeFields[0]
-			valueStr := beforeFields[1]
-
-			// Try to parse value as a number
-			val, err := strconv.ParseFloat(valueStr, 64)
-			if err == nil {
-				// Valid assignment pattern: "name value = expr..." or "name value ="
-				if err := r.vars.SetVariable(name, val); err != nil {
-					return "", false, err
-				}
-
-				// If no expression after assignment, just return assignment info
-				if after == "" {
-					return fmt.Sprintf("%s = %.10g", name, val), true, nil
-				}
-				result, err := r.evaluate(input, strings.Fields(after))
-				return result, true, err
-			}
-		}
-	}
-
-	return "", false, nil
 }

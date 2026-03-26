@@ -11,13 +11,14 @@ import (
 // It is thread-safe for concurrent read operations, but write operations
 // on the stack or mode should be synchronized externally or use the provided methods.
 type RPN struct {
-	mu           sync.RWMutex
-	vars         VariableStore
-	ops          Operator
-	opRegistry   *OperatorRegistry
-	maxStack     int
-	currentStack *Stack
-	mode         CalculationMode
+	mu            sync.RWMutex
+	vars          VariableStore
+	ops           Operator
+	opRegistry    *OperatorRegistry
+	assignHandler *assignmentHandler
+	maxStack      int
+	currentStack  *Stack
+	mode          CalculationMode
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
@@ -25,12 +26,13 @@ func NewRPN(vars VariableStore) *RPN {
 	ops := NewOperations(vars)
 	ops.SetMode(FloatMode) // Set default mode
 	return &RPN{
-		vars:         vars,
-		ops:          ops,
-		opRegistry:   NewOperatorRegistry(ops),
-		maxStack:     1000, // Reasonable limit for RPN expressions
-		currentStack: NewStack(),
-		mode:         FloatMode, // Default mode
+		vars:          vars,
+		ops:           ops,
+		opRegistry:    NewOperatorRegistry(ops),
+		assignHandler: newAssignmentHandler(),
+		maxStack:      1000, // Reasonable limit for RPN expressions
+		currentStack:  NewStack(),
+		mode:          FloatMode, // Default mode
 	}
 }
 
