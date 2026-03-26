@@ -445,7 +445,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 	if len(token) > 0 && token[0] == ':' {
 		symbolName := token[1:] // Remove the leading :
 		if symbolName == "" {
-			return "", fmt.Errorf("symbol name cannot be empty after :")
+			return "", fmt.Errorf("symbol name cannot be empty after colon")
 		}
 		// Only push as symbol if the remaining part is a valid identifier
 		// This prevents := and =: from being treated as : followed by = operator

@@ -25,7 +25,8 @@ func TestConcurrentRPN(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			runRPN("3 4 +")
+			// Ignore error return as the expression "3 4 +" should always succeed
+			_, _ = runRPN("3 4 +")
 		}(i)
 	}
 	wg.Wait()
@@ -55,7 +56,8 @@ func TestConcurrentExecutorAndRPN(t *testing.T) {
 		}(i)
 		go func(id int) {
 			defer wg.Done()
-			runRPN("3 4 +")
+			// Ignore error return as the expression "3 4 +" should always succeed
+			_, _ = runRPN("3 4 +")
 		}(i)
 	}
 	wg.Wait()

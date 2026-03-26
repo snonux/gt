@@ -27,7 +27,8 @@ func buildBinary(t *testing.T) string {
 	}
 	
 	t.Cleanup(func() {
-		os.Remove("/tmp/gt-test")
+		// Explicitly ignore error return from os.Remove during cleanup
+		_ = os.Remove("/tmp/gt-test")
 	})
 	
 	return "/tmp/gt-test"
