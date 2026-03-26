@@ -56,8 +56,8 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 	stack := r.currentStack
 
 	for i, token := range tokens {
-		// Check for variable assignment: name value =
-		if token == "=" {
+		// Check for variable assignment: name value = (but not == or != etc.)
+		if token == "=" && (i+1 >= len(tokens) || tokens[i+1] != "=") {
 			return "", fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
 		}
 
@@ -389,7 +389,16 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 	}
 
 	// Check for standard assignment format (name = value or name value = expression)
-	hasAssignment := strings.Contains(input, " = ") || strings.Contains(input, " =")
+	// Must check for " = " (with spaces) to avoid matching == or !=
+	// The pattern "name value = expr..." or "name value =" requires " =" followed by non-= character
+	hasAssignment := strings.Contains(input, " = ") || strings.Contains(input, " =") 
+	// Additional check: the = must not be followed by another = (i.e., not == or !=)
+	if hasAssignment && strings.Contains(input, "==") {
+		hasAssignment = false
+	}
+	if hasAssignment && strings.Contains(input, "!=") {
+		hasAssignment = false
+	}
 	if !hasAssignment {
 		return "", false, nil
 	}
