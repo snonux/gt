@@ -360,3 +360,72 @@ func (s *StringNum) IsNegative() bool               { return false }
 func (s *StringNum) Compare(other Number) int       { panic("string not supported for comparison") }
 func (s *StringNum) Bool() bool                     { panic("string not supported for Bool()") }
 func (s *StringNum) IsBool() bool                   { panic("string not supported for IsBool()") }
+
+// Symbol represents a variable symbol on the stack.
+// Symbols are created when:
+// - The user enters :x syntax (explicit symbol)
+// - A bare identifier x is used but the variable is unbound
+// When printed, symbols are prefixed with : (e.g., :x) to distinguish them from values.
+type Symbol struct {
+	name string
+}
+
+// NewSymbol creates a new Symbol from a name.
+func NewSymbol(name string) *Symbol {
+	return &Symbol{name: name}
+}
+
+// String returns the string representation of the symbol, prefixed with :.
+func (s *Symbol) String() string {
+	return ":" + s.name
+}
+
+// Float64 returns 0 for symbols (not numeric).
+func (s *Symbol) Float64() float64 {
+	panic("symbol not supported for Float64()")
+}
+
+// Name returns the symbol name.
+func (s *Symbol) Name() string {
+	return s.name
+}
+
+// IsSymbol returns true for Symbol.
+func (s *Symbol) IsSymbol() bool {
+	return true
+}
+
+// Other methods return errors for symbols
+func (s *Symbol) Add(other Number) Number {
+	panic("symbol not supported for addition")
+}
+func (s *Symbol) Sub(other Number) Number {
+	panic("symbol not supported for subtraction")
+}
+func (s *Symbol) Mul(other Number) Number {
+	panic("symbol not supported for multiplication")
+}
+func (s *Symbol) Div(other Number) (Number, error) {
+	panic("symbol not supported for division")
+}
+func (s *Symbol) Pow(other Number) Number {
+	panic("symbol not supported for power")
+}
+func (s *Symbol) Mod(other Number) (Number, error) {
+	panic("symbol not supported for modulo")
+}
+func (s *Symbol) IsZero() bool {
+	return false
+}
+func (s *Symbol) IsNegative() bool {
+	return false
+}
+func (s *Symbol) Compare(other Number) int {
+	panic("symbol not supported for comparison")
+}
+func (s *Symbol) Bool() bool {
+	panic("symbol not supported for Bool()")
+}
+func (s *Symbol) IsBool() bool {
+	panic("symbol not supported for IsBool()")
+}

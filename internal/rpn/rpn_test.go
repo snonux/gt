@@ -473,9 +473,9 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:          "invalid value for assignment (non-numeric)",
+			name:          "invalid value for assignment (non-numeric, multi-char)",
 			input:         "x abc =",
-			expectedError: "unknown token 'x'",
+			expectedError: "unknown token 'abc'",
 		},
 		{
 			name:          "assignment with variable name containing space",
@@ -485,7 +485,7 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 		{
 			name:          "assignment with value containing space",
 			input:         "x 5 6 =",
-			expectedError: "unknown token 'x'",
+			expectedError: "invalid assignment syntax",
 		},
 		{
 			name:          "empty assignment",
@@ -772,5 +772,147 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 				t.Errorf("Variable %q = %v, want %v", tt.expectedVar, val, tt.expectedValue)
 			}
 		})
+	}
+}
+
+// TestSymbolPush verifies that :x syntax pushes a symbol
+func TestSymbolPush(t *testing.T) {
+	vars := NewVariables()
+	r := NewRPN(vars)
+	
+	// Test :x syntax
+	result, err := r.ParseAndEvaluate(":x")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate(':x') returned error: %v", err)
+	}
+	
+	// The result should be the symbol displayed
+	if result != ":x" {
+		t.Errorf("Expected ':x', got '%s'", result)
+	}
+	
+	// Verify the stack has a Symbol
+	stack := r.GetCurrentStack()
+	if len(stack) != 1 {
+		t.Fatalf("Expected 1 item on stack, got %d", len(stack))
+	}
+	
+	// Check that it's a Symbol
+	sym, ok := stack[0].(*Symbol)
+	if !ok {
+		t.Fatalf("Expected Symbol, got %T", stack[0])
+	}
+	if sym.Name() != "x" {
+		t.Errorf("Expected symbol name 'x', got '%s'", sym.Name())
+	}
+}
+
+// TestUnboundIdentifierAsSymbol verifies that unbound identifiers push symbols
+func TestUnboundIdentifierAsSymbol(t *testing.T) {
+	vars := NewVariables()
+	r := NewRPN(vars)
+	
+	// Use bare identifier x (unbound)
+	result, err := r.ParseAndEvaluate("x")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('x') returned error: %v", err)
+	}
+	
+	// The result should be the symbol displayed
+	if result != ":x" {
+		t.Errorf("Expected ':x', got '%s'", result)
+	}
+}
+
+// TestBoundIdentifierPushesValue verifies that bound identifiers push values
+func TestBoundIdentifierPushesValue(t *testing.T) {
+	vars := NewVariables()
+	r := NewRPN(vars)
+	
+	// First bind x to 5
+	result, err := r.ParseAndEvaluate("x = 5")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('x = 5') returned error: %v", err)
+	}
+	
+	// Now use x (bound) - should push value
+	result, err = r.ParseAndEvaluate("x")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('x') after binding returned error: %v", err)
+	}
+	
+	// The result should be 5
+	if result != "5" {
+		t.Errorf("Expected '5', got '%s'", result)
+	}
+}
+
+// TestSymbolWithAssignment verifies that symbols work with assignment operators
+func TestSymbolWithAssignment(t *testing.T) {
+	// Test :x 10 := (symbol then value with right assignment)
+	vars := NewVariables()
+	r := NewRPN(vars)
+	
+	_, err := r.ParseAndEvaluate(":x 10 :=")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate(':x 10 :=') returned error: %v", err)
+	}
+	
+	// Verify x was set to 10
+	val, exists := vars.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after assignment")
+	}
+	if val != 10 {
+		t.Errorf("Variable x = %v, want 10", val)
+	}
+	
+	// Test 10 :x =: (value then symbol with left assignment)
+	vars2 := NewVariables()
+	r2 := NewRPN(vars2)
+	
+	_, err = r2.ParseAndEvaluate("10 :x =:")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('10 :x =:') returned error: %v", err)
+	}
+	
+	val, exists = vars2.GetVariable("x")
+	if !exists {
+		t.Errorf("Variable x should exist after assignment")
+	}
+	if val != 10 {
+		t.Errorf("Variable x = %v, want 10", val)
+	}
+}
+
+// TestStackBasedAssignmentWithSymbol verifies stack-based assignment with symbol
+func TestStackBasedAssignmentWithSymbol(t *testing.T) {
+	vars := NewVariables()
+	r := NewRPN(vars)
+	
+	// Push 42 onto stack
+	_, err := r.ParseAndEvaluate("42")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('42') returned error: %v", err)
+	}
+	
+	// Now y =: - this should assign 42 to y
+	result, err := r.ParseAndEvaluate("y =:")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate('y =:') returned error: %v", err)
+	}
+	
+	// Verify y was set to 42
+	val, exists := vars.GetVariable("y")
+	if !exists {
+		t.Errorf("Variable y should exist after assignment")
+	}
+	if val != 42 {
+		t.Errorf("Variable y = %v, want 42", val)
+	}
+	
+	// The result should show the assignment confirmation
+	if result != "y = 42" {
+		t.Errorf("Expected 'y = 42', got '%s'", result)
 	}
 }

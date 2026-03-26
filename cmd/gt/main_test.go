@@ -174,3 +174,50 @@ func TestRunCommandNoArgs(t *testing.T) {
 // - TestRunCommandCalcWithClear (calc with clear)
 
 // These commands are now only available in REPL mode, not in command-line mode.
+
+// TestRunCommandAssignmentSyntaxes tests all variable assignment syntaxes
+func TestRunCommandAssignmentSyntaxes(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		expectedVar  string
+		expectedVal  float64
+		expectedOut  string
+	}{
+		{
+			name:         "x 5 = x x + (standard assignment)",
+			input:        "x 5 = x x +",
+			expectedVar:  "x",
+			expectedVal:  5,
+			expectedOut:  "10",
+		},
+		{
+			name:         "x 5 =: x x + (left assignment)",
+			input:        "5 x =: x x +",
+			expectedVar:  "x",
+			expectedVal:  5,
+			expectedOut:  "10",
+		},
+		{
+			name:         "x 5 := x x + (right assignment)",
+			input:        "x 5 := x x +",
+			expectedVar:  "x",
+			expectedVal:  5,
+			expectedOut:  "10",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := []string{"gt", tt.input}
+			result, err := runCommand(args)
+			if err != nil {
+				t.Fatalf("runCommand(%q) returned error: %v", tt.input, err)
+			}
+
+			if result != tt.expectedOut {
+				t.Errorf("runCommand(%q) = %q, want %q", tt.input, result, tt.expectedOut)
+			}
+		})
+	}
+}

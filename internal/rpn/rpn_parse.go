@@ -104,8 +104,9 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 					}
 					// Skip the operator token (next one) since we handled it inline
 					// We've consumed both tokens, so we're done
-					return "", nil
-				} else if _, err := strconv.ParseFloat(token, 64); err != nil {
+					// Return confirmation message showing the assignment
+					return fmt.Sprintf("%s = %.10g", token, val.Float64()), nil
+				} else if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
 					// This token is a variable name (not a number)
 					shouldPushName = true
 				}
@@ -113,14 +114,36 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		}
 		
 		// Special case: first token in := expression (e.g., "x 5 :=")
+		// Only push as name if the first token is not a number (it's a variable name)
 		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == ":=" {
-			shouldPushName = true
+			if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
+				shouldPushName = true
+			}
 		}
 		
 		if shouldPushName {
 			// This token is a variable name, push as StringNum
 			stack.Push(NewStringNum(token))
 			continue
+		}
+		
+		// Special case: if token is a defined variable and appears before an assignment operator
+		// (within the next few tokens), push the variable NAME (StringNum) instead of VALUE
+		// to allow reassignment.
+		// For example: "x 5 := x 10 := ..." - the second "x" should be the name, not the value 5.
+		// We check if there's an assignment operator within the next 2 tokens (e.g., "x N :=" or "x N =:")
+		if isValidIdentifier(token) {
+			if _, exists := r.vars.GetVariable(token); exists {
+				// Check if there's an assignment operator within the next 2 tokens
+				// Format: variable value := or variable value =:
+				if i+2 < len(tokens) {
+					if tokens[i+2] == ":=" || tokens[i+2] == "=:" {
+						// Push the variable name (not value) for assignment
+						stack.Push(NewStringNum(token))
+						continue
+					}
+				}
+			}
 		}
 
 		// Handle special operators and commands
@@ -171,6 +194,22 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		return "", nil
 	}
 
+	// Check if it's a symbol syntax (:x)
+	// Only match :x where x is a valid identifier (not an operator like := or =:)
+	if len(token) > 0 && token[0] == ':' {
+		symbolName := token[1:] // Remove the leading :
+		if symbolName == "" {
+			return "", fmt.Errorf("symbol name cannot be empty after :")
+		}
+		// Only push as symbol if the remaining part is a valid identifier
+		// This prevents := and =: from being treated as : followed by = operator
+		if isValidIdentifier(symbolName) {
+			stack.Push(NewSymbol(symbolName))
+			return "", nil
+		}
+		// Not a valid symbol, fall through to check for operators
+	}
+
 	// Check if it's a variable reference first (before operators)
 	if val, exists := r.vars.GetVariable(token); exists {
 		stack.Push(NewNumber(val, r.mode))
@@ -178,13 +217,72 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 	}
 
 	// Handle standard operators (common logic extracted for DRY)
-	if result, handled, err := r.executeOperator(stack, token); err != nil {
+	// This must be done BEFORE pushing Symbol for unknown identifiers,
+	// so that operators are properly handled
+	result, handled, err := r.executeOperator(stack, token)
+	if err != nil {
+		// If it's an unknown token error and we're at the evaluate stage,
+		// it might be a bare identifier that should be a symbol
+		// Check if the caller is the main evaluate loop
+		if strings.Contains(err.Error(), "unknown token") {
+			// For bare identifiers, push a Symbol instead of returning error
+			// But only if it looks like a valid identifier (alphanumeric/underscore, starts with letter/_)
+			// Don't push symbols for tokens with special characters like %, ., etc.
+			if isValidIdentifier(token) {
+				stack.Push(NewSymbol(token))
+				return "", nil
+			}
+		}
 		return "", err
-	} else if handled {
+	}
+	if handled {
 		return result, nil
 	}
 
-	return "", fmt.Errorf("unknown token '%s'", token)
+	// For bare identifiers that don't exist as variables and aren't operators,
+	// push a Symbol (this implements the feature where unbound identifiers act as symbols)
+	if isValidIdentifier(token) {
+		stack.Push(NewSymbol(token))
+	}
+	return "", nil
+}
+
+// isValidIdentifier checks if a token looks like a valid variable identifier.
+// Valid identifiers contain only alphanumeric characters and underscores,
+// and start with a letter or underscore (not a digit or special character).
+// For RPN symbol support, we also limit to single-character identifiers
+// (like x, y, z) to avoid converting percentage expression words into symbols.
+func isValidIdentifier(token string) bool {
+	if len(token) == 0 {
+		return false
+	}
+	
+	// Check first character - must be letter or underscore
+	first := token[0]
+	if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_') {
+		return false
+	}
+	
+	// Check remaining characters - must be alphanumeric or underscore
+	for i := 1; i < len(token); i++ {
+		c := token[i]
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+			return false
+		}
+	}
+	
+	// Only allow single-character identifiers for symbol support
+	// This prevents words like "what", "is", "of" from becoming symbols
+	return len(token) == 1
+}
+
+// extractVariableName extracts a variable name from a token, stripping the leading colon if present.
+// This allows symbol syntax like :x to be used where the actual variable name is x.
+func extractVariableName(token string) string {
+	if len(token) > 0 && token[0] == ':' {
+		return token[1:]
+	}
+	return token
 }
 
 // handleAssignment checks if the input is an assignment format and handles it.
@@ -207,11 +305,13 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 				val, err := strconv.ParseFloat(valueStr, 64)
 				if err == nil {
-					if err := r.vars.SetVariable(name, val); err != nil {
+					// Extract variable name, stripping colon for symbols
+					varName := extractVariableName(name)
+					if err := r.vars.SetVariable(varName, val); err != nil {
 						return "", false, err
 					}
 					if after == "" {
-						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
 					}
 					result, err := r.evaluate(input, strings.Fields(after))
 					return result, true, err
@@ -223,11 +323,13 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 				val, err = strconv.ParseFloat(valueStr, 64)
 				if err == nil {
-					if err := r.vars.SetVariable(name, val); err != nil {
+					// Extract variable name, stripping colon for symbols
+					varName := extractVariableName(name)
+					if err := r.vars.SetVariable(varName, val); err != nil {
 						return "", false, err
 					}
 					if after == "" {
-						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
 					}
 					result, err := r.evaluate(input, strings.Fields(after))
 					return result, true, err
@@ -253,11 +355,13 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 				val, err := strconv.ParseFloat(valueStr, 64)
 				if err == nil {
-					if err := r.vars.SetVariable(name, val); err != nil {
+					// Extract variable name, stripping colon for symbols
+					varName := extractVariableName(name)
+					if err := r.vars.SetVariable(varName, val); err != nil {
 						return "", false, err
 					}
 					if after == "" {
-						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
 					}
 					result, err := r.evaluate(input, strings.Fields(after))
 					return result, true, err
@@ -269,11 +373,13 @@ func (r *RPN) handleAssignment(input string) (string, bool, error) {
 
 				val, err = strconv.ParseFloat(valueStr, 64)
 				if err == nil {
-					if err := r.vars.SetVariable(name, val); err != nil {
+					// Extract variable name, stripping colon for symbols
+					varName := extractVariableName(name)
+					if err := r.vars.SetVariable(varName, val); err != nil {
 						return "", false, err
 					}
 					if after == "" {
-						return fmt.Sprintf("%s = %.10g", name, val), true, nil
+						return fmt.Sprintf("%s = %.10g", varName, val), true, nil
 					}
 					result, err := r.evaluate(input, strings.Fields(after))
 					return result, true, err

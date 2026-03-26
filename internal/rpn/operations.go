@@ -348,6 +348,14 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for %%: %w", err)
 	}
 
+	// Check if operands are symbols (not supported for arithmetic)
+	if sym, ok := a.(*Symbol); ok {
+		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
+	}
+	if sym, ok := b.(*Symbol); ok {
+		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
+	}
+
 	if b.IsZero() {
 		return fmt.Errorf("modulo by zero")
 	}
@@ -963,9 +971,11 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for =: : need value")
 	}
 
-	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
+	// Get the variable name - handle Symbol, StringNum, or convert to string
 	varName := ""
 	switch v := name.(type) {
+	case *Symbol:
+		varName = v.Name()
 	case *StringNum:
 		varName = v.String()
 	default:
@@ -990,9 +1000,11 @@ func (o *Operations) AssignRight(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for := : need variable name")
 	}
 
-	// Get the variable name - if it's StringNum, get the string; otherwise convert to string
+	// Get the variable name - handle Symbol, StringNum, or convert to string
 	varName := ""
 	switch v := name.(type) {
+	case *Symbol:
+		varName = v.Name()
 	case *StringNum:
 		varName = v.String()
 	default:
