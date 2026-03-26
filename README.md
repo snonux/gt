@@ -1,6 +1,6 @@
 # gt
 
-A simple AI-engineered command-line percentage calculator written in Go. No frontier AI models were used for this project. The ones used were:
+A simple AI-engineered command-line percentage calculator written in Go. No frontier AI models from Claude, OpenAI, Google, ec, were used for this project. The ones used were:
 
 * Qwen 3 Coder Next
 * GPT OSS 120b
