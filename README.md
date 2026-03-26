@@ -39,12 +39,12 @@ mage install
 #### Calculate X% of Y
 
 ```bash
-gt 20% of 150
+gt '20% of 150'
 # Output:
 # 20.00% of 150.00 = 30.00
 #   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
 
-gt what is 20% of 150
+gt 'what is 20% of 150'
 # Output:
 # 20.00% of 150.00 = 30.00
 #   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
@@ -53,7 +53,7 @@ gt what is 20% of 150
 #### Find what percentage X is of Y
 
 ```bash
-gt 30 is what % of 150
+gt '30 is what % of 150'
 # Output:
 # 30.00 is 20.00% of 150.00
 #   Steps: (30.00 / 150.00) * 100 = 0.20 * 100 = 20.00%
@@ -62,7 +62,7 @@ gt 30 is what % of 150
 #### Find the whole when X is Y% of it
 
 ```bash
-gt 30 is 20% of what
+gt '30 is 20% of what'
 # Output:
 # 30.00 is 20.00% of 150.00
 #   Steps: (30.00 / 20.00) * 100 = 1.50 * 100 = 150.00
@@ -75,61 +75,61 @@ RPN (postfix notation) uses a stack-based approach where operators follow their 
 #### Basic Arithmetic
 
 ```bash
-gt 3 4 +           # 3 + 4 = 7
+gt '3 4 +'           # 3 + 4 = 7
 # → 7
 
-gt 3 4 -           # 3 - 4 = -1
+gt '3 4 -'           # 3 - 4 = -1
 # → -1
 
-gt 5 6 *           # 5 * 6 = 30
+gt '5 6 *'           # 5 * 6 = 30
 # → 30
 
-gt 20 4 /          # 20 / 4 = 5
+gt '20 4 /'          # 20 / 4 = 5
 # → 5
 
-gt 2 3 ^           # 2^3 = 8
+gt '2 3 ^'           # 2^3 = 8
 # → 8
 
-gt 10 3 %          # 10 % 3 = 1 (modulo)
+gt '10 3 %'          # 10 % 3 = 1 (modulo)
 # → 1
 ```
 
 #### Expression Chaining
 
 ```bash
-gt 3 4 + 4 4 - *   # (3+4) * (4-4) = 0
+gt '3 4 + 4 4 - *'   # (3+4) * (4-4) = 0
 # → 0
 
-gt 1 2 + 3 *       # (1+2) * 3 = 9
+gt '1 2 + 3 *'       # (1+2) * 3 = 9
 # → 9
 ```
 
 #### Variables
 
 ```bash
-gt x 5 =           # Assign x = 5
+gt 'x 5 ='           # Assign x = 5
 # → x = 5
 
-gt x 5 = x x +     # x + x = 10
+gt 'x 5 = x x +'     # x + x = 10
 # → 10
 
-gt pi 3.14159 = pi 2 *  # 2 * π
+gt 'pi 3.14159 = pi 2 *'  # 2 * π
 # → 6.28318
 
-# Note: Variable assignment works in bare mode (e.g., "gt x 5 =").
-# gt x 5 = x x +  (works)
+# Note: Variable assignment works in bare mode (e.g., "gt 'x 5 ='").
+# gt 'x 5 = x x +'  (works)
 ```
 
 #### Variable Management
 
 ```bash
-gt vars            # List all variables
+gt 'vars'            # List all variables
 # x = 5
 
-gt delete x        # Delete a specific variable
+gt 'delete x'        # Delete a specific variable
 # Variable removed
 
-gt clear           # Clear all variables
+gt 'clear'           # Clear all variables
 # All variables cleared
 ```
 
@@ -140,7 +140,7 @@ Variables persist across commands in REPL mode but are cleared when exiting. In 
 Example:
 ```bash
 # In bare mode, variables don't persist between commands
-gt x 5 =           # Assign x = 5 (in this command only)
+gt 'x 5 ='           # Assign x = 5 (in this command only)
 # → x = 5
 
 gt x               # x is not defined in this separate command
@@ -158,16 +158,16 @@ gt x               # x is not defined in this separate command
 #### Stack Operations
 
 ```bash
-gt 1 2 3 dup       # Duplicate top value
+gt '1 2 3 dup'       # Duplicate top value
 # → 1 2 3 3
 
-gt 1 2 swap        # Swap top two values
+gt '1 2 swap'        # Swap top two values
 # → 2 1
 
-gt 1 2 3 pop       # Remove top value
+gt '1 2 3 pop'       # Remove top value
 # → 1 2
 
-gt 1 2 3 show      # Show stack without modifying
+gt '1 2 3 show'      # Show stack without modifying
 # → 1 2 3
 ```
 
@@ -220,22 +220,22 @@ Note: The boolean result is shown as `true`/`false` when printed, but when used 
 Hyper operators work on all values on the stack simultaneously:
 
 ```bash
-gt 1 2 3 4 5 [+]    # Sum all: 1+2+3+4+5 = 15
+gt '1 2 3 4 5 [+]'    # Sum all: 1+2+3+4+5 = 15
 # → 15
 
-gt 2 3 4 [*]        # Multiply all: 2*3*4 = 24
+gt '2 3 4 [*]'        # Multiply all: 2*3*4 = 24
 # → 24
 
-gt 10 3 2 [-]       # 10 - 3 - 2 = 5
+gt '10 3 2 [-]'       # 10 - 3 - 2 = 5
 # → 5
 
-gt 100 5 2 [/]      # 100 / 5 / 2 = 10
+gt '100 5 2 [/]'      # 100 / 5 / 2 = 10
 # → 10
 
-gt 2 3 2 [^]        # (2^3)^2 = 64
+gt '2 3 2 [^]'        # (2^3)^2 = 64
 # → 64
 
-gt 100 7 3 [%]      # 100 % 7 % 3 = 2
+gt '100 7 3 [%]'      # 100 % 7 % 3 = 2
 # → 2
 ```
 
