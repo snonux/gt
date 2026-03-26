@@ -71,7 +71,7 @@ func main() {
 // runCommand processes command-line arguments and executes the appropriate action.
 //
 // It handles:
-//   - No arguments: Start REPL mode if stdin is a TTY, otherwise show usage
+//   - No arguments: Start REPL mode if stdin is a TTY, otherwise read from stdin
 //   - "version" argument: Return the version string
 //   - Other arguments: Try RPN parsing first, then fall back to percentage calculation
 func runCommand(args []string) (string, error) {
@@ -83,8 +83,27 @@ func runCommand(args []string) (string, error) {
 			}
 			return "", nil
 		}
-		printUsage()
-		return "", fmt.Errorf("no input provided")
+		// Read from stdin (pipe or redirect)
+		input, err := readStdin()
+		if err != nil {
+			return "", fmt.Errorf("failed to read stdin: %w", err)
+		}
+		input = strings.TrimSpace(input)
+		if input == "" {
+			printUsage()
+			return "", fmt.Errorf("no input provided")
+		}
+		// Try RPN parsing first
+		rpnResult, rpnErr := runRPN(input)
+		if rpnErr == nil {
+			return rpnResult, nil
+		}
+		// Fall back to percentage calculation
+		result, err := perc.Parse(input)
+		if err != nil {
+			return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
+		}
+		return result, nil
 	}
 
 	if args[1] == "version" {
@@ -106,6 +125,21 @@ func runCommand(args []string) (string, error) {
 	}
 
 	return result, nil
+}
+
+// readStdin reads all input from stdin and returns it as a string.
+func readStdin() (string, error) {
+	data, err := os.ReadFile("/dev/stdin")
+	if err != nil {
+		// Fallback if /dev/stdin is not available
+		buf := make([]byte, 4096)
+		n, err := os.Stdin.Read(buf)
+		if n > 0 {
+			return string(buf[:n]), nil
+		}
+		return "", err
+	}
+	return string(data), nil
 }
 
 // runREPL starts the interactive REPL mode.

@@ -210,6 +210,146 @@ func TestCLIInvalidRPN(t *testing.T) {
 	}
 }
 
+// TestCLIStdin tests that stdin input works correctly.
+func TestCLIStdin(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		stdin    string
+		expected string
+	}{
+		{
+			name:     "RPN expression via stdin",
+			stdin:    "3 4 +",
+			expected: "7",
+		},
+		{
+			name:     "Percentage expression via stdin",
+			stdin:    "20% of 150",
+			expected: "30",
+		},
+		{
+			name:     "Variable assignment via stdin",
+			stdin:    "x 5 = x x +",
+			expected: "10",
+		},
+		{
+			name:     "Boolean comparison via stdin",
+			stdin:    "5 3 ==",
+			expected: "false",
+		},
+		{
+			name:     "Boolean to number coercion via stdin",
+			stdin:    "true 2 *",
+			expected: "2",
+		},
+		{
+			name:     "Complex expression via stdin",
+			stdin:    "2 3 + 4 *",
+			expected: "20",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath)
+			cmd.Stdin = strings.NewReader(tt.stdin)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}
+
+// TestCLIStdinWithPiping tests stdin via pipe (simulating `echo EXP | gt`).
+func TestCLIStdinWithPiping(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "echo 3 4 +",
+			input:    "3 4 +",
+			expected: "7",
+		},
+		{
+			name:     "echo 20%% of 150",
+			input:    "20% of 150",
+			expected: "30",
+		},
+		{
+			name:     "echo x 5 = x x +",
+			input:    "x 5 = x x +",
+			expected: "10",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Simulate piping: echo INPUT | gt
+			cmd := exec.Command(binaryPath)
+			cmd.Stdin = strings.NewReader(tt.input)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}
+
+// TestCLIStdinWithMultipleLines tests stdin with multiple lines (should use first line).
+func TestCLIStdinWithMultipleLines(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		stdin    string
+		expected string
+	}{
+		{
+			name:     "Multiple lines - first line used",
+			stdin:    "3 4 +\n5 6 +",
+			expected: "7",
+		},
+		{
+			name:     "Empty line then expression",
+			stdin:    "\n3 4 +",
+			expected: "7",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath)
+			cmd.Stdin = strings.NewReader(tt.stdin)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}
+
 // TestCLIVariableAssignment tests all variable assignment syntaxes.
 func TestCLIVariableAssignment(t *testing.T) {
 	binaryPath := buildBinary(t)
