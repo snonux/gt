@@ -698,8 +698,7 @@ func TestIncrementalAssignmentRPN(t *testing.T) {
 	}
 
 	// Now try x =: - should assign 2 to variable x
-	result, err = r.ParseAndEvaluate("x =:")
-	if err != nil {
+	if _, err := r.ParseAndEvaluate("x =:"); err != nil {
 		t.Fatalf("Assignment failed: %v", err)
 	}
 
@@ -830,13 +829,12 @@ func TestBoundIdentifierPushesValue(t *testing.T) {
 	r := NewRPN(vars)
 	
 	// First bind x to 5
-	result, err := r.ParseAndEvaluate("x = 5")
-	if err != nil {
+	if _, err := r.ParseAndEvaluate("x = 5"); err != nil {
 		t.Fatalf("ParseAndEvaluate('x = 5') returned error: %v", err)
 	}
 	
 	// Now use x (bound) - should push value
-	result, err = r.ParseAndEvaluate("x")
+	result, err := r.ParseAndEvaluate("x")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('x') after binding returned error: %v", err)
 	}

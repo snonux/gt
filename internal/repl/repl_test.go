@@ -671,12 +671,11 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 	// Test that assignment works after a calculation with separate commands
 	// This should use the value from the stack for assignment
 	executor("1 2 +")
-	state := getRPNState()
 	
 	// Now use z =: to assign the top of stack (3) to variable z
 	executor("z =:")
-	state = getRPNState()
-	val, exists := state.vars.GetVariable("z")
+
+	val, exists := getRPNState().vars.GetVariable("z")
 	if !exists {
 		t.Errorf("Variable z should exist after z =:")
 	}
@@ -689,12 +688,10 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 	// First execute 2 to put it on the stack
 	executor("2")
-	state := getRPNState()
 	
 	// Then use x =: to assign the top of stack to variable x
 	executor("x =:")
-	state = getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	val, exists := getRPNState().vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
@@ -711,14 +708,12 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 	// The variable should be assigned the value 2
 
 	executor("2")
-	state := getRPNState()
 	
 	// Verify stack has 2
 	// (can't directly check stack without exposing it, but next command will fail if stack is empty)
 	
 	executor("x =:")
-	state = getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	val, exists := getRPNState().vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
