@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/snonux/perc/internal/perc"
-	"codeberg.org/snonux/perc/internal/rpn"
+	"codeberg.org/snonux/gt/internal/perc"
+	"codeberg.org/snonux/gt/internal/rpn"
 )
 
 // CommandHandler represents a handler in the chain of responsibility pattern.

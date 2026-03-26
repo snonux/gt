@@ -28,7 +28,7 @@ This is a toy project created to experience with local LLMs and how good they ar
 ## Installation
 
 ```bash
-go install codeberg.org/snonux/perc/cmd/gt@latest
+go install codeberg.org/snonux/gt/cmd/gt@latest
 ```
 
 Or using mage:

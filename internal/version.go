@@ -22,7 +22,7 @@
 //
 // To access the version from the main command:
 //
-//	import "codeberg.org/snonux/perc/internal"
+//	import "codeberg.org/snonux/gt/internal"
 //
 //	func main() {
 //	    fmt.Println("gt version", internal.Version)
@@ -38,7 +38,7 @@ package internal
 // Version is the current version of the gt application.
 //
 // This constant is defined at build time and can be overridden during builds:
-//   go build -ldflags="-X 'codeberg.org/snonux/perc/internal.Version=v0.3.0-20240324'"
+//   go build -ldflags="-X 'codeberg.org/snonux/gt/internal.Version=v0.3.0-20240324'"
 //
 // The version is used in:
 //   - Command-line output: "gt version" command

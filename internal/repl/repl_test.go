@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/snonux/perc/internal/rpn"
+	"codeberg.org/snonux/gt/internal/rpn"
 
 	"github.com/c-bata/go-prompt"
 )

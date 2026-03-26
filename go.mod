@@ -1,4 +1,4 @@
-module codeberg.org/snonux/perc
+module codeberg.org/snonux/gt
 
 go 1.25.0
 

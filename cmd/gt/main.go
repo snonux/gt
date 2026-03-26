@@ -51,10 +51,10 @@ import (
 	"os"
 	"strings"
 
-	"codeberg.org/snonux/perc/internal"
-	"codeberg.org/snonux/perc/internal/perc"
-	"codeberg.org/snonux/perc/internal/repl"
-	"codeberg.org/snonux/perc/internal/rpn"
+	"codeberg.org/snonux/gt/internal"
+	"codeberg.org/snonux/gt/internal/perc"
+	"codeberg.org/snonux/gt/internal/repl"
+	"codeberg.org/snonux/gt/internal/rpn"
 	"github.com/mattn/go-isatty"
 )
 
