@@ -76,7 +76,7 @@ func TestConstants_GetConstant_NonExistent(t *testing.T) {
 	}
 }
 
-func TestConstants_Count(t *testing.T) {
+func TestConstants_Count_Expanded(t *testing.T) {
 	c := NewConstants()
 	count := c.Count()
 
@@ -354,3 +354,88 @@ func TestClearConstantsCommand(t *testing.T) {
 		t.Errorf("pi after clearconstants = %q, want \"3.141592654\"", result)
 	}
 }
+
+// TestConstants_NewConstants tests the expanded constants library
+func TestConstants_NewConstants(t *testing.T) {
+	c := NewConstants()
+
+	tests := []struct {
+		name     string
+		expected float64
+	}{
+		{"pi", math.Pi},
+		{"π", math.Pi},
+		{"e", math.E},
+		{"euler", math.E},
+		{"phi", 1.618033988749895},
+		{"φ", 1.618033988749895},
+		{"sqrt2", 1.414213562373095},
+		{"√2", 1.414213562373095},
+		{"sqrt3", 1.732050807568877},
+		{"√3", 1.732050807568877},
+		{"sqrt5", 2.23606797749979},
+		{"√5", 2.23606797749979},
+		{"ln2", 0.693147180559945},
+		{"log2", 0.693147180559945},
+		{"ln10", 2.302585092994046},
+		{"log10", 2.302585092994046},
+		{"tau", 2 * math.Pi},
+		{"τ", 2 * math.Pi},
+		{"inf", math.Inf(1)},
+		{"infinity", math.Inf(1)},
+		{"-inf", math.Inf(-1)},
+		{"-infinity", math.Inf(-1)},
+		{"nan", math.NaN()},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			val, exists := c.GetConstant(tt.name)
+			if !exists {
+				t.Errorf("Constant %q not found", tt.name)
+				return
+			}
+			if tt.name == "nan" {
+				if !math.IsNaN(val) {
+					t.Errorf("Expected NaN for %q, got %v", tt.name, val)
+				}
+			} else if val != tt.expected {
+				t.Errorf("Constant %q = %v, want %v", tt.name, val, tt.expected)
+			}
+		})
+	}
+}
+
+// TestConstants_ParseInRPN tests that new constants can be used in RPN expressions
+func TestConstants_ParseInRPN(t *testing.T) {
+	vars := NewVariables()
+	rpnCalc := NewRPN(vars)
+
+	tests := []struct {
+		expression string
+		wantResult string
+	}{
+		{"pi", "3.1415926536"},
+		{"tau", "6.2831853072"},
+		{"sqrt2", "1.4142135624"},
+		{"sqrt3", "1.7320508076"},
+		{"sqrt5", "2.2360679775"},
+		{"e", "2.7182818285"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expression, func(t *testing.T) {
+			result, err := rpnCalc.ParseAndEvaluate(tt.expression)
+			if err != nil {
+				t.Errorf("RPN evaluation error = %v", err)
+				return
+			}
+			// Check if result contains the expected value (approximately)
+			if !strings.Contains(result, tt.wantResult[:8]) {
+				t.Errorf("RPN(%q) = %q, expected to contain %q", tt.expression, result, tt.wantResult[:8])
+			}
+		})
+	}
+}
+
+// TestConstants_Count tests that constants count is correct

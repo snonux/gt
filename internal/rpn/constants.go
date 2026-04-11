@@ -60,9 +60,45 @@ func (c *Constants) loadBuiltInConstants() {
 	c.constants["sqrt2"] = 1.414213562373095
 	c.constants["√2"] = 1.414213562373095
 
+	// Square root of 3
+	c.constants["sqrt3"] = 1.732050807568877
+	c.constants["√3"] = 1.732050807568877
+
+	// Square root of 5
+	c.constants["sqrt5"] = 2.23606797749979
+	c.constants["√5"] = 2.23606797749979
+
+	// Natural logarithm of 2
+	c.constants["ln2"] = 0.693147180559945
+	c.constants["log2"] = 0.693147180559945
+
+	// Natural logarithm of 10
+	c.constants["ln10"] = 2.302585092994046
+	c.constants["log10"] = 2.302585092994046
+
+	// Logarithm of e base 10
+	c.constants["log_e"] = 0.434294481903252
+	c.constants["log_e10"] = 0.434294481903252
+
+	// Tau (2π) - circle constant
+	c.constants["tau"] = 2 * math.Pi
+	c.constants["τ"] = 2 * math.Pi
+
+	// Fraction 1/π
+	c.constants["1/π"] = 1 / math.Pi
+	c.constants["inv_pi"] = 1 / math.Pi
+
+	// Fraction 1/e
+	c.constants["1/e"] = 1 / math.E
+	c.constants["inv_e"] = 1 / math.E
+
 	// Infinity
 	c.constants["inf"] = math.Inf(1)
 	c.constants["infinity"] = math.Inf(1)
+
+	// Negative infinity
+	c.constants["-inf"] = math.Inf(-1)
+	c.constants["-infinity"] = math.Inf(-1)
 
 	// NaN (Not a Number)
 	c.constants["nan"] = math.NaN()

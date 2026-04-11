@@ -85,3 +85,10 @@ func (r *RPN) SetCurrentStack(values []Number) {
 		r.currentStack.Push(v)
 	}
 }
+
+// Stack returns the current stack as a slice of Numbers.
+// This is a convenience wrapper around GetCurrentStack().
+// Returns nil if the stack is empty or nil.
+func (r *RPN) Stack() []Number {
+	return r.GetCurrentStack()
+}

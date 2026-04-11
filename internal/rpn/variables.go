@@ -4,7 +4,9 @@
 package rpn
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -178,6 +180,11 @@ type VariableWriter interface {
 type VariableStore interface {
 	VariableReader
 	VariableWriter
+	// Save writes the variable store to a file in JSON format.
+	Save(path string) error
+	// Load reads the variable store from a file in JSON format.
+	// Existing variables are overwritten; new variables are added.
+	Load(path string) error
 }
 
 // NewVariables creates and initializes a new Variables instance.
@@ -334,4 +341,79 @@ func (v *Variables) HasVariable(name string) bool {
 
 	_, exists := v.variables[name]
 	return exists
+}
+
+// Save writes the variable store to a file in JSON format.
+// The file path should be an absolute path.
+// This method is thread-safe for concurrent writes.
+func (v *Variables) Save(path string) error {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	// Convert variables to JSON-compatible format
+	var infos []VariableInfo
+	for name, value := range v.variables {
+		infos = append(infos, VariableInfo{Name: name, Value: value})
+	}
+
+	// Sort by name for consistent output
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].Name < infos[j].Name
+	})
+
+	return saveVariables(path, infos)
+}
+
+// Load reads the variable store from a file in JSON format.
+// Existing variables are overwritten; new variables are added.
+// This method is thread-safe for concurrent reads.
+func (v *Variables) Load(path string) error {
+	infos, err := loadVariables(path)
+	if err != nil {
+		return err
+	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	// Clear existing variables and load from file
+	v.variables = make(map[string]float64)
+	for _, info := range infos {
+		if isValidVariableName(info.Name) {
+			v.variables[info.Name] = info.Value
+		}
+	}
+
+	return nil
+}
+
+// saveVariables saves variable info to a file in JSON format.
+// This is a helper function that does not acquire locks.
+func saveVariables(path string, infos []VariableInfo) error {
+	data, err := json.MarshalIndent(infos, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal variables: %w", err)
+	}
+
+	return os.WriteFile(path, data, 0644)
+}
+
+// loadVariables loads variable info from a file in JSON format.
+// Returns an empty slice if the file doesn't exist.
+// This is a helper function that does not acquire locks.
+func loadVariables(path string) ([]VariableInfo, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []VariableInfo{}, nil
+		}
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var infos []VariableInfo
+	if err := json.Unmarshal(data, &infos); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal variables: %w", err)
+	}
+
+	return infos, nil
 }

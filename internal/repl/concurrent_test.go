@@ -16,12 +16,13 @@ func TestConcurrentExecutor(t *testing.T) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
 			rpnCalc := rpn.NewRPN(vars)
+			calculator := NewRPNCalculator(rpnCalc)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
 				signalHandler: NewSignalHandler(),
 				commandChain:  NewCommandChain(),
-				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+				rpnState:      &RPNState{vars: vars, calculator: calculator},
 			}
 			defaultExecutor(rpl, "20% of 150")
 		}(i)
@@ -53,12 +54,13 @@ func TestConcurrentRatModeToggle(t *testing.T) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
 			rpnCalc := rpn.NewRPN(vars)
+			calculator := NewRPNCalculator(rpnCalc)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
 				signalHandler: NewSignalHandler(),
 				commandChain:  NewCommandChain(),
-				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+				rpnState:      &RPNState{vars: vars, calculator: calculator},
 			}
 			defaultExecutor(rpl, "rat toggle")
 		}(i)
@@ -75,12 +77,13 @@ func TestConcurrentExecutorAndRPN(t *testing.T) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
 			rpnCalc := rpn.NewRPN(vars)
+			calculator := NewRPNCalculator(rpnCalc)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
 				signalHandler: NewSignalHandler(),
 				commandChain:  NewCommandChain(),
-				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+				rpnState:      &RPNState{vars: vars, calculator: calculator},
 			}
 			defaultExecutor(rpl, "20% of 150")
 		}(i)

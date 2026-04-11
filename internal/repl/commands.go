@@ -10,8 +10,8 @@ import (
 
 // builtinCommandsList is the list of built-in REPL commands.
 // It's exposed as a variable to allow for dependency injection in tests.
-// Commands: help, clear, quit, exit, rpn, calc, rat
-var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc", "rat"}
+// Commands: help, clear, quit, exit, rpn, calc, rat, stack
+var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc", "rat", "stack"}
 
 // Commands returns the list of built-in command names supported by the REPL.
 // This is a public function that exposes the built-in command list.
@@ -45,6 +45,8 @@ func ExecuteCommand(cmd string) (string, error) {
 	case "rat":
 		// rat command is handled in executor() with access to RPN state
 		return "", nil
+	case "stack":
+		return cmdStack(), nil
 	default:
 		return "", fmt.Errorf("unknown command: %s. Available commands: %s", args[0], strings.Join(builtinCommandsList, ", "))
 	}
@@ -66,6 +68,7 @@ Built-in Commands:
   quit / exit      Exit the REPL
   rpn / calc       Evaluate an RPN (postfix notation) expression
   rat on/off/toggle Switch between float64 and rational number modes
+  stack            Show current stack state (same as 'rpn show')
 
 Usage Examples:
   20% of 150           Calculate 20% of 150
@@ -135,6 +138,14 @@ func cmdClear() error {
 func cmdQuit() error {
 	fmt.Println("Goodbye!")
 	return nil
+}
+
+// cmdStack displays the current RPN stack state.
+// It shows the stack depth and each value with its index.
+//
+// Returns the formatted stack output as a string
+func cmdStack() string {
+	return "Use 'rpn show' to view the current stack state"
 }
 
 // isBuiltinCommand checks if input starts with a built-in command.

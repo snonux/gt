@@ -232,3 +232,122 @@ func TestVariableConcurrency(t *testing.T) {
 		t.Errorf("Final count = %d, want 50", v.Count())
 	}
 }
+
+// TestVariablesSaveLoad tests saving and loading variables to/from a file
+func TestVariablesSaveLoad(t *testing.T) {
+	tmpFile := t.TempDir() + "/vars.json"
+
+	// Create and populate a variable store
+	vars := NewVariables()
+	vars.SetVariable("x", 42)
+	vars.SetVariable("y", 100)
+
+	// Save to file
+	if err := vars.Save(tmpFile); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Create a new variable store and load from file
+	newVars := NewVariables()
+	if err := newVars.Load(tmpFile); err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Verify loaded values
+	val, exists := newVars.GetVariable("x")
+	if !exists || val != 42 {
+		t.Errorf("Expected x=42 after load, got %v (exists=%v)", val, exists)
+	}
+
+	val, exists = newVars.GetVariable("y")
+	if !exists || val != 100 {
+		t.Errorf("Expected y=100 after load, got %v (exists=%v)", val, exists)
+	}
+
+	// Verify that variables from original store are NOT in the new one
+	val, exists = newVars.GetVariable("z")
+	if exists {
+		t.Errorf("Unexpected variable z in loaded store: %v", val)
+	}
+}
+
+// TestVariablesSaveLoadNonExistentFile tests that Load handles non-existent files gracefully
+func TestVariablesSaveLoadNonExistentFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	tmpFile := tmpDir + "/nonexistent_vars.json"
+
+	vars := NewVariables()
+	// Load from non-existent file should not error
+	if err := vars.Load(tmpFile); err != nil {
+		t.Errorf("Load from non-existent file should not error: %v", err)
+	}
+
+	// Verify the store is empty
+	if vars.Count() != 0 {
+		t.Errorf("Expected empty store after loading non-existent file, got %d variables", vars.Count())
+	}
+}
+
+// TestVariablesSaveLoadOverwrite tests that Load overwrites existing variables
+func TestVariablesSaveLoadOverwrite(t *testing.T) {
+	tmpFile := t.TempDir() + "/vars.json"
+
+	// Create and save variables
+	vars := NewVariables()
+	vars.SetVariable("x", 10)
+	vars.SetVariable("y", 20)
+
+	if err := vars.Save(tmpFile); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Modify variables in original store
+	vars.SetVariable("x", 100)
+	vars.SetVariable("z", 30)
+
+	// Load from file (should overwrite)
+	if err := vars.Load(tmpFile); err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Verify values are from file
+	val, exists := vars.GetVariable("x")
+	if !exists || val != 10 {
+		t.Errorf("Expected x=10 after load, got %v", val)
+	}
+
+	val, exists = vars.GetVariable("y")
+	if !exists || val != 20 {
+		t.Errorf("Expected y=20 after load, got %v", val)
+	}
+
+	// z should not exist anymore
+	val, exists = vars.GetVariable("z")
+	if exists {
+		t.Errorf("Expected z to be removed, got %v", val)
+	}
+}
+
+// TestVariablesSaveLoadEmptyStore tests saving and loading an empty variable store
+func TestVariablesSaveLoadEmptyStore(t *testing.T) {
+	tmpFile := t.TempDir() + "/empty_vars.json"
+
+	// Create empty variable store
+	vars := NewVariables()
+
+	// Save empty store
+	if err := vars.Save(tmpFile); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Load into new store
+	newVars := NewVariables()
+	if err := newVars.Load(tmpFile); err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	// Verify empty
+	if newVars.Count() != 0 {
+		t.Errorf("Expected empty store, got %d variables", newVars.Count())
+	}
+}

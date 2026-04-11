@@ -6,50 +6,47 @@ package repl
 import (
 	"strings"
 	"testing"
-
-	"github.com/c-bata/go-prompt"
 )
 
 // TestCompleterLogic tests the completer logic directly
 func TestCompleterLogic(t *testing.T) {
-	// Simulate the completer logic
 	testCases := []struct {
 		name  string
 		text  string
 		match bool
 	}{
-		{"h", "h", true},     // "help"
-		{"he", "he", true},   // "help"
-		{"hel", "hel", true}, // "help"
+		{"h", "h", true},
+		{"he", "he", true},
+		{"hel", "hel", true},
 		{"help", "help", true},
-		{"c", "c", true},     // "clear", "calc"
-		{"cl", "cl", true},   // "clear"
-		{"cle", "cle", true}, // "clear"
+		{"c", "c", true},
+		{"cl", "cl", true},
+		{"cle", "cle", true},
 		{"clear", "clear", true},
-		{"ca", "ca", true},   // "calc"
-		{"cal", "cal", true}, // "calc"
+		{"ca", "ca", true},
+		{"cal", "cal", true},
 		{"calc", "calc", true},
-		{"q", "q", true},     // "quit"
-		{"qu", "qu", true},   // "quit"
-		{"qui", "qui", true}, // "quit"
+		{"q", "q", true},
+		{"qu", "qu", true},
+		{"qui", "qui", true},
 		{"quit", "quit", true},
-		{"e", "e", true},     // "exit"
-		{"ex", "ex", true},   // "exit"
-		{"exi", "exi", true}, // "exit"
+		{"e", "e", true},
+		{"ex", "ex", true},
+		{"exi", "exi", true},
 		{"exit", "exit", true},
-		{"r", "r", true},   // "rpn"
-		{"rp", "rp", true}, // "rpn"
+		{"r", "r", true},
+		{"rp", "rp", true},
 		{"rpn", "rpn", true},
-		{"x", "x", false},     // no match
-		{"xyz", "xyz", false}, // no match
+		{"x", "x", false},
+		{"xyz", "xyz", false},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Simulate the completer logic
-			var found bool
-			for _, cmd := range Commands() {
-				if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(tc.text)) {
+			suggestions := completer(tc.text)
+			found := false
+			for _, s := range suggestions {
+				if strings.HasPrefix(strings.ToLower(s), strings.ToLower(tc.text)) {
 					found = true
 					break
 				}
@@ -63,7 +60,7 @@ func TestCompleterLogic(t *testing.T) {
 
 // TestCompleterEmptyText tests completer with empty text
 func TestCompleterEmptyText(t *testing.T) {
-	suggestions := completer(prompt.Document{Text: ""})
+	suggestions := completer("")
 	if suggestions != nil {
 		t.Errorf("Expected nil for empty text, got %d suggestions", len(suggestions))
 	}
@@ -71,7 +68,7 @@ func TestCompleterEmptyText(t *testing.T) {
 
 // TestCompleterNoPrefix tests completer with no matching prefix
 func TestCompleterNoPrefix(t *testing.T) {
-	suggestions := completer(prompt.Document{Text: "xyz "})
+	suggestions := completer("xyz ")
 	if len(suggestions) > 0 {
 		t.Errorf("Expected no suggestions for 'xyz', got %d", len(suggestions))
 	}

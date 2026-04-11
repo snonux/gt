@@ -18,7 +18,7 @@ func createTestREPL() *REPL {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpn.NewRPN(vars)},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpn.NewRPN(vars))},
 	}
 }
 
@@ -414,7 +414,7 @@ func TestExecutorWithRatModeOn(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	defaultExecutor(rpl, "rat on")
 	if rpnCalc.GetMode() != rpn.RationalMode {
@@ -431,7 +431,7 @@ func TestExecutorWithRatModeOff(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	defaultExecutor(rpl, "rat off")
 	if rpnCalc.GetMode() != rpn.FloatMode {
@@ -448,7 +448,7 @@ func TestExecutorWithRatModeToggle(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// First toggle
@@ -493,7 +493,7 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// Test := operator
@@ -526,7 +526,7 @@ func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// Test that assignment works after a calculation
@@ -549,7 +549,7 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// Test that assignment works after a calculation
@@ -576,7 +576,7 @@ func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// First execute 2 to put it on the stack
@@ -602,7 +602,7 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// This test replicates the exact user interaction:
@@ -634,7 +634,7 @@ func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// Clear any previous state
@@ -666,7 +666,7 @@ func TestExecutorWithExactUserScenarioDirect(t *testing.T) {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+		rpnState:      &RPNState{vars: vars, calculator: NewRPNCalculator(rpnCalc)},
 	}
 	
 	// Clear any previous state

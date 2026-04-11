@@ -48,6 +48,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -65,21 +66,62 @@ func main() {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-	fmt.Println(output)
+	if output != "" {
+		fmt.Println(output)
+	}
+}
+
+// LogWriter wraps io.Writer for use with io.MultiWriter in REPL mode.
+// It provides a log writer that can be passed to the REPL.
+type LogWriter struct {
+	writer io.WriteCloser
+}
+
+// Write writes data to the log file.
+func (lw *LogWriter) Write(p []byte) (n int, err error) {
+	return lw.writer.Write(p)
+}
+
+// Close closes the log file.
+func (lw *LogWriter) Close() error {
+	return lw.writer.Close()
 }
 
 // runCommand processes command-line arguments and executes the appropriate action.
 //
 // It handles:
+//   - --log <file>: Append REPL input/output to the specified log file
 //   - No arguments: Start REPL mode if stdin is a TTY, otherwise read from stdin
 //   - "version" argument: Return the version string
 //   - Other arguments: Try RPN parsing first, then fall back to percentage calculation
 func runCommand(args []string) (string, error) {
+	// Check for --log flag
+	var logFile string
+	var remainingArgs []string
+	
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--log" && i+1 < len(args) {
+			logFile = args[i+1]
+			i++ // Skip the filename argument
+		} else {
+			remainingArgs = append(remainingArgs, args[i])
+		}
+	}
+	
+	// Update args to exclude --log flag
+	args = remainingArgs
+	
 	if len(args) < 2 {
 		// No args provided - check if stdin is a TTY for REPL mode
 		if isatty.IsTerminal(os.Stdin.Fd()) {
-			if err := runREPL(); err != nil {
-				return "", err
+			if logFile != "" {
+				if err := repl.RunREPLWithLog(logFile); err != nil {
+					return "", err
+				}
+			} else {
+				if err := runREPL(); err != nil {
+					return "", err
+				}
 			}
 			return "", nil
 		}

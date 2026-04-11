@@ -74,7 +74,13 @@ func Repl() error {
 // Uninstall removes the perc binary from GOPATH/bin.
 func Uninstall() error {
 	fmt.Println("Uninstalling gt...")
-	binPath := filepath.Join(getGOPATH(), "bin", binaryName)
+	// Use the same logic as go install to determine the binary location
+	// go install installs to GOBIN or GOPATH/bin (GOBIN takes precedence)
+	gobin := os.Getenv("GOBIN")
+	if gobin == "" {
+		gobin = filepath.Join(getGOPATH(), "bin")
+	}
+	binPath := filepath.Join(gobin, binaryName)
 	return os.Remove(binPath)
 }
 
