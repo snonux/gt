@@ -506,8 +506,10 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 // isValidIdentifier checks if a token looks like a valid variable identifier.
 // Valid identifiers contain only alphanumeric characters and underscores,
 // and start with a letter or underscore (not a digit or special character).
-// For RPN symbol support, we also limit to single-character identifiers
-// (like x, y, z) to avoid converting percentage expression words into symbols.
+//
+// IMPORTANT: To prevent natural language words (like "what", "is", "of") from
+// being incorrectly treated as RPN symbols in mixed-mode expressions,
+// this function currently restricts valid identifiers to a length of 1.
 func isValidIdentifier(token string) bool {
 	if len(token) == 0 {
 		return false

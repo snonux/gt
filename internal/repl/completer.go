@@ -43,7 +43,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 	}
 
 	var suggestions []prompt.Suggest
-	for _, cmd := range builtinCommands() {
+	for _, cmd := range Commands() {
 		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(text)) {
 			suggestions = append(suggestions, prompt.Suggest{
 				Text:        cmd,

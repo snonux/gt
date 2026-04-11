@@ -3,61 +3,92 @@ package repl
 import (
 	"sync"
 	"testing"
+
+	"codeberg.org/snonux/gt/internal/rpn"
 )
 
+// TestConcurrentExecutor tests concurrent calls to defaultExecutor with fresh state
 func TestConcurrentExecutor(t *testing.T) {
-	// Test concurrent calls to executor()
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			executor("20% of 150")
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+			rpl := &REPL{
+				ttyChecker:    &TTYChecker{},
+				historyMgr:    NewHistoryManager(".gt_history"),
+				signalHandler: NewSignalHandler(),
+				commandChain:  NewCommandChain(),
+				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+			}
+			defaultExecutor(rpl, "20% of 150")
 		}(i)
 	}
 	wg.Wait()
 }
 
+// TestConcurrentRPN tests concurrent inline RPN evaluation
 func TestConcurrentRPN(t *testing.T) {
-	// Test concurrent calls to runRPN()
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			// Ignore error return as the expression "3 4 +" should always succeed
-			_, _ = runRPN("3 4 +")
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+			_, _ = rpnCalc.ParseAndEvaluate("3 4 +")
 		}(i)
 	}
 	wg.Wait()
 }
 
+// TestConcurrentRatModeToggle tests concurrent rat mode toggles with fresh state
 func TestConcurrentRatModeToggle(t *testing.T) {
-	// Test concurrent calls to executor() that change mode
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			executor("rat toggle")
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+			rpl := &REPL{
+				ttyChecker:    &TTYChecker{},
+				historyMgr:    NewHistoryManager(".gt_history"),
+				signalHandler: NewSignalHandler(),
+				commandChain:  NewCommandChain(),
+				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+			}
+			defaultExecutor(rpl, "rat toggle")
 		}(i)
 	}
 	wg.Wait()
 }
 
+// TestConcurrentExecutorAndRPN tests concurrent executor and RPN calls with fresh state
 func TestConcurrentExecutorAndRPN(t *testing.T) {
-	// Test concurrent calls to executor() and runRPN()
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
 		wg.Add(2)
 		go func(id int) {
 			defer wg.Done()
-			executor("20% of 150")
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+			rpl := &REPL{
+				ttyChecker:    &TTYChecker{},
+				historyMgr:    NewHistoryManager(".gt_history"),
+				signalHandler: NewSignalHandler(),
+				commandChain:  NewCommandChain(),
+				rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+			}
+			defaultExecutor(rpl, "20% of 150")
 		}(i)
 		go func(id int) {
 			defer wg.Done()
-			// Ignore error return as the expression "3 4 +" should always succeed
-			_, _ = runRPN("3 4 +")
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+			_, _ = rpnCalc.ParseAndEvaluate("3 4 +")
 		}(i)
 	}
 	wg.Wait()

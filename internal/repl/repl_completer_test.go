@@ -48,7 +48,7 @@ func TestCompleterLogic(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Simulate the completer logic
 			var found bool
-			for _, cmd := range builtinCommands() {
+			for _, cmd := range Commands() {
 				if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(tc.text)) {
 					found = true
 					break

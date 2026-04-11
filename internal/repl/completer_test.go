@@ -140,7 +140,7 @@ func TestCompleter(t *testing.T) {
 			// Only generate suggestions if text is not empty
 			// (empty string is a prefix of all strings, so we need to handle it specially)
 			if tt.text != "" {
-				for _, cmd := range builtinCommands() {
+				for _, cmd := range Commands() {
 					if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(tt.text)) {
 						suggestions = append(suggestions, prompt.Suggest{
 							Text:        cmd,

@@ -6,7 +6,6 @@ package repl
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"codeberg.org/snonux/gt/internal/rpn"
 
@@ -20,26 +19,6 @@ import (
 type RPNState struct {
 	vars    rpn.VariableStore
 	rpnCalc *rpn.RPN
-}
-
-// executorREPL holds the REPL instance created by the executor function.
-// This is used for backward compatibility with tests that need to access RPN state
-// after calling executor(). It's not part of the main REPL architecture.
-// Thread safety: Use executorREPLOnce for lazy initialization and executorREPLMu for access.
-var executorREPL *REPL
-var executorREPLOnce sync.Once
-var executorREPLMu sync.Mutex
-
-// ResetExecutorREPL resets the executorREPL for clean test isolation.
-// This should be called between tests that use executor() and getRPNState()
-// to ensure each test starts with a fresh RPN state.
-//
-// Note: This function is intended for test use only and should not be used
-// in production code. For production use, create new REPL instances with NewREPL().
-func ResetExecutorREPL() {
-	executorREPLMu.Lock()
-	defer executorREPLMu.Unlock()
-	executorREPL = nil
 }
 
 // REPL manages the interactive command-line interface for the percentage calculator.
@@ -190,7 +169,7 @@ func defaultCompleter(r *REPL, d prompt.Document) []prompt.Suggest {
 	}
 
 	var suggestions []prompt.Suggest
-	for _, cmd := range builtinCommands() {
+	for _, cmd := range Commands() {
 		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(text)) {
 			suggestions = append(suggestions, prompt.Suggest{
 				Text:        cmd,
@@ -236,126 +215,4 @@ func getCommandDescription(cmd string) string {
 func RunREPL() error {
 	repl := NewREPL(nil, nil)
 	return repl.Run()
-}
-
-// executor runs a calculation command and returns the result.
-// This is a package-level wrapper for backward compatibility and testing.
-// It creates a minimal REPL instance without building a prompt, allowing
-// calculation execution in non-interactive contexts.
-//
-// input: the calculation or command string to execute
-// The function processes the input through defaultExecutor, which handles
-// commands via the chain of responsibility pattern, including percentage
-// calculations, RPN expressions, and built-in commands.
-func executor(input string) {
-	// Initialize executorREPL only once using sync.Once for thread-safe lazy initialization
-	executorREPLOnce.Do(func() {
-		vars := rpn.NewVariables()
-		rpnState := &RPNState{
-			vars:    vars,
-			rpnCalc: rpn.NewRPN(vars),
-		}
-
-		// Create a minimal REPL instance without building a prompt
-		executorREPL = &REPL{
-			ttyChecker:    &TTYChecker{},
-			historyMgr:    NewHistoryManager(".gt_history"),
-			signalHandler: NewSignalHandler(),
-			commandChain:  NewCommandChain(),
-			rpnState:      rpnState,
-		}
-	})
-
-	// Use mutex to protect access to executorREPL during execution
-	executorREPLMu.Lock()
-	repl := executorREPL
-	executorREPLMu.Unlock()
-
-	defaultExecutor(repl, input)
-}
-
-// runRPN parses and evaluates an RPN (Reverse Polish Notation) expression.
-// This is a package-level wrapper for backward compatibility that delegates to
-// the executor's REPL runRPN method.
-//
-// input: the RPN expression to evaluate
-// Returns the result string and an error if the expression is invalid
-func runRPN(input string) (string, error) {
-	executorREPLMu.Lock()
-	defer executorREPLMu.Unlock()
-
-	if executorREPL != nil {
-		return executorREPL.rpnState.rpnCalc.ParseAndEvaluate(input)
-	}
-	return "", fmt.Errorf("no executor REPL available - call executor() first")
-}
-
-// getRPNState returns the RPN state from the executor's REPL.
-// This is a package-level helper for backward compatibility with tests that need
-// to access RPN state after calling executor(). It's not part of the main REPL
-// architecture.
-//
-// Returns the RPNState instance from the last executor() call, or nil if executor() hasn't been called
-func getRPNState() *RPNState {
-	executorREPLMu.Lock()
-	defer executorREPLMu.Unlock()
-
-	if executorREPL != nil {
-		return executorREPL.rpnState
-	}
-	return nil
-}
-
-
-
-
-
-// getHistoryPath returns the absolute path to the history file.
-// This is a package-level wrapper for backward compatibility.
-// The history file is stored in the user's home directory.
-//
-// Returns the full path to the history file, or empty string on error
-func getHistoryPath() string {
-	historyMgr := NewHistoryManager(".gt_history")
-	return historyMgr.Path()
-}
-
-// loadHistory loads history from the history file.
-// This is a package-level wrapper for backward compatibility that uses NewHistoryManager.
-//
-// Returns a slice of history entries, or nil if the file doesn't exist
-func loadHistory() []string {
-	historyMgr := NewHistoryManager(".gt_history")
-	return historyMgr.Load()
-}
-
-// saveHistory saves history to the history file.
-// This is a package-level wrapper for backward compatibility that uses NewHistoryManager.
-//
-// history: the slice of history entries to save
-// Returns an error if the file cannot be written
-func saveHistory(history []string) error {
-	historyMgr := NewHistoryManager(".gt_history")
-	return historyMgr.Save(history)
-}
-
-// isBuiltinCommand checks if input starts with a built-in command.
-// It performs case-insensitive matching against known built-in commands.
-//
-// input: the command string to check
-// Returns the input string and true if it starts with a built-in command,
-// or empty string and false otherwise
-func isBuiltinCommand(input string) (string, bool) {
-	args := strings.Fields(input)
-	if len(args) == 0 {
-		return "", false
-	}
-
-	cmd := strings.ToLower(args[0])
-	for _, builtin := range builtinCommands() {
-		if cmd == builtin {
-			return input, true
-		}
-	}
-	return "", false
 }

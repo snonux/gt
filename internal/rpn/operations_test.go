@@ -35,7 +35,9 @@ func TestStackPushPop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 3.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 3.0 {
 		t.Errorf("Pop() = %v, want 3.0", val)
 	}
 
@@ -52,7 +54,9 @@ func TestStackPeek(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Peek() returned error: %v", err)
 	}
-	if val.Float64() != 5.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 5.0 {
 		t.Errorf("Peek() = %v, want 5.0", val)
 	}
 
@@ -94,8 +98,14 @@ func TestStackValues(t *testing.T) {
 
 	// Values() returns values in storage order (bottom-to-top)
 	// Push order: 1, 2, 3 so storage is [1, 2, 3] with 3 on top
-	if vals[0].Float64() != 1.0 || vals[1].Float64() != 2.0 || vals[2].Float64() != 3.0 {
-		t.Errorf("Values() = %v, want [1 2 3] (bottom-to-top)", vals)
+	for i, v := range vals {
+		val, err := v.Float64()
+		if err != nil {
+			t.Fatalf("Float64() returned error: %v", err)
+		}
+		if val != float64(i+1) {
+			t.Errorf("Values()[%d] = %v, want %d", i, v, i+1)
+		}
 	}
 }
 
@@ -128,7 +138,9 @@ func TestOperationsAdd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Add() returned error: %v", err)
 	}
-	if val.Float64() != 7.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 7.0 {
 		t.Errorf("Add result = %v, want 7.0", val)
 	}
 }
@@ -149,7 +161,9 @@ func TestOperationsSubtract(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Subtract() returned error: %v", err)
 	}
-	if val.Float64() != 6.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 6.0 {
 		t.Errorf("Subtract result = %v, want 6.0 (10 - 4)", val)
 	}
 }
@@ -170,7 +184,9 @@ func TestOperationsMultiply(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Multiply() returned error: %v", err)
 	}
-	if val.Float64() != 15.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 15.0 {
 		t.Errorf("Multiply result = %v, want 15.0", val)
 	}
 }
@@ -191,7 +207,9 @@ func TestOperationsDivide(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Divide() returned error: %v", err)
 	}
-	if val.Float64() != 5.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 5.0 {
 		t.Errorf("Divide result = %v, want 5.0", val)
 	}
 }
@@ -228,7 +246,9 @@ func TestOperationsPower(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Power() returned error: %v", err)
 	}
-	if val.Float64() != 8.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 8.0 {
 		t.Errorf("Power result = %v, want 8.0 (2^3)", val)
 	}
 }
@@ -249,7 +269,9 @@ func TestOperationsModulo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after Modulo() returned error: %v", err)
 	}
-	if val.Float64() != 1.0 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 1.0 {
 		t.Errorf("Modulo result = %v, want 1.0 (10 %% 3)", val)
 	}
 }
@@ -297,8 +319,15 @@ func TestOperationsDup(t *testing.T) {
 
 	val1, _ := s.Pop()
 	val2, _ := s.Pop()
-	if val1.Float64() != 7.0 || val2.Float64() != 7.0 {
-		t.Errorf("Dup values = %v, %v, want both 7.0", val1, val2)
+	if v1, err := val1.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v1 != 7.0 {
+		t.Errorf("val1.Float64() = %v, want 7.0", v1)
+	}
+	if v2, err := val2.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v2 != 7.0 {
+		t.Errorf("val2.Float64() = %v, want 7.0", v2)
 	}
 }
 
@@ -316,8 +345,15 @@ func TestOperationsSwap(t *testing.T) {
 
 	val1, _ := s.Pop()
 	val2, _ := s.Pop()
-	if val1.Float64() != 1.0 || val2.Float64() != 2.0 {
-		t.Errorf("After Swap, values = %v, %v, want 1.0, 2.0 (swapped)", val1, val2)
+	if v1, err := val1.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v1 != 1.0 {
+		t.Errorf("val1.Float64() = %v, want 1.0", v1)
+	}
+	if v2, err := val2.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v2 != 2.0 {
+		t.Errorf("val2.Float64() = %v, want 2.0", v2)
 	}
 }
 
@@ -449,7 +485,9 @@ func TestOperationsUseVariable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Pop() after UseVariable() returned error: %v", err)
 	}
-	if val.Float64() != 3.14159 {
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 3.14159 {
 		t.Errorf("Variable value pushed to stack = %v, want 3.14159", val)
 	}
 }
@@ -576,8 +614,10 @@ func TestLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 3.0 {
-		t.Errorf("Log2(8) = %f, want 3.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 3.0 {
+		t.Errorf("Log2(8) = %f, want 3.0)", v)
 	}
 
 	// Test log₂(1) = 0
@@ -590,8 +630,10 @@ func TestLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Log2(1) = %f, want 0.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Log2(1) = %f, want 0.0)", v)
 	}
 
 	// Test log₂(0) should error
@@ -616,8 +658,10 @@ func TestLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 2.0 {
-		t.Errorf("Log10(100) = %f, want 2.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 2.0 {
+		t.Errorf("Log10(100) = %f, want 2.0)", v)
 	}
 
 	// Test log₁₀(1) = 0
@@ -630,8 +674,10 @@ func TestLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Log10(1) = %f, want 0.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Log10(1) = %f, want 0.0)", v)
 	}
 }
 
@@ -649,8 +695,10 @@ func TestLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if math.Abs(val.Float64()-1.0) > 0.0001 {
-		t.Errorf("ln(e) = %f, want ~1.0", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if math.Abs(v-1.0) > 0.0001 {
+		t.Errorf("ln(e) = %f, want ~1.0", v)
 	}
 
 	// Test ln(1) = 0
@@ -663,8 +711,10 @@ func TestLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Ln(1) = %f, want 0.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Ln(1) = %f, want 0.0)", v)
 	}
 }
 
@@ -682,8 +732,10 @@ func TestLog2WithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Log2(true) = %f, want 0.0 (log₂(1) = 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Log2(true) = %f, want 0.0 (log₂(1) = 0)", v)
 	}
 
 	// Test with boolean false (should be converted to 0, log₂(0) should error)
@@ -708,8 +760,10 @@ func TestLog10WithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Log10(true) = %f, want 0.0 (log₁₀(1) = 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Log10(true) = %f, want 0.0 (log₁₀(1) = 0)", v)
 	}
 
 	// Test with boolean false (should be converted to 0, log₁₀(0) should error)
@@ -734,8 +788,10 @@ func TestLnWithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 0.0 {
-		t.Errorf("Ln(true) = %f, want 0.0 (ln(1) = 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 0.0 {
+		t.Errorf("Ln(true) = %f, want 0.0 (ln(1) = 0)", v)
 	}
 
 	// Test with boolean false (should be converted to 0, ln(0) should error)
@@ -774,8 +830,10 @@ func TestLnEdgeCases(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() > -6.0 || val.Float64() < -7.0 {
-		t.Errorf("Ln(0.001) = %f, want ~-6.9 (ln(0.001))", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v > -6.0 || v < -7.0 {
+		t.Errorf("Ln(0.001) = %f, want ~-6.9 (ln(0.001))", v)
 	}
 }
 
@@ -795,8 +853,10 @@ func TestHyperLog2WithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 2.0 {
-		t.Errorf("HyperLog2(4, true) = %f, want 2.0 (log₂(4) + log₂(1) = 2 + 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 2.0 {
+		t.Errorf("HyperLog2(4, true) = %f, want 2.0 (log₂(4) + log₂(1) = 2 + 0)", v)
 	}
 
 	// Test hyperlog₂(4, false) = log₂(4) + log₂(0) should error
@@ -825,8 +885,10 @@ func TestHyperLog10WithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 1.0 {
-		t.Errorf("HyperLog10(10, true) = %f, want 1.0 (log₁₀(10) + log₁₀(1) = 1 + 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 1.0 {
+		t.Errorf("HyperLog10(10, true) = %f, want 1.0 (log₁₀(10) + log₁₀(1) = 1 + 0)", v)
 	}
 
 	// Test hyperlog₁₀(10, false) = log₁₀(10) + log₁₀(0) should error
@@ -854,8 +916,10 @@ func TestHyperLnWithBoolean(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if math.Abs(val.Float64()-1.0) > 0.0001 {
-		t.Errorf("HyperLn(e, true) = %f, want ~1.0 (ln(e) + ln(1) = 1 + 0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if math.Abs(v-1.0) > 0.0001 {
+		t.Errorf("HyperLn(e, true) = %f, want ~1.0 (ln(e) + ln(1) = 1 + 0)", v)
 	}
 
 	// Test hyperln(e, false) = ln(e) + ln(0) should error
@@ -882,8 +946,10 @@ func TestHyperLog2(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 6.0 {
-		t.Errorf("HyperLog2(4, 16) = %f, want 6.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 6.0 {
+		t.Errorf("HyperLog2(4, 16) = %f, want 6.0)", v)
 	}
 
 	// Test with single value (should error, like other hyper operators)
@@ -909,8 +975,10 @@ func TestHyperLog10(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if val.Float64() != 3.0 {
-		t.Errorf("HyperLog10(10, 100) = %f, want 3.0)", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if v != 3.0 {
+		t.Errorf("HyperLog10(10, 100) = %f, want 3.0)", v)
 	}
 }
 
@@ -929,8 +997,10 @@ func TestHyperLn(t *testing.T) {
 	if err != nil {
 		t.Errorf("Pop() returned error: %v", err)
 	}
-	if math.Abs(val.Float64()-3.0) > 0.0001 {
-		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", val.Float64())
+	if v, err := val.Float64(); err != nil {
+		t.Errorf("Float64() returned error: %v", err)
+	} else if math.Abs(v-3.0) > 0.0001 {
+		t.Errorf("HyperLn(e, e²) = %f, want ~3.0", v)
 	}
 }
 
@@ -1005,8 +1075,10 @@ func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
 			if err != nil {
 				t.Errorf("Pop() returned error: %v", err)
 			}
-			if val.Float64() != tc.expected {
-				t.Errorf("Result = %f, want %f", val.Float64(), tc.expected)
+			if v, err := val.Float64(); err != nil {
+				t.Errorf("Float64() returned error: %v", err)
+			} else if v != tc.expected {
+				t.Errorf("Result = %f, want %f", v, tc.expected)
 			}
 		})
 	}

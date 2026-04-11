@@ -123,8 +123,12 @@ func (f *Float) Add(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot add: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot add: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.n + otherF), nil
+	return NewFloat(fF + otherF), nil
 }
 
 // Sub returns the difference of two float numbers.
@@ -133,8 +137,12 @@ func (f *Float) Sub(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot subtract: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot subtract: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.n - otherF), nil
+	return NewFloat(fF - otherF), nil
 }
 
 // Mul returns the product of two float numbers.
@@ -143,8 +151,12 @@ func (f *Float) Mul(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot multiply: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot multiply: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.n * otherF), nil
+	return NewFloat(fF * otherF), nil
 }
 
 // Div returns the quotient of two float numbers.
@@ -153,11 +165,15 @@ func (f *Float) Div(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot divide: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot divide: %w", err)
+	}
 	if other.IsZero() {
 		return nil, fmt.Errorf("division by zero")
 	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.n / otherF), nil
+	return NewFloat(fF / otherF), nil
 }
 
 // Pow returns this float raised to the power of another.
@@ -166,8 +182,12 @@ func (f *Float) Pow(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot power: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot power: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(math.Pow(f.n, otherF)), nil
+	return NewFloat(math.Pow(fF, otherF)), nil
 }
 
 // Mod returns the remainder of this float divided by another.
@@ -176,11 +196,15 @@ func (f *Float) Mod(other Number) (Number, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot modulo: %w", err)
 	}
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot modulo: %w", err)
+	}
 	if other.IsZero() {
 		return nil, fmt.Errorf("modulo by zero")
 	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(math.Mod(f.n, otherF)), nil
+	return NewFloat(math.Mod(fF, otherF)), nil
 }
 
 // IsZero returns true if the float is zero.
@@ -277,7 +301,10 @@ func (r *Rat) Float64() (float64, error) {
 		}
 		return 0, nil
 	}
-	f, _ := r.n.Float64()
+	f, ok := r.n.Float64()
+	if !ok {
+		return 0, fmt.Errorf("cannot convert rational number to float64")
+	}
 	return f, nil
 }
 

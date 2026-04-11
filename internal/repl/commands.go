@@ -13,20 +13,12 @@ import (
 // Commands: help, clear, quit, exit, rpn, calc, rat
 var builtinCommandsList = []string{"help", "clear", "quit", "exit", "rpn", "calc", "rat"}
 
-// builtinCommands returns the list of built-in commands.
-// This is a package-level wrapper for backward compatibility.
-//
-// Returns a slice of built-in command names
-func builtinCommands() []string {
-	return builtinCommandsList
-}
-
 // Commands returns the list of built-in command names supported by the REPL.
 // This is a public function that exposes the built-in command list.
 //
 // Returns a slice of built-in command names (e.g., "help", "clear", "quit")
 func Commands() []string {
-	return builtinCommands()
+	return builtinCommandsList
 }
 
 // ExecuteCommand runs a built-in command and returns its output or error.
@@ -143,4 +135,25 @@ func cmdClear() error {
 func cmdQuit() error {
 	fmt.Println("Goodbye!")
 	return nil
+}
+
+// isBuiltinCommand checks if input starts with a built-in command.
+// It performs case-insensitive matching against known built-in commands.
+//
+// input: the command string to check
+// Returns the input string and true if it starts with a built-in command,
+// or empty string and false otherwise
+func isBuiltinCommand(input string) (string, bool) {
+	args := strings.Fields(input)
+	if len(args) == 0 {
+		return "", false
+	}
+
+	cmd := strings.ToLower(args[0])
+	for _, builtin := range builtinCommandsList {
+		if cmd == builtin {
+			return input, true
+		}
+	}
+	return "", false
 }

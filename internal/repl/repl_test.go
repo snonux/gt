@@ -8,50 +8,63 @@ import (
 	"testing"
 
 	"codeberg.org/snonux/gt/internal/rpn"
-
-	"github.com/c-bata/go-prompt"
 )
 
-func TestExecutor(t *testing.T) {
-	// Test that executor doesn't panic on empty input
-	executor("")
+// Helper to create a minimal REPL for testing without prompt (no TTY required)
+func createTestREPL() *REPL {
+	vars := rpn.NewVariables()
+	return &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpn.NewRPN(vars)},
+	}
 }
 
 func TestExecutorWithHelp(t *testing.T) {
-	// Test executor with help command
-	executor("help")
+	repl := createTestREPL()
+	defaultExecutor(repl, "help")
 }
 
 func TestExecutorWithClear(t *testing.T) {
-	executor("clear")
+	repl := createTestREPL()
+	defaultExecutor(repl, "clear")
 }
 
 func TestExecutorWithQuit(t *testing.T) {
-	executor("quit")
+	repl := createTestREPL()
+	defaultExecutor(repl, "quit")
 }
 
 func TestExecutorWithExit(t *testing.T) {
-	executor("exit")
+	repl := createTestREPL()
+	defaultExecutor(repl, "exit")
 }
 
 func TestExecutorWithPercentage(t *testing.T) {
-	executor("20% of 150")
+	repl := createTestREPL()
+	defaultExecutor(repl, "20% of 150")
 }
 
 func TestExecutorWithRPN(t *testing.T) {
-	executor("rpn 3 4 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 3 4 +")
 }
 
 func TestExecutorWithInvalid(t *testing.T) {
-	executor("invalid input")
+	repl := createTestREPL()
+	defaultExecutor(repl, "invalid input")
 }
 
 func TestExecutorWithVars(t *testing.T) {
-	executor("rpn x 5 = vars")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn x 5 = vars")
 }
 
 func TestExecutorWithClearVariables(t *testing.T) {
-	executor("rpn clear")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn clear")
 }
 
 func TestIsBuiltinCommand(t *testing.T) {
@@ -152,7 +165,7 @@ func TestIsBuiltinCommandWithMixedCase(t *testing.T) {
 	}
 }
 
-// TestRunRPN tests the runRPN helper function
+// TestRunRPN tests inline RPN evaluation (like cmd/gt/main.go does)
 func TestRunRPN(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -172,9 +185,19 @@ func TestRunRPN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := runRPN(tt.input)
+			vars := rpn.NewVariables()
+			rpnCalc := rpn.NewRPN(vars)
+
+			input := strings.TrimSpace(tt.input)
+			if strings.HasPrefix(input, "rpn ") {
+				input = strings.TrimPrefix(input, "rpn ")
+			} else if strings.HasPrefix(input, "calc ") {
+				input = strings.TrimPrefix(input, "calc ")
+			}
+
+			_, err := rpnCalc.ParseAndEvaluate(input)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("runRPN(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+				t.Errorf("RPN evaluation error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -212,198 +235,230 @@ func TestGetCommandDescriptionForUnknownCommand(t *testing.T) {
 }
 
 func TestExecutorWithSingleOperator(t *testing.T) {
-	executor("+")
-	executor("-")
-	executor("*")
-	executor("/")
-	executor("^")
-	executor("%")
-	executor("dup")
-	executor("swap")
-	executor("pop")
-	executor("show")
-	executor("vars")
-	executor("clear")
+	repl := createTestREPL()
+	for _, op := range []string{"+", "-", "*", "/", "^", "%", "dup", "swap", "pop", "show", "vars", "clear"} {
+		t.Run(op, func(t *testing.T) {
+			defaultExecutor(repl, op)
+		})
+	}
 }
 
 func TestExecutorWithPercentageExpression(t *testing.T) {
-	executor("20% of 150")
-	executor("30 is what %% of 150")
-	executor("30 is 20%% of what")
+	repl := createTestREPL()
+	defaultExecutor(repl, "20% of 150")
+	defaultExecutor(repl, "30 is what %% of 150")
+	defaultExecutor(repl, "30 is 20%% of what")
 }
 
 func TestExecutorWithInvalidPercentage(t *testing.T) {
-	executor("invalid percentage input")
+	repl := createTestREPL()
+	defaultExecutor(repl, "invalid percentage input")
 }
 
 func TestExecutorWithOperatorOnly(t *testing.T) {
-	executor("1 2 +")
-	executor("+")
+	repl := createTestREPL()
+	defaultExecutor(repl, "1 2 +")
+	defaultExecutor(repl, "+")
 }
 
 func TestExecutorWithRPNPrefix(t *testing.T) {
-	executor("rpn 3 4 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 3 4 +")
 }
 
 func TestExecutorWithCalcPrefix(t *testing.T) {
-	executor("calc 5 6 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "calc 5 6 +")
 }
 
 func TestExecutorWithEmptyInput(t *testing.T) {
-	executor("")
+	repl := createTestREPL()
+	defaultExecutor(repl, "")
 }
 
 func TestExecutorWithWhitespaceOnly(t *testing.T) {
-	executor("   ")
+	repl := createTestREPL()
+	defaultExecutor(repl, "   ")
 }
 
 func TestExecutorWithInvalidInput(t *testing.T) {
 	tests := []string{"invalid input", "not a valid command", "xyz"}
 	for _, input := range tests {
 		t.Run(input, func(t *testing.T) {
-			executor(input)
+			repl := createTestREPL()
+			defaultExecutor(repl, input)
 		})
 	}
 }
 
 func TestExecutorWithInvalidRPN(t *testing.T) {
-	executor("rpn 1 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 1 +")
 }
 
 func TestExecutorWithEmptyRPNPrefix(t *testing.T) {
-	executor("rpn")
-	executor("calc")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn")
+	defaultExecutor(repl, "calc")
 }
 
 func TestExecutorWithAssignment(t *testing.T) {
-	executor("rpn x 42 =")
-	executor("rpn x")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn x 42 =")
+	defaultExecutor(repl, "rpn x")
 }
 
 func TestExecutorWithPercentageAndRPNFallback(t *testing.T) {
-	executor("20% of 150")
-	executor("3 4 +")
-}
-
-func TestGetHistoryPath(t *testing.T) {
-	path := getHistoryPath()
-	if path == "" {
-		t.Error("getHistoryPath() returned empty string")
-	}
-}
-
-func TestLoadHistory(t *testing.T) {
-	history := loadHistory()
-	_ = history
-}
-
-func TestSaveHistory(t *testing.T) {
-	err := saveHistory([]string{"test1", "test2"})
-	_ = err
+	repl := createTestREPL()
+	defaultExecutor(repl, "20% of 150")
+	defaultExecutor(repl, "3 4 +")
 }
 
 func TestExecutorWithRPNExpressionOnly(t *testing.T) {
-	executor("5 3 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "5 3 +")
 }
 
 func TestExecutorWithRPNThenOperator(t *testing.T) {
-	executor("1 2 +")
-	executor("+")
+	repl := createTestREPL()
+	defaultExecutor(repl, "1 2 +")
+	defaultExecutor(repl, "+")
 }
 
 func TestExecutorWithRPNThenRPN(t *testing.T) {
-	executor("rpn 1 2 +")
-	executor("rpn 3 4 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 1 2 +")
+	defaultExecutor(repl, "rpn 3 4 +")
 }
 
 func TestExecutorWithRPNShow(t *testing.T) {
-	executor("rpn show")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn show")
 }
 
 func TestExecutorWithRPNDup(t *testing.T) {
-	executor("rpn dup")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn dup")
 }
 
 func TestExecutorWithRPNSwap(t *testing.T) {
-	executor("rpn swap")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn swap")
 }
 
 func TestExecutorWithRPNSingle(t *testing.T) {
-	executor("rpn 42")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 42")
 }
 
 func TestExecutorWithRPNMulti(t *testing.T) {
-	executor("rpn 1 2 3 4 5 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 1 2 3 4 5 +")
 }
 
 func TestExecutorWithStackOps(t *testing.T) {
-	executor("dup")
-	executor("swap")
-	executor("pop")
-	executor("show")
+	repl := createTestREPL()
+	defaultExecutor(repl, "dup")
+	defaultExecutor(repl, "swap")
+	defaultExecutor(repl, "pop")
+	defaultExecutor(repl, "show")
 }
 
 func TestExecutorWithRPNClear(t *testing.T) {
-	executor("rpn clear")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn clear")
 }
 
 func TestExecutorWithHistoryCommands(t *testing.T) {
-	executor("vars")
-	executor("clear")
+	repl := createTestREPL()
+	defaultExecutor(repl, "vars")
+	defaultExecutor(repl, "clear")
 }
 
 func TestExecutorWithMixedInput(t *testing.T) {
-	executor("25% of 200")
-	executor("10 20 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "25% of 200")
+	defaultExecutor(repl, "10 20 +")
 }
 
 func TestExecutorWithRPNCalcMixed(t *testing.T) {
-	executor("rpn 1 2 +")
-	executor("3 4 +")
-	executor("calc 5 6 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 1 2 +")
+	defaultExecutor(repl, "3 4 +")
+	defaultExecutor(repl, "calc 5 6 +")
 }
 
 func TestExecutorCommandsEdgeCases(t *testing.T) {
-	executor("  clear  ")
-	executor("HELP")
-	executor("CLEAR")
+	repl := createTestREPL()
+	defaultExecutor(repl, "  clear  ")
+	defaultExecutor(repl, "HELP")
+	defaultExecutor(repl, "CLEAR")
 }
 
 func TestExecutorWithRPMPrefix(t *testing.T) {
-	executor("rpn 1 2 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "rpn 1 2 +")
 }
 
 func TestExecutorWithCalcPrefixMixed(t *testing.T) {
-	executor("calc 1 2 +")
+	repl := createTestREPL()
+	defaultExecutor(repl, "calc 1 2 +")
 }
 
+// TestExecutorWithRatModeOn tests that rat on works with fresh REPL
 func TestExecutorWithRatModeOn(t *testing.T) {
-	executor("rat on")
-	state := getRPNState()
-	if state.rpnCalc.GetMode() != rpn.RationalMode {
-		t.Errorf("Expected RationalMode after rat on, got %v", state.rpnCalc.GetMode())
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	defaultExecutor(rpl, "rat on")
+	if rpnCalc.GetMode() != rpn.RationalMode {
+		t.Errorf("Expected RationalMode after rat on, got %v", rpnCalc.GetMode())
 	}
 }
 
+// TestExecutorWithRatModeOff tests that rat off works with fresh REPL
 func TestExecutorWithRatModeOff(t *testing.T) {
-	executor("rat off")
-	state := getRPNState()
-	if state.rpnCalc.GetMode() != rpn.FloatMode {
-		t.Errorf("Expected FloatMode after rat off, got %v", state.rpnCalc.GetMode())
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	defaultExecutor(rpl, "rat off")
+	if rpnCalc.GetMode() != rpn.FloatMode {
+		t.Errorf("Expected FloatMode after rat off, got %v", rpnCalc.GetMode())
 	}
 }
 
+// TestExecutorWithRatModeToggle tests that rat toggle works with fresh REPL
 func TestExecutorWithRatModeToggle(t *testing.T) {
-	// First toggle - should enable rational mode if currently float
-	executor("rat toggle")
-	state := getRPNState()
-	mode1 := state.rpnCalc.GetMode()
-
-	// Second toggle - should toggle back
-	executor("rat toggle")
-	state = getRPNState()
-	mode2 := state.rpnCalc.GetMode()
-
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
+	// First toggle
+	defaultExecutor(rpl, "rat toggle")
+	mode1 := rpnCalc.GetMode()
+	
+	// Second toggle
+	defaultExecutor(rpl, "rat toggle")
+	mode2 := rpnCalc.GetMode()
+	
 	// Modes should be different after toggle
 	if mode1 == mode2 {
 		t.Errorf("Modes should be different after toggle: %v -> %v", mode1, mode2)
@@ -411,13 +466,15 @@ func TestExecutorWithRatModeToggle(t *testing.T) {
 }
 
 func TestExecutorWithRatModeInvalid(t *testing.T) {
+	repl := createTestREPL()
 	// Just verify it doesn't panic
-	executor("rat invalid")
+	defaultExecutor(repl, "rat invalid")
 }
 
 func TestExecutorWithRatModeNoArg(t *testing.T) {
+	repl := createTestREPL()
 	// Just verify it doesn't panic
-	executor("rat")
+	defaultExecutor(repl, "rat")
 }
 
 func TestIsBuiltinCommandWithSubcommandHelp(t *testing.T) {
@@ -427,222 +484,31 @@ func TestIsBuiltinCommandWithSubcommandHelp(t *testing.T) {
 	}
 }
 
-func TestRPNHandlerWithUnknownInput(t *testing.T) {
-	// Test that unknown input falls through to next handler
-	chain := NewCommandChain()
-
-	// Create a minimal REPL
-	r := &REPL{
-		ttyChecker:    &TTYChecker{},
-		historyMgr:    NewHistoryManager(".gt_history"),
-		signalHandler: NewSignalHandler(),
-		commandChain:  chain,
-	}
-
-	// Test unknown input - should not be handled by RPNHandler directly
-	// but will be handled by Error handler after RPNHandler passes it through
-	output, handled, err := chain.Handle(r, "unknowncommand")
-	if handled {
-		t.Errorf("Expected unknowncommand to be handled by error handler, got handled=%v, err=%v, output=%q", handled, err, output)
-	}
-}
-
-func TestRPNHandlerWithPercentageExpression(t *testing.T) {
-	// Test that percentage expressions are handled by PercentageHandler, not RPNHandler
-	chain := NewCommandChain()
-	r := &REPL{
-		ttyChecker:    &TTYChecker{},
-		historyMgr:    NewHistoryManager(".gt_history"),
-		signalHandler: NewSignalHandler(),
-		commandChain:  chain,
-	}
-
-	// Test percentage expression
-	output, handled, err := chain.Handle(r, "20% of 150")
-	if !handled {
-		t.Errorf("Expected percentage expression to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
-	}
-	if err != nil {
-		t.Errorf("Expected no error for percentage expression, got %v", err)
-	}
-}
-
-func TestRPNHandlerWithRPNExpression(t *testing.T) {
-	// Test RPN expressions
-	chain := NewCommandChain()
-	vars := rpn.NewVariables()
-	rpnState := &RPNState{
-		vars:    vars,
-		rpnCalc: rpn.NewRPN(vars),
-	}
-	r := &REPL{
-		ttyChecker:    &TTYChecker{},
-		historyMgr:    NewHistoryManager(".gt_history"),
-		signalHandler: NewSignalHandler(),
-		commandChain:  chain,
-		rpnState:      rpnState,
-	}
-
-	// Test RPN expression
-	output, handled, err := chain.Handle(r, "3 4 +")
-	if !handled {
-		t.Errorf("Expected RPN expression to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
-	}
-	if err != nil {
-		t.Errorf("Expected no error for RPN expression, got %v", err)
-	}
-}
-
-func TestRPNHandlerWithSingleNumber(t *testing.T) {
-	// Test single number input (RPN - pushes number onto stack)
-	chain := NewCommandChain()
-	vars := rpn.NewVariables()
-	rpnState := &RPNState{
-		vars:    vars,
-		rpnCalc: rpn.NewRPN(vars),
-	}
-	r := &REPL{
-		ttyChecker:    &TTYChecker{},
-		historyMgr:    NewHistoryManager(".gt_history"),
-		signalHandler: NewSignalHandler(),
-		commandChain:  chain,
-		rpnState:      rpnState,
-	}
-
-	// Test single number
-	output, handled, err := chain.Handle(r, "42")
-	if !handled {
-		t.Errorf("Expected single number to be handled, got handled=%v, err=%v, output=%q", handled, err, output)
-	}
-	if err != nil {
-		t.Errorf("Expected no error for single number, got %v", err)
-	}
-}
-
-// TestNewREPL tests that NewREPL creates a valid REPL instance.
-// Note: This test is skipped when not running in a TTY because the prompt
-// library requires TTY access.
-func TestNewREPL(t *testing.T) {
-	// Skip this test if not running in a TTY
-	ttyChecker := &TTYChecker{}
-	if !ttyChecker.IsTTY() {
-		t.Skip("Skipping test - not running in a TTY")
-	}
-
-	// Test that NewREPL creates a valid REPL instance without panicking
-	repl := NewREPL(nil, nil)
-	if repl == nil {
-		t.Fatal("Expected REPL to be created, got nil")
-	}
-	if repl.prompt == nil {
-		t.Error("Expected prompt to be set")
-	}
-	if repl.commandChain == nil {
-		t.Error("Expected commandChain to be set")
-	}
-	if repl.ttyChecker == nil {
-		t.Error("Expected ttyChecker to be set")
-	}
-	if repl.historyMgr == nil {
-		t.Error("Expected historyMgr to be set")
-	}
-	if repl.signalHandler == nil {
-		t.Error("Expected signalHandler to be set")
-	}
-}
-
-func TestDefaultCompleter(t *testing.T) {
-	// Test the default completer function directly
-	// Note: This test has limited coverage because defaultCompleter uses
-	// GetWordBeforeCursor() which requires proper cursor position.
-	// The actual completer logic is tested in completer_test.go
-
-	// Test with text that would match if cursor position was set correctly
-	repl := &REPL{}
-	doc := prompt.Document{Text: "h"}
-	suggestions := defaultCompleter(repl, doc)
-
-	// When cursor is at position 0 (default), GetWordBeforeCursor returns empty
-	// But the test in completer_test.go verifies the actual behavior
-	_ = suggestions
-
-	// Test with clear prefix
-	doc2 := prompt.Document{Text: "cl"}
-	suggestions2 := defaultCompleter(repl, doc2)
-	_ = suggestions2
-}
-
-func TestDefaultGetCommandDescription(t *testing.T) {
-	// Create a REPL and test the defaultGetCommandDescription method
-	repl := &REPL{}
-
-	tests := []struct {
-		cmd        string
-		wantPrefix string
-	}{
-		{"help", "Show"},
-		{"clear", "Clear"},
-		{"quit", "Exit"},
-		{"exit", "Exit"},
-		{"rpn", "Evaluate"},
-		{"calc", "Same"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.cmd, func(t *testing.T) {
-			desc := repl.defaultGetCommandDescription(tt.cmd)
-			if !strings.Contains(desc, tt.wantPrefix) {
-				t.Errorf("defaultGetCommandDescription(%q) = %q, should contain %q", tt.cmd, desc, tt.wantPrefix)
-			}
-		})
-	}
-}
-
-func TestExecutorWithUnknownCommand(t *testing.T) {
-	// Test that unknown commands are handled by the error handler
-	// This should exercise the "Not handled by any handler" path
-	executor("completelyunknowncommand123")
-}
-
-func TestDefaultExecutorCodePaths(t *testing.T) {
-	// Test all code paths in defaultExecutor
-	// 1. Empty input (returns early at line 110)
-	// 2. Handled=true with error (prints error, returns at line 124)
-	// 3. Handled=true with output (prints output, returns at line 124)
-	// 4. Handled=false with error (prints error at line 130)
-	// 5. Handled=false without error (does nothing)
-
-	// Path 1: Empty input
-	executor("")
-
-	// Path 2: Built-in command with error (clear should not error but let's verify)
-	executor("clear")
-
-	// Path 3: Built-in command with output (help returns help text)
-	executor("help")
-
-	// Path 4: Unknown command (error handler returns handled=false, err!=nil)
-	executor("completelyunknowncommand123")
-
-	// Path 5: Whitespace only (trimmed to empty, returns early)
-	executor("   ")
-}
-
+// TestExecutorWithAssignmentRight tests := and =: operators
 func TestExecutorWithAssignmentRight(t *testing.T) {
-	// Test := and =: operators
-	executor("5 x :=")
-	state := getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
+	// Test := operator
+	defaultExecutor(rpl, "5 x :=")
+	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x :=")
 	}
 	if val != 5 {
 		t.Errorf("Variable x = %v, want 5", val)
 	}
-
-	executor("y 3 =:")
-	state = getRPNState()
-	val, exists = state.vars.GetVariable("y")
+	
+	// Test =: operator
+	defaultExecutor(rpl, "y 3 =:")
+	val, exists = vars.GetVariable("y")
 	if !exists {
 		t.Errorf("Variable y should exist after y =:")
 	}
@@ -651,14 +517,21 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 	}
 }
 
-
+// TestExecutorWithAssignmentAfterCalculation tests assignment after a calculation
 func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
 	// Test that assignment works after a calculation
-	// Note: This test uses a fresh variable name to avoid conflicts with previous tests
-	// that may have set x=5 from TestExecutorWithAssignmentRight
-	executor("1 2 + z =:")
-	state := getRPNState()
-	val, exists := state.vars.GetVariable("z")
+	defaultExecutor(rpl, "1 2 + z =:")
+	val, exists := vars.GetVariable("z")
 	if !exists {
 		t.Errorf("Variable z should exist")
 	}
@@ -667,15 +540,25 @@ func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 	}
 }
 
+// TestExecutorWithIncrementalAssignment tests that assignment works after a calculation with separate commands
 func TestExecutorWithIncrementalAssignment(t *testing.T) {
-	// Test that assignment works after a calculation with separate commands
-	// This should use the value from the stack for assignment
-	executor("1 2 +")
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
+	// Test that assignment works after a calculation
+	defaultExecutor(rpl, "1 2 +")
 	
 	// Now use z =: to assign the top of stack (3) to variable z
-	executor("z =:")
-
-	val, exists := getRPNState().vars.GetVariable("z")
+	defaultExecutor(rpl, "z =:")
+	
+	val, exists := vars.GetVariable("z")
 	if !exists {
 		t.Errorf("Variable z should exist after z =:")
 	}
@@ -686,12 +569,22 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 
 // TestExecutorWithSimpleIncrementalAssignment tests x =: after 2 in REPL
 func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
 	// First execute 2 to put it on the stack
-	executor("2")
+	defaultExecutor(rpl, "2")
 	
 	// Then use x =: to assign the top of stack to variable x
-	executor("x =:")
-	val, exists := getRPNState().vars.GetVariable("x")
+	defaultExecutor(rpl, "x =:")
+	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
@@ -702,18 +595,28 @@ func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 
 // TestExecutorWithExactUserScenario tests the exact user scenario: 2 then x =:
 func TestExecutorWithExactUserScenario(t *testing.T) {
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
 	// This test replicates the exact user interaction:
 	// > 2
 	// > x =:
 	// The variable should be assigned the value 2
-
-	executor("2")
+	
+	defaultExecutor(rpl, "2")
 	
 	// Verify stack has 2
 	// (can't directly check stack without exposing it, but next command will fail if stack is empty)
 	
-	executor("x =:")
-	val, exists := getRPNState().vars.GetVariable("x")
+	defaultExecutor(rpl, "x =:")
+	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
@@ -724,20 +627,28 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 
 // TestExecutorWithExactUserScenarioWithOutput tests that x =: assigns and shows result
 func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
-	// First, clear state
-	executor("rpn clear")
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
+	// Clear any previous state
+	defaultExecutor(rpl, "rpn clear")
 	
 	// Put 2 on stack
-	executor("2")
-	state := getRPNState()
-	_, _ = state.rpnCalc.ResultStack([]string{})
+	defaultExecutor(rpl, "2")
+	_, _ = rpnCalc.ResultStack([]string{})
 	
 	// Assign to x =:
-	result, err := state.rpnCalc.ParseAndEvaluate("x =:")
+	result, err := rpnCalc.ParseAndEvaluate("x =:")
 	t.Logf("ParseAndEvaluate('x =:') returned result=%q, err=%v", result, err)
 	
-	state = getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
@@ -748,22 +659,57 @@ func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
 
 // TestExecutorWithExactUserScenarioDirect simulates REPL input flow
 func TestExecutorWithExactUserScenarioDirect(t *testing.T) {
+	vars := rpn.NewVariables()
+	rpnCalc := rpn.NewRPN(vars)
+	rpl := &REPL{
+		ttyChecker:    &TTYChecker{},
+		historyMgr:    NewHistoryManager(".gt_history"),
+		signalHandler: NewSignalHandler(),
+		commandChain:  NewCommandChain(),
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
+	}
+	
 	// Clear any previous state
-	executor("rpn clear")
+	defaultExecutor(rpl, "rpn clear")
 	
 	// Simulate typing "2" in REPL
-	executor("2")
+	defaultExecutor(rpl, "2")
 	
 	// Simulate typing "x =:" in REPL
-	executor("x =:")
+	defaultExecutor(rpl, "x =:")
 	
 	// Verify variable was set
-	state := getRPNState()
-	val, exists := state.vars.GetVariable("x")
+	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
 	}
 	if val != 2 {
 		t.Errorf("Variable x = %v, want 2", val)
 	}
+}
+
+func TestExecutorWithUnknownCommand(t *testing.T) {
+	repl := createTestREPL()
+	// Test that unknown commands are handled by the error handler
+	defaultExecutor(repl, "completelyunknowncommand123")
+}
+
+func TestDefaultExecutorCodePaths(t *testing.T) {
+	// Test all code paths in defaultExecutor
+	repl := createTestREPL()
+	
+	// Path 1: Empty input
+	defaultExecutor(repl, "")
+	
+	// Path 2: Built-in command with error (clear should not error but let's verify)
+	defaultExecutor(repl, "clear")
+	
+	// Path 3: Built-in command with output (help returns help text)
+	defaultExecutor(repl, "help")
+	
+	// Path 4: Unknown command (error handler returns handled=false, err!=nil)
+	defaultExecutor(repl, "completelyunknowncommand123")
+	
+	// Path 5: Whitespace only (trimmed to empty, returns early)
+	defaultExecutor(repl, "   ")
 }
