@@ -185,14 +185,16 @@ gt 'clearconstants'  # Clear user-defined constants
 # All constants cleared
 ```
 
-Built-in constants cannot be deleted individually, but you can list them and clear variables that might override them:
+**Note:** `clearconstants` only clears user-defined constants. To clear all variables (which may include variables overriding built-in constants), use `clear`.
+
+Built-in constants cannot be deleted individually, but you can list variables and clear them to restore access to the original constants:
 
 ```bash
 gt 'vars'            # List all variables (not constants)
 # x = 5
 
-# To access constants again after overriding them:
-gt 'clear'           # Clear all variables
+# To access constants again after overriding them with variables:
+gt 'clear'           # Clear all variables (restores built-in constants)
 gt 'pi'              # Now returns the constant π
 # → 3.141592654
 ```
@@ -204,7 +206,7 @@ gt 'vars'            # List all variables
 gt 'delete x'        # Delete a specific variable
 # Variable removed
 
-gt 'clear'           # Clear all variables
+gt 'clear'           # Clear all variables (also restores overridden built-in constants)
 # All variables cleared
 ```
 
