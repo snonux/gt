@@ -33,6 +33,9 @@ type Number interface {
 	// Pow returns this number raised to the power of another.
 	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
 	Pow(other Number) (Number, error)
+	// PowInt returns this number raised to an integer power using binary exponentiation.
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	PowInt(exp int) (Number, error)
 	// Mod returns the remainder of this number divided by another.
 	// Returns (nil, error) if modulo by zero or operation not supported.
 	Mod(other Number) (Number, error)
@@ -188,6 +191,42 @@ func (f *Float) Pow(other Number) (Number, error) {
 	}
 	// Use Float64() to handle both regular numbers and boolean values
 	return NewFloat(math.Pow(fF, otherF)), nil
+}
+
+// PowInt returns this float raised to an integer power using binary exponentiation.
+// This is more efficient than repeated multiplication for large integer exponents.
+func (f *Float) PowInt(exp int) (Number, error) {
+	fF, err := f.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot power: %w", err)
+	}
+	return NewFloat(binaryExponentiationFloat(fF, exp)), nil
+}
+
+// binaryExponentiationFloat computes base^exp using the square-and-multiply algorithm.
+// Time Complexity: O(log exp)
+// Space Complexity: O(1)
+func binaryExponentiationFloat(base float64, exp int) float64 {
+	if exp == 0 {
+		return 1.0
+	}
+
+	// Handle negative exponents: base^-exp = 1 / (base^exp)
+	if exp < 0 {
+		return 1.0 / binaryExponentiationFloat(base, -exp)
+	}
+
+	res := 1.0
+	for exp > 0 {
+		// If exponent is odd, multiply result by current base
+		if exp%2 == 1 {
+			res *= base
+		}
+		// Square the base and divide exponent by 2
+		base *= base
+		exp /= 2
+	}
+	return res
 }
 
 // Mod returns the remainder of this float divided by another.
@@ -384,6 +423,51 @@ func (r *Rat) Pow(other Number) (Number, error) {
 	return &Rat{n: result}, nil
 }
 
+// PowInt returns this rational raised to an integer power using binary exponentiation.
+// This is more efficient than repeated multiplication for large integer exponents
+// and maintains exact rational arithmetic.
+func (r *Rat) PowInt(exp int) (Number, error) {
+	if exp == 0 {
+		return NewRat(1), nil
+	}
+
+	// Handle negative exponents: (a/b)^-exp = (b/a)^exp
+	if exp < 0 {
+		// Create reciprocal: b/a
+		reciprocal := &big.Rat{}
+		num := r.n.Num()
+		denom := r.n.Denom()
+		reciprocal.SetFrac(denom, num)
+		// Calculate reciprocal^(-exp)
+		return PowIntRat(reciprocal, -exp)
+	}
+
+	return PowIntRat(r.n, exp)
+}
+
+// PowIntRat computes rat^exp using binary exponentiation for *big.Rat.
+// This maintains exact rational arithmetic.
+func PowIntRat(rat *big.Rat, exp int) (Number, error) {
+	if exp == 0 {
+		return NewRat(1), nil
+	}
+
+	res := &big.Rat{}
+	res.SetInt64(1)
+	base := &big.Rat{}
+	base.Set(rat)
+
+	for exp > 0 {
+		if exp%2 == 1 {
+			res.Mul(res, base)
+		}
+		// Square the base: base = base * base
+		base.Mul(base, base)
+		exp /= 2
+	}
+	return &Rat{n: res}, nil
+}
+
 // Mod returns the remainder of this rational divided by another.
 func (r *Rat) Mod(other Number) (Number, error) {
 	if other.IsZero() {
@@ -476,6 +560,7 @@ func (s *StringNum) Sub(other Number) (Number, error) { return nil, fmt.Errorf("
 func (s *StringNum) Mul(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for multiplication") }
 func (s *StringNum) Div(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for division") }
 func (s *StringNum) Pow(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for power") }
+func (s *StringNum) PowInt(exp int) (Number, error)   { return nil, fmt.Errorf("string not supported for integer power") }
 func (s *StringNum) Mod(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for modulo") }
 func (s *StringNum) IsZero() bool                     { return false }
 func (s *StringNum) IsNegative() bool                 { return false }
@@ -533,6 +618,9 @@ func (s *Symbol) Div(other Number) (Number, error) {
 }
 func (s *Symbol) Pow(other Number) (Number, error) {
 	return nil, fmt.Errorf("symbol not supported for power")
+}
+func (s *Symbol) PowInt(exp int) (Number, error) {
+	return nil, fmt.Errorf("symbol not supported for integer power")
 }
 func (s *Symbol) Mod(other Number) (Number, error) {
 	return nil, fmt.Errorf("symbol not supported for modulo")

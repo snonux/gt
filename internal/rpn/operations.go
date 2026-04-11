@@ -116,6 +116,11 @@ type ConstantOperator interface {
 	ClearConstants()
 }
 
+// PowerIntOperator defines the interface for integer power operations (**) using binary exponentiation.
+type PowerIntOperator interface {
+	FastPower(stack *Stack) error
+}
+
 // Operator is the combined interface for all operator implementations.
 // This allows RPN to depend on an abstraction instead of the concrete Operations type.
 type Operator interface {
@@ -125,6 +130,7 @@ type Operator interface {
 	StackOperator
 	VariableOperator
 	ConstantOperator
+	PowerIntOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
 	// AssignLeft assigns a value to a variable (for := operator)
@@ -197,6 +203,7 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("*", func(stack *Stack) error { return op.Multiply(stack) })
 	registry.registerStandardOperator("/", func(stack *Stack) error { return op.Divide(stack) })
 	registry.registerStandardOperator("^", func(stack *Stack) error { return op.Power(stack) })
+	registry.registerStandardOperator("**", func(stack *Stack) error { return op.FastPower(stack) })
 	registry.registerStandardOperator("%", func(stack *Stack) error { return op.Modulo(stack) })
 	registry.registerStandardOperator("lg", func(stack *Stack) error { return op.Log2(stack) })
 	registry.registerStandardOperator("log", func(stack *Stack) error { return op.Log10(stack) })
@@ -416,6 +423,38 @@ func (o *Operations) Modulo(stack *Stack) error {
 	result, err := a.Mod(b)
 	if err != nil {
 		return buildError("%", err)
+	}
+	stack.Push(result)
+	return nil
+}
+
+// FastPower pops two values from stack, raises first to integer power of second (a ** b), and pushes result.
+// Uses binary exponentiation for efficiency with large integer exponents.
+func (o *Operations) FastPower(stack *Stack) error {
+	b, err := popStack(stack, "**")
+	if err != nil {
+		return err
+	}
+
+	a, err := popStack(stack, "**")
+	if err != nil {
+		return err
+	}
+
+	// Get the integer exponent from b
+	bVal, err := b.Float64()
+	if err != nil {
+		return buildError("**", fmt.Errorf("exponent must be a number: %w", err))
+	}
+
+	exp := int(bVal)
+	if float64(exp) != bVal {
+		return buildError("**", fmt.Errorf("exponent must be an integer, got %v", bVal))
+	}
+
+	result, err := a.PowInt(exp)
+	if err != nil {
+		return buildError("**", err)
 	}
 	stack.Push(result)
 	return nil

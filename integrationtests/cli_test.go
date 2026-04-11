@@ -544,3 +544,98 @@ func TestCLIVariableAssignmentRepetition(t *testing.T) {
 		})
 	}
 }
+
+// TestCLIBinaryExponentiation tests the ** operator with binary exponentiation.
+func TestCLIBinaryExponentiation(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{
+			name:     "2 ** 10",
+			args:     []string{"2", "10", "**"},
+			expected: "1024",
+		},
+		{
+			name:     "3 ** 4",
+			args:     []string{"3", "4", "**"},
+			expected: "81",
+		},
+		{
+			name:     "2 ** -3",
+			args:     []string{"2", "-3", "**"},
+			expected: "0.125",
+		},
+		{
+			name:     "10 ** -2",
+			args:     []string{"10", "-2", "**"},
+			expected: "0.01",
+		},
+		{
+			name:     "5 ** 0",
+			args:     []string{"5", "0", "**"},
+			expected: "1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath, tt.args...)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}
+
+// TestCLIBinaryExponentiationStdin tests the ** operator via stdin.
+func TestCLIBinaryExponentiationStdin(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		stdin    string
+		expected string
+	}{
+		{
+			name:     "2 ** 10 via stdin",
+			stdin:    "2 10 **",
+			expected: "1024",
+		},
+		{
+			name:     "3 ** 4 via stdin",
+			stdin:    "3 4 **",
+			expected: "81",
+		},
+		{
+			name:     "2 ** -3 via stdin",
+			stdin:    "2 -3 **",
+			expected: "0.125",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath)
+			cmd.Stdin = strings.NewReader(tt.stdin)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}

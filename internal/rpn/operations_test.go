@@ -341,6 +341,98 @@ func TestOperationsPowerNegativeExponent(t *testing.T) {
 	}
 }
 
+func TestOperationsPowInt(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// Test PowInt(2, 10) = 1024
+	s.Push(NewNumber(2.0, FloatMode))
+	s.Push(NewNumber(10.0, FloatMode))
+
+	err := o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(2^10) returned error: %v", err)
+	}
+
+	val, err := s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(2^10) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 1024.0 {
+		t.Errorf("Power(2^10) = %v, want 1024.0", val)
+	}
+
+	// Test PowInt(2, -3) = 0.125
+	s.Push(NewNumber(2.0, FloatMode))
+	s.Push(NewNumber(-3.0, FloatMode))
+
+	err = o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(2^-3) returned error: %v", err)
+	}
+
+	val, err = s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(2^-3) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if math.Abs(v-0.125) > 0.0001 {
+		t.Errorf("Power(2^-3) = %v, want 0.125", val)
+	}
+}
+
+func TestOperationsPowIntRat(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// Enable rational mode
+	o.SetMode(RationalMode)
+	defer o.SetMode(FloatMode)
+
+	// Test PowInt(2, 10) = 1024 in rational mode
+	s.Push(NewNumber(2.0, RationalMode))
+	s.Push(NewNumber(10.0, RationalMode))
+
+	err := o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(2^10) in rational mode returned error: %v", err)
+	}
+
+	val, err := s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(2^10) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 1024.0 {
+		t.Errorf("Power(2^10) in rational mode = %v, want 1024.0", val)
+	}
+
+	// Test PowInt(1/2, 3) = 1/8 = 0.125 in rational mode
+	s.Push(NewNumber(0.5, RationalMode))
+	s.Push(NewNumber(3.0, RationalMode))
+
+	err = o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(0.5^3) in rational mode returned error: %v", err)
+	}
+
+	val, err = s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(0.5^3) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if math.Abs(v-0.125) > 0.0001 {
+		t.Errorf("Power(0.5^3) in rational mode = %v, want 0.125", val)
+	}
+}
+
 func TestOperationsModulo(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)

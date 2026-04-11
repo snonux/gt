@@ -83,15 +83,26 @@ gt '5 6 *'           # 5 * 6 = 30
 gt '20 4 /'          # 20 / 4 = 5
 # → 5
 
-gt '2 3 ^'           # 2^3 = 8
+gt '2 3 ^'           # 2^3 = 8 (floating-point power)
 # → 8
 
 gt '2 10 **'          # 2^10 = 1024 (Fast binary exponentiation)
 # → 1024
 
+gt '2 -3 **'          # 2^(-3) = 0.125 (negative integer exponent)
+# → 0.125
+
+gt '5 0 **'           # 5^0 = 1 (zero exponent)
+# → 1
+
+gt '10 100 **'        # 10^100 (very large exponent - efficient)
+# → 1e+100
+
 gt '10 3 %'          # 10 % 3 = 1 (modulo)
 # → 1
 ```
+
+**Note:** The `**` operator uses binary exponentiation (exponentiation by squaring), which is more efficient than the general `^` operator for large integer exponents. It only works with integer exponents.
 
 #### Expression Chaining
 
