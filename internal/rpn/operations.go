@@ -10,6 +10,54 @@ import (
 	"sync"
 )
 
+// Helper functions to reduce error handling boilerplate in RPN operations
+
+// popStack pops a value from the stack and returns a wrapped error if insufficient operands.
+func popStack(stack *Stack, op string) (Number, error) {
+	val, err := stack.Pop()
+	if err != nil {
+		return nil, fmt.Errorf("insufficient operands for %s: %w", op, err)
+	}
+	return val, nil
+}
+
+// popTwo pops two values from the stack for binary operations.
+func popTwo(stack *Stack, op string) (Number, Number, error) {
+	b, err := stack.Pop()
+	if err != nil {
+		return nil, nil, fmt.Errorf("insufficient operands for %s: %w", op, err)
+	}
+
+	a, err := stack.Pop()
+	if err != nil {
+		return nil, nil, fmt.Errorf("insufficient operands for %s: %w", op, err)
+	}
+
+	return a, b, nil
+}
+
+// toFloat64 converts a Number to float64 with proper error wrapping.
+func toFloat64(val Number, context string) (float64, error) {
+	f, err := val.Float64()
+	if err != nil {
+		return 0, fmt.Errorf("%s: failed to get float64 value: %w", context, err)
+	}
+	return f, nil
+}
+
+// ensureStackLength checks if the stack has at least min values and returns error if not.
+func ensureStackLength(stack *Stack, min int, op string) error {
+	if stack.Len() < min {
+		return fmt.Errorf("insufficient operands for %s: need at least %d values", op, min)
+	}
+	return nil
+}
+
+// buildError wraps an error with context for the given operator.
+func buildError(op string, err error) error {
+	return fmt.Errorf("%s: %w", op, err)
+}
+
 // ArithmeticOperator defines the interface for basic arithmetic operators.
 type ArithmeticOperator interface {
 	Add(stack *Stack) error
@@ -263,20 +311,15 @@ func (r *OperatorRegistry) IsHyperOperator(token string) bool {
 
 // Add pops two values from stack, adds them, and pushes result.
 func (o *Operations) Add(stack *Stack) error {
-	bVal, err := stack.Pop()
+	a, b, err := popTwo(stack, "+")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for +: %w", err)
-	}
-
-	aVal, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for +: %w", err)
+		return err
 	}
 
 	// Use the Number interface for arithmetic
-	result, err := aVal.Add(bVal)
+	result, err := a.Add(b)
 	if err != nil {
-		return fmt.Errorf("addition error: %w", err)
+		return buildError("addition", err)
 	}
 	stack.Push(result)
 	return nil
@@ -284,19 +327,14 @@ func (o *Operations) Add(stack *Stack) error {
 
 // Subtract pops two values from stack, subtracts (a - b), and pushes result.
 func (o *Operations) Subtract(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "-")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for -: %w", err)
-	}
-
-	a, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for -: %w", err)
+		return err
 	}
 
 	result, err := a.Sub(b)
 	if err != nil {
-		return fmt.Errorf("subtraction error: %w", err)
+		return buildError("subtraction", err)
 	}
 	stack.Push(result)
 	return nil
@@ -304,19 +342,14 @@ func (o *Operations) Subtract(stack *Stack) error {
 
 // Multiply pops two values from stack, multiplies them, and pushes result.
 func (o *Operations) Multiply(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "*")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for *: %w", err)
-	}
-
-	a, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for *: %w", err)
+		return err
 	}
 
 	result, err := a.Mul(b)
 	if err != nil {
-		return fmt.Errorf("multiplication error: %w", err)
+		return buildError("multiplication", err)
 	}
 	stack.Push(result)
 	return nil
@@ -324,23 +357,23 @@ func (o *Operations) Multiply(stack *Stack) error {
 
 // Divide pops two values from stack, divides (a / b), and pushes result.
 func (o *Operations) Divide(stack *Stack) error {
-	b, err := stack.Pop()
+	b, err := popStack(stack, "/")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for /: %w", err)
+		return err
 	}
 
 	if b.IsZero() {
-		return fmt.Errorf("division by zero")
+		return buildError("/", fmt.Errorf("division by zero"))
 	}
 
-	a, err := stack.Pop()
+	a, err := popStack(stack, "/")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for /: %w", err)
+		return err
 	}
 
 	result, err := a.Div(b)
 	if err != nil {
-		return fmt.Errorf("division error: %w", err)
+		return buildError("division", err)
 	}
 	stack.Push(result)
 	return nil
@@ -348,19 +381,14 @@ func (o *Operations) Divide(stack *Stack) error {
 
 // Power pops two values from stack, raises first to power of second (a ^ b), and pushes result.
 func (o *Operations) Power(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "^")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for ^: %w", err)
-	}
-
-	a, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for ^: %w", err)
+		return err
 	}
 
 	result, err := a.Pow(b)
 	if err != nil {
-		return fmt.Errorf("power error: %w", err)
+		return buildError("power", err)
 	}
 	stack.Push(result)
 	return nil
@@ -368,14 +396,9 @@ func (o *Operations) Power(stack *Stack) error {
 
 // Modulo pops two values from stack, computes modulo (a % b), and pushes result.
 func (o *Operations) Modulo(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "%")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for %%: %w", err)
-	}
-
-	a, err := stack.Pop()
-	if err != nil {
-		return fmt.Errorf("insufficient operands for %%: %w", err)
+		return err
 	}
 
 	// Check if operands are symbols (not supported for arithmetic)
@@ -387,12 +410,12 @@ func (o *Operations) Modulo(stack *Stack) error {
 	}
 
 	if b.IsZero() {
-		return fmt.Errorf("modulo by zero")
+		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
 	result, err := a.Mod(b)
 	if err != nil {
-		return fmt.Errorf("modulo error: %w", err)
+		return buildError("%", err)
 	}
 	stack.Push(result)
 	return nil
@@ -400,19 +423,17 @@ func (o *Operations) Modulo(stack *Stack) error {
 
 // Log2 pops one value from stack, computes log base 2 (log₂(a)), and pushes result.
 func (o *Operations) Log2(stack *Stack) error {
-	a, err := stack.Pop()
+	a, err := popStack(stack, "lg")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for lg: %w", err)
+		return err
 	}
 
-	// Use Float64() to convert value to float64, handling boolean values:
-	// - true → 1, false → 0
-	val, err := a.Float64()
+	val, err := toFloat64(a, "log2")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value: %w", err)
+		return err
 	}
 	if val <= 0 {
-		return fmt.Errorf("log2 undefined for non-positive numbers")
+		return buildError("lg", fmt.Errorf("log2 undefined for non-positive numbers"))
 	}
 
 	// Compute log2 using the number interface
@@ -423,19 +444,17 @@ func (o *Operations) Log2(stack *Stack) error {
 
 // Log10 pops one value from stack, computes log base 10 (log₁₀(a)), and pushes result.
 func (o *Operations) Log10(stack *Stack) error {
-	a, err := stack.Pop()
+	a, err := popStack(stack, "log")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for log: %w", err)
+		return err
 	}
 
-	// Use Float64() to convert value to float64, handling boolean values:
-	// - true → 1, false → 0
-	val, err := a.Float64()
+	val, err := toFloat64(a, "log10")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value: %w", err)
+		return err
 	}
 	if val <= 0 {
-		return fmt.Errorf("log10 undefined for non-positive numbers")
+		return buildError("log", fmt.Errorf("log10 undefined for non-positive numbers"))
 	}
 
 	// Compute log10 using the number interface
@@ -446,19 +465,17 @@ func (o *Operations) Log10(stack *Stack) error {
 
 // Ln pops one value from stack, computes natural log (ln(a)), and pushes result.
 func (o *Operations) Ln(stack *Stack) error {
-	a, err := stack.Pop()
+	a, err := popStack(stack, "ln")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for ln: %w", err)
+		return err
 	}
 
-	// Use Float64() to convert value to float64, handling boolean values:
-	// - true → 1, false → 0
-	val, err := a.Float64()
+	val, err := toFloat64(a, "ln")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value: %w", err)
+		return err
 	}
 	if val <= 0 {
-		return fmt.Errorf("ln undefined for non-positive numbers")
+		return buildError("ln", fmt.Errorf("ln undefined for non-positive numbers"))
 	}
 
 	// Compute ln using the number interface
@@ -813,27 +830,20 @@ func (o *Operations) HyperLn(stack *Stack) error {
 	return nil
 }
 
-// Boolean operators
-
 // GT pops two values from stack, compares (a > b), and pushes a boolean result.
 func (o *Operations) GT(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "gt")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for gt: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "gt comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for gt: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "gt comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal > bVal))
@@ -842,23 +852,18 @@ func (o *Operations) GT(stack *Stack) error {
 
 // LT pops two values from stack, compares (a < b), and pushes a boolean result.
 func (o *Operations) LT(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "lt")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for lt: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "lt comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for lt: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "lt comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal < bVal))
@@ -867,23 +872,18 @@ func (o *Operations) LT(stack *Stack) error {
 
 // GTE pops two values from stack, compares (a >= b), and pushes a boolean result.
 func (o *Operations) GTE(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "gte")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for gte: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "gte comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for gte: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "gte comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal >= bVal))
@@ -892,23 +892,18 @@ func (o *Operations) GTE(stack *Stack) error {
 
 // LTE pops two values from stack, compares (a <= b), and pushes a boolean result.
 func (o *Operations) LTE(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "lte")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for lte: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "lte comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for lte: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "lte comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal <= bVal))
@@ -917,23 +912,18 @@ func (o *Operations) LTE(stack *Stack) error {
 
 // EQ pops two values from stack, compares (a == b), and pushes a boolean result.
 func (o *Operations) EQ(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "eq")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for eq: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "eq comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for eq: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "eq comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal == bVal))
@@ -942,23 +932,18 @@ func (o *Operations) EQ(stack *Stack) error {
 
 // NEQ pops two values from stack, compares (a != b), and pushes a boolean result.
 func (o *Operations) NEQ(stack *Stack) error {
-	b, err := stack.Pop()
+	a, b, err := popTwo(stack, "neq")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for neq: %w", err)
+		return err
 	}
 
-	a, err := stack.Pop()
+	aVal, err := toFloat64(a, "neq comparison for a")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for neq: %w", err)
+		return err
 	}
-
-	aVal, err := a.Float64()
+	bVal, err := toFloat64(b, "neq comparison for b")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for a: %w", err)
-	}
-	bVal, err := b.Float64()
-	if err != nil {
-		return fmt.Errorf("failed to get float64 value for b: %w", err)
+		return err
 	}
 
 	stack.Push(NewFloatFromBool(aVal != bVal))
@@ -971,7 +956,7 @@ func (o *Operations) NEQ(stack *Stack) error {
 func (o *Operations) Dup(stack *Stack) error {
 	val, err := stack.Peek()
 	if err != nil {
-		return fmt.Errorf("insufficient operands for dup: %w", err)
+		return buildError("dup", err)
 	}
 	stack.Push(val)
 	return nil
@@ -979,8 +964,8 @@ func (o *Operations) Dup(stack *Stack) error {
 
 // Swap swaps the top two stack values.
 func (o *Operations) Swap(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for swap: need at least 2 values")
+	if err := ensureStackLength(stack, 2, "swap"); err != nil {
+		return err
 	}
 
 	// Get the values without popping
@@ -988,12 +973,12 @@ func (o *Operations) Swap(stack *Stack) error {
 	top := vals[len(vals)-1]
 	second := vals[len(vals)-2]
 
-	// Pop both values - we know this won't fail because we checked stack.Len() >= 2 above
+	// Pop both values
 	if _, err := stack.Pop(); err != nil {
-		return fmt.Errorf("swap: failed to pop top value: %w", err)
+		return buildError("swap", fmt.Errorf("failed to pop top value: %w", err))
 	}
 	if _, err := stack.Pop(); err != nil {
-		return fmt.Errorf("swap: failed to pop second value: %w", err)
+		return buildError("swap", fmt.Errorf("failed to pop second value: %w", err))
 	}
 
 	// Push in swapped order
@@ -1006,7 +991,7 @@ func (o *Operations) Swap(stack *Stack) error {
 // Pop removes and discards the top stack value.
 func (o *Operations) Pop(stack *Stack) error {
 	if _, err := stack.Pop(); err != nil {
-		return fmt.Errorf("insufficient operands for pop: %w", err)
+		return buildError("pop", err)
 	}
 	return nil
 }
@@ -1041,18 +1026,18 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 	}
 
 	if stack.Len() < 1 {
-		return fmt.Errorf("insufficient operands for assignment: need value")
+		return buildError("=", fmt.Errorf("insufficient operands: need value"))
 	}
 
-	val, err := stack.Pop()
+	val, err := popStack(stack, "=")
 	if err != nil {
 		return err
 	}
 
 	// Convert Number to float64 for variable storage
-	valF, err := val.Float64()
+	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+		return err
 	}
 	return o.vars.SetVariable(name, valF)
 }
@@ -1133,14 +1118,14 @@ func (o *Operations) ClearConstants() {
 // This function pops name first (top of stack), then value.
 // Usage: `value name =:` (e.g., `5 x =:`)
 func (o *Operations) AssignLeft(stack *Stack) error {
-	name, err := stack.Pop()
+	name, err := popStack(stack, "=:")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for =: : need variable name")
+		return err
 	}
 
-	val, err := stack.Pop()
+	val, err := popStack(stack, "=:")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for =: : need value")
+		return err
 	}
 
 	// Get the variable name - handle Symbol, StringNum, or convert to string
@@ -1154,9 +1139,9 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 		varName = name.String()
 	}
 
-	valF, err := val.Float64()
+	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+		return err
 	}
 	return o.vars.SetVariable(varName, valF)
 }
@@ -1166,14 +1151,14 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 // This function pops value first (top of stack), then name.
 // Usage: `name value :=` (e.g., `x 5 :=`)
 func (o *Operations) AssignRight(stack *Stack) error {
-	val, err := stack.Pop()
+	val, err := popStack(stack, ":=")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for := : need value")
+		return err
 	}
 
-	name, err := stack.Pop()
+	name, err := popStack(stack, ":=")
 	if err != nil {
-		return fmt.Errorf("insufficient operands for := : need variable name")
+		return err
 	}
 
 	// Get the variable name - handle Symbol, StringNum, or convert to string
@@ -1187,9 +1172,9 @@ func (o *Operations) AssignRight(stack *Stack) error {
 		varName = name.String()
 	}
 
-	valF, err := val.Float64()
+	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
-		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+		return err
 	}
 	return o.vars.SetVariable(varName, valF)
 }
