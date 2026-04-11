@@ -253,6 +253,94 @@ func TestOperationsPower(t *testing.T) {
 	}
 }
 
+func TestOperationsPowerLargeExponent(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// Test 2^10 = 1024 (large exponent)
+	s.Push(NewNumber(2.0, FloatMode))
+	s.Push(NewNumber(10.0, FloatMode))
+
+	err := o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(2^10) returned error: %v", err)
+	}
+
+	val, err := s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(2^10) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 1024.0 {
+		t.Errorf("Power(2^10) = %v, want 1024.0", val)
+	}
+
+	// Test 10^5 = 100000
+	s.Push(NewNumber(10.0, FloatMode))
+	s.Push(NewNumber(5.0, FloatMode))
+
+	err = o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(10^5) returned error: %v", err)
+	}
+
+	val, err = s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(10^5) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 100000.0 {
+		t.Errorf("Power(10^5) = %v, want 100000.0", val)
+	}
+}
+
+func TestOperationsPowerNegativeExponent(t *testing.T) {
+	v := NewVariables()
+	o := NewOperations(v)
+	s := NewStack()
+
+	// Test 2^-3 = 1/8 = 0.125
+	s.Push(NewNumber(2.0, FloatMode))
+	s.Push(NewNumber(-3.0, FloatMode))
+
+	err := o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(2^-3) returned error: %v", err)
+	}
+
+	val, err := s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(2^-3) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if math.Abs(v-0.125) > 0.0001 {
+		t.Errorf("Power(2^-3) = %v, want 0.125", val)
+	}
+
+	// Test 10^-2 = 0.01
+	s.Push(NewNumber(10.0, FloatMode))
+	s.Push(NewNumber(-2.0, FloatMode))
+
+	err = o.Power(s)
+	if err != nil {
+		t.Fatalf("Power(10^-2) returned error: %v", err)
+	}
+
+	val, err = s.Pop()
+	if err != nil {
+		t.Fatalf("Pop() after Power(10^-2) returned error: %v", err)
+	}
+	if v, err := val.Float64(); err != nil {
+		t.Fatalf("Float64() returned error: %v", err)
+	} else if v != 0.01 {
+		t.Errorf("Power(10^-2) = %v, want 0.01", val)
+	}
+}
+
 func TestOperationsModulo(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
