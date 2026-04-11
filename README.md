@@ -10,21 +10,7 @@ A simple AI-engineered command-line percentage calculator written in Go. No fron
 
 This is a toy project created to experience with local LLMs and how good they are at their jobs. 
 
-```
-     ┌────────────────────────────────┐
-     │       G T Calculator           │
-     │                                │
-     │       (o.o)                    │
-     │      /|   | \   5  6  *        │
-     │     / |   |  \  _______        │
-     │    /  |   |   \ / G T  \       │
-     │   (   |   |    )%  +   |       │
-     │    \  |   |  / | RPN   |       │
-     │     \ |   | /  | Calc  |       │
-     │      \|___|/   |_______|       │
-     │        Result: 30              │
-     └────────────────────────────────┘
-```
+![gt Logo](logo.svg)
 
 ## Installation
 
