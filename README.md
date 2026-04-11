@@ -210,6 +210,8 @@ gt 'clear'           # Clear all variables (also restores overridden built-in co
 # All variables cleared
 ```
 
+See the Constant Management section for the `constants` command to list all available constants.
+
 ### Working with Variables
 
 Variables persist across commands in REPL mode but are cleared when exiting. In bare mode (single command), variables are only available within that command's execution context.
