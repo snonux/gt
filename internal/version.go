@@ -30,7 +30,7 @@
 //
 // # Version History
 //
-// Current: v0.4.0
+// Current: v0.4.1
 //
 // See the git repository for complete version history and release notes.
 package internal
@@ -50,4 +50,4 @@ package internal
 //
 //	$ gt version
 //	v0.3.0
-const Version = "v0.4.1"
+const Version = "v0.4.2"
