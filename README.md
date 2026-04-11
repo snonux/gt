@@ -24,6 +24,8 @@ Or using mage:
 mage install
 ```
 
+[Mage](https://github.com/magefile/mage) is a Makefile replacement written in Go. It uses Go code for task definitions, providing better type safety and dependency management. The project includes a `magefile.go` with common development tasks like `build`, `test`, and `install`.
+
 ## Usage
 
 `gt` supports various percentage calculation formats and RPN (Reverse Polish Notation) stack calculations.
