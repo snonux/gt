@@ -15,32 +15,43 @@ import (
 type Number interface {
 	// String returns the string representation of the number.
 	String() string
-	// Float64 returns the float64 representation, or panics if not representable.
-	Float64() float64
+	// Float64 returns the float64 representation.
+	// Returns error if the number is not representable (e.g., StringNum, Symbol).
+	Float64() (float64, error)
 	// Add returns the sum of this number and another.
-	Add(other Number) Number
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	Add(other Number) (Number, error)
 	// Sub returns the difference of this number and another.
-	Sub(other Number) Number
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	Sub(other Number) (Number, error)
 	// Mul returns the product of this number and another.
-	Mul(other Number) Number
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	Mul(other Number) (Number, error)
 	// Div returns the quotient of this number and another.
-	// Returns (nil, error) if division by zero.
+	// Returns (nil, error) if division by zero or operation not supported.
 	Div(other Number) (Number, error)
 	// Pow returns this number raised to the power of another.
-	Pow(other Number) Number
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	Pow(other Number) (Number, error)
 	// Mod returns the remainder of this number divided by another.
-	// Returns (nil, error) if modulo by zero.
+	// Returns (nil, error) if modulo by zero or operation not supported.
 	Mod(other Number) (Number, error)
 	// IsZero returns true if the number is zero.
 	IsZero() bool
 	// IsNegative returns true if the number is negative.
 	IsNegative() bool
 	// Compare returns -1, 0, or 1 if this number is less than, equal to, or greater than another.
-	Compare(other Number) int
+	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
+	Compare(other Number) (int, error)
 	// IsBool returns true if this number represents a boolean value.
 	IsBool() bool
-	// Bool returns the boolean value, or false if not a boolean.
-	Bool() bool
+	// Bool returns the boolean value.
+	// Returns error if the number is not a boolean.
+	Bool() (bool, error)
+	// IsString returns true if this number represents a string value.
+	IsString() bool
+	// IsSymbol returns true if this number represents a symbol.
+	IsSymbol() bool
 }
 
 // NewNumber creates a Number from a float64 value.
@@ -82,14 +93,14 @@ func (f *Float) String() string {
 }
 
 // Float64 returns the float64 value.
-func (f *Float) Float64() float64 {
+func (f *Float) Float64() (float64, error) {
 	if f.isBool {
 		if f.boolVal {
-			return 1
+			return 1, nil
 		}
-		return 0
+		return 0, nil
 	}
-	return f.n
+	return f.n, nil
 }
 
 // IsBool returns true if this number represents a boolean value.
@@ -97,51 +108,79 @@ func (f *Float) IsBool() bool {
 	return f.isBool
 }
 
-// Bool returns the boolean value, or false if not a boolean.
-func (f *Float) Bool() bool {
-	return f.boolVal
+// Bool returns the boolean value.
+// Returns error if the number is not a boolean.
+func (f *Float) Bool() (bool, error) {
+	if !f.isBool {
+		return false, fmt.Errorf("not a boolean")
+	}
+	return f.boolVal, nil
 }
 
 // Add returns the sum of two float numbers.
-func (f *Float) Add(other Number) Number {
+func (f *Float) Add(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot add: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.Float64() + other.Float64())
+	return NewFloat(f.n + otherF), nil
 }
 
 // Sub returns the difference of two float numbers.
-func (f *Float) Sub(other Number) Number {
+func (f *Float) Sub(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot subtract: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.Float64() - other.Float64())
+	return NewFloat(f.n - otherF), nil
 }
 
 // Mul returns the product of two float numbers.
-func (f *Float) Mul(other Number) Number {
+func (f *Float) Mul(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot multiply: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.Float64() * other.Float64())
+	return NewFloat(f.n * otherF), nil
 }
 
 // Div returns the quotient of two float numbers.
 func (f *Float) Div(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot divide: %w", err)
+	}
 	if other.IsZero() {
 		return nil, fmt.Errorf("division by zero")
 	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(f.Float64() / other.Float64()), nil
+	return NewFloat(f.n / otherF), nil
 }
 
 // Pow returns this float raised to the power of another.
-func (f *Float) Pow(other Number) Number {
+func (f *Float) Pow(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot power: %w", err)
+	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(math.Pow(f.Float64(), other.Float64()))
+	return NewFloat(math.Pow(f.n, otherF)), nil
 }
 
 // Mod returns the remainder of this float divided by another.
 func (f *Float) Mod(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot modulo: %w", err)
+	}
 	if other.IsZero() {
 		return nil, fmt.Errorf("modulo by zero")
 	}
 	// Use Float64() to handle both regular numbers and boolean values
-	return NewFloat(math.Mod(f.Float64(), other.Float64())), nil
+	return NewFloat(math.Mod(f.n, otherF)), nil
 }
 
 // IsZero returns true if the float is zero.
@@ -156,15 +195,18 @@ func (f *Float) IsNegative() bool {
 }
 
 // Compare returns -1, 0, or 1 if this float is less than, equal to, or greater than another.
-func (f *Float) Compare(other Number) int {
-	otherF := other.Float64()
+func (f *Float) Compare(other Number) (int, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return 0, fmt.Errorf("cannot compare: %w", err)
+	}
 	if f.n < otherF {
-		return -1
+		return -1, nil
 	}
 	if f.n > otherF {
-		return 1
+		return 1, nil
 	}
-	return 0
+	return 0, nil
 }
 
 // Rat is a Number implementation using *big.Rat.
@@ -217,15 +259,15 @@ func (r *Rat) String() string {
 }
 
 // Float64 returns the float64 representation.
-func (r *Rat) Float64() float64 {
+func (r *Rat) Float64() (float64, error) {
 	if r.isBool {
 		if r.boolVal {
-			return 1
+			return 1, nil
 		}
-		return 0
+		return 0, nil
 	}
 	f, _ := r.n.Float64()
-	return f
+	return f, nil
 }
 
 // IsBool returns true if this number represents a boolean value.
@@ -233,30 +275,46 @@ func (r *Rat) IsBool() bool {
 	return r.isBool
 }
 
-// Bool returns the boolean value, or false if not a boolean.
-func (r *Rat) Bool() bool {
-	return r.boolVal
+// Bool returns the boolean value.
+// Returns error if the number is not a boolean.
+func (r *Rat) Bool() (bool, error) {
+	if !r.isBool {
+		return false, fmt.Errorf("not a boolean")
+	}
+	return r.boolVal, nil
 }
 
 // Add returns the sum of two rational numbers.
-func (r *Rat) Add(other Number) Number {
+func (r *Rat) Add(other Number) (Number, error) {
+	otherRat, ok := other.(*Rat)
+	if !ok {
+		return nil, fmt.Errorf("cannot add: operand is not a rational number")
+	}
 	result := &big.Rat{}
-	result.Add(r.n, other.(*Rat).n)
-	return &Rat{n: result}
+	result.Add(r.n, otherRat.n)
+	return &Rat{n: result}, nil
 }
 
 // Sub returns the difference of two rational numbers.
-func (r *Rat) Sub(other Number) Number {
+func (r *Rat) Sub(other Number) (Number, error) {
+	otherRat, ok := other.(*Rat)
+	if !ok {
+		return nil, fmt.Errorf("cannot subtract: operand is not a rational number")
+	}
 	result := &big.Rat{}
-	result.Sub(r.n, other.(*Rat).n)
-	return &Rat{n: result}
+	result.Sub(r.n, otherRat.n)
+	return &Rat{n: result}, nil
 }
 
 // Mul returns the product of two rational numbers.
-func (r *Rat) Mul(other Number) Number {
+func (r *Rat) Mul(other Number) (Number, error) {
+	otherRat, ok := other.(*Rat)
+	if !ok {
+		return nil, fmt.Errorf("cannot multiply: operand is not a rational number")
+	}
 	result := &big.Rat{}
-	result.Mul(r.n, other.(*Rat).n)
-	return &Rat{n: result}
+	result.Mul(r.n, otherRat.n)
+	return &Rat{n: result}, nil
 }
 
 // Div returns the quotient of two rational numbers.
@@ -264,20 +322,28 @@ func (r *Rat) Div(other Number) (Number, error) {
 	if other.IsZero() {
 		return nil, fmt.Errorf("division by zero")
 	}
+	otherRat, ok := other.(*Rat)
+	if !ok {
+		return nil, fmt.Errorf("cannot divide: operand is not a rational number")
+	}
 	result := &big.Rat{}
-	result.Quo(r.n, other.(*Rat).n)
+	result.Quo(r.n, otherRat.n)
 	return &Rat{n: result}, nil
 }
 
 // Pow returns this rational raised to the power of another.
-func (r *Rat) Pow(other Number) Number {
+func (r *Rat) Pow(other Number) (Number, error) {
+	otherF, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot power: %w", err)
+	}
 	// For rational powers, convert to float and back
 	// This may lose precision but is necessary for non-integer exponents
-	power := other.Float64()
+	power := otherF
 	result := &big.Rat{}
 	f, _ := r.n.Float64()
 	result.SetFloat64(math.Pow(f, power))
-	return &Rat{n: result}
+	return &Rat{n: result}, nil
 }
 
 // Mod returns the remainder of this rational divided by another.
@@ -289,7 +355,10 @@ func (r *Rat) Mod(other Number) (Number, error) {
 	// This may lose precision but is necessary for non-integer moduli
 	result := &big.Rat{}
 	f1, _ := r.n.Float64()
-	f2 := other.Float64()
+	f2, err := other.Float64()
+	if err != nil {
+		return nil, fmt.Errorf("cannot modulo: %w", err)
+	}
 	result.SetFloat64(math.Mod(f1, f2))
 	return &Rat{n: result}, nil
 }
@@ -305,8 +374,12 @@ func (r *Rat) IsNegative() bool {
 }
 
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
-func (r *Rat) Compare(other Number) int {
-	return r.n.Cmp(other.(*Rat).n)
+func (r *Rat) Compare(other Number) (int, error) {
+	otherRat, ok := other.(*Rat)
+	if !ok {
+		return 0, fmt.Errorf("cannot compare: operand is not a rational number")
+	}
+	return r.n.Cmp(otherRat.n), nil
 }
 
 // ToRat converts a Number to *big.Rat.
@@ -338,9 +411,9 @@ func (s *StringNum) String() string {
 	return s.value
 }
 
-// Float64 returns 0 for string numbers (not numeric).
-func (s *StringNum) Float64() float64 {
-	panic("string not supported for Float64()")
+// Float64 returns error for string numbers (not numeric).
+func (s *StringNum) Float64() (float64, error) {
+	return 0, fmt.Errorf("string not supported for Float64()")
 }
 
 // IsString returns true for StringNum.
@@ -348,18 +421,18 @@ func (s *StringNum) IsString() bool {
 	return true
 }
 
-// Other methods panic as they're not supported for strings
-func (s *StringNum) Add(other Number) Number        { panic("string not supported for addition") }
-func (s *StringNum) Sub(other Number) Number        { panic("string not supported for subtraction") }
-func (s *StringNum) Mul(other Number) Number        { panic("string not supported for multiplication") }
-func (s *StringNum) Div(other Number) (Number, error) { panic("string not supported for division") }
-func (s *StringNum) Pow(other Number) Number        { panic("string not supported for power") }
-func (s *StringNum) Mod(other Number) (Number, error) { panic("string not supported for modulo") }
-func (s *StringNum) IsZero() bool                   { return false }
-func (s *StringNum) IsNegative() bool               { return false }
-func (s *StringNum) Compare(other Number) int       { panic("string not supported for comparison") }
-func (s *StringNum) Bool() bool                     { panic("string not supported for Bool()") }
-func (s *StringNum) IsBool() bool                   { panic("string not supported for IsBool()") }
+// Other methods return errors for strings
+func (s *StringNum) Add(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for addition") }
+func (s *StringNum) Sub(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for subtraction") }
+func (s *StringNum) Mul(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for multiplication") }
+func (s *StringNum) Div(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for division") }
+func (s *StringNum) Pow(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for power") }
+func (s *StringNum) Mod(other Number) (Number, error) { return nil, fmt.Errorf("string not supported for modulo") }
+func (s *StringNum) IsZero() bool                     { return false }
+func (s *StringNum) IsNegative() bool                 { return false }
+func (s *StringNum) Compare(other Number) (int, error) { return 0, fmt.Errorf("string not supported for comparison") }
+func (s *StringNum) Bool() (bool, error)              { return false, fmt.Errorf("string not supported for Bool()") }
+func (s *StringNum) IsBool() bool                     { return false }
 
 // Symbol represents a variable symbol on the stack.
 // Symbols are created when:
@@ -380,9 +453,9 @@ func (s *Symbol) String() string {
 	return ":" + s.name
 }
 
-// Float64 returns 0 for symbols (not numeric).
-func (s *Symbol) Float64() float64 {
-	panic("symbol not supported for Float64()")
+// Float64 returns error for symbols (not numeric).
+func (s *Symbol) Float64() (float64, error) {
+	return 0, fmt.Errorf("symbol not supported for Float64()")
 }
 
 // Name returns the symbol name.
@@ -396,23 +469,23 @@ func (s *Symbol) IsSymbol() bool {
 }
 
 // Other methods return errors for symbols
-func (s *Symbol) Add(other Number) Number {
-	panic("symbol not supported for addition")
+func (s *Symbol) Add(other Number) (Number, error) {
+	return nil, fmt.Errorf("symbol not supported for addition")
 }
-func (s *Symbol) Sub(other Number) Number {
-	panic("symbol not supported for subtraction")
+func (s *Symbol) Sub(other Number) (Number, error) {
+	return nil, fmt.Errorf("symbol not supported for subtraction")
 }
-func (s *Symbol) Mul(other Number) Number {
-	panic("symbol not supported for multiplication")
+func (s *Symbol) Mul(other Number) (Number, error) {
+	return nil, fmt.Errorf("symbol not supported for multiplication")
 }
 func (s *Symbol) Div(other Number) (Number, error) {
-	panic("symbol not supported for division")
+	return nil, fmt.Errorf("symbol not supported for division")
 }
-func (s *Symbol) Pow(other Number) Number {
-	panic("symbol not supported for power")
+func (s *Symbol) Pow(other Number) (Number, error) {
+	return nil, fmt.Errorf("symbol not supported for power")
 }
 func (s *Symbol) Mod(other Number) (Number, error) {
-	panic("symbol not supported for modulo")
+	return nil, fmt.Errorf("symbol not supported for modulo")
 }
 func (s *Symbol) IsZero() bool {
 	return false
@@ -420,12 +493,12 @@ func (s *Symbol) IsZero() bool {
 func (s *Symbol) IsNegative() bool {
 	return false
 }
-func (s *Symbol) Compare(other Number) int {
-	panic("symbol not supported for comparison")
+func (s *Symbol) Compare(other Number) (int, error) {
+	return 0, fmt.Errorf("symbol not supported for comparison")
 }
-func (s *Symbol) Bool() bool {
-	panic("symbol not supported for Bool()")
+func (s *Symbol) Bool() (bool, error) {
+	return false, fmt.Errorf("symbol not supported for Bool()")
 }
 func (s *Symbol) IsBool() bool {
-	panic("symbol not supported for IsBool()")
+	return false
 }

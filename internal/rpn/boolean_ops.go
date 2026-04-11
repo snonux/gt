@@ -28,7 +28,16 @@ func (o *BooleanOperations) GT(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for gt: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() > b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal > bVal))
 	return nil
 }
 
@@ -44,7 +53,16 @@ func (o *BooleanOperations) LT(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lt: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() < b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal < bVal))
 	return nil
 }
 
@@ -60,7 +78,16 @@ func (o *BooleanOperations) GTE(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for gte: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() >= b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal >= bVal))
 	return nil
 }
 
@@ -76,7 +103,16 @@ func (o *BooleanOperations) LTE(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lte: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() <= b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal <= bVal))
 	return nil
 }
 
@@ -92,7 +128,16 @@ func (o *BooleanOperations) EQ(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for eq: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() == b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal == bVal))
 	return nil
 }
 
@@ -108,6 +153,15 @@ func (o *BooleanOperations) NEQ(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for neq: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() != b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal != bVal))
 	return nil
 }

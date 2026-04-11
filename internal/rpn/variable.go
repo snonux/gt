@@ -26,7 +26,11 @@ func (o *VariableOperations) AssignVariable(stack *Stack, name string) error {
 	}
 
 	// Convert Number to float64 for variable storage
-	return o.vars.SetVariable(name, val.Float64())
+	valF, err := val.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+	}
+	return o.vars.SetVariable(name, valF)
 }
 
 // UseVariable pushes a variable's value onto the stack.

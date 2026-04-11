@@ -128,7 +128,85 @@ gt 'pi 3.14159 = pi 2 *'  # 2 * π
 # gt 'x 5 = x x +'  (works)
 ```
 
-#### Variable Management
+#### Built-in Constants
+
+The RPN calculator includes several built-in mathematical constants:
+
+```bash
+gt 'pi'              # π (pi) - ratio of circumference to diameter
+# → 3.141592654
+
+gt 'e'               # Euler's number (base of natural logarithm)
+# → 2.718281828
+
+gt 'phi'             # Golden ratio
+# → 1.618033989
+
+gt 'sqrt2'           # Square root of 2
+# → 1.414213562
+
+gt 'inf'             # Positive infinity
+# → +Inf
+
+gt 'nan'             # Not a Number
+# → NaN
+```
+
+Greek letter variants are also supported:
+```bash
+gt 'π'               # Same as pi
+# → 3.141592654
+
+gt 'φ'               # Same as phi
+# → 1.618033989
+
+gt '√2'              # Same as sqrt2
+# → 1.414213562
+```
+
+Constants can be used in expressions:
+```bash
+gt 'pi 2 *'          # 2π
+# → 6.283185307
+
+gt 'e phi +'         # e + φ
+# → 4.336315817
+
+gt 'sqrt2 2 ^'       # (√2)² = 2
+# → 2
+```
+
+**Note:** If you assign a variable with the same name as a constant (e.g., `pi = 3`), the variable takes precedence and the constant is no longer accessible until you clear the variables.
+
+#### Constant Management
+
+List all constants:
+```bash
+gt 'constants'       # List all constants
+# e = 2.718281828
+# pi = 3.141592654
+# phi = 1.618033989
+# sqrt2 = 1.414213562
+# ...
+```
+
+Clear user-defined constants (built-in constants are preserved):
+```bash
+gt 'clearconstants'  # Clear user-defined constants
+# All constants cleared
+```
+
+Built-in constants cannot be deleted individually, but you can list them and clear variables that might override them:
+
+```bash
+gt 'vars'            # List all variables (not constants)
+# x = 5
+
+# To access constants again after overriding them:
+gt 'clear'           # Clear all variables
+gt 'pi'              # Now returns the constant π
+# → 3.141592654
+```
 
 ```bash
 gt 'vars'            # List all variables

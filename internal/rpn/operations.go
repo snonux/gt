@@ -6,6 +6,7 @@ package rpn
 import (
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 )
 
@@ -61,6 +62,12 @@ type VariableOperator interface {
 	AssignRight(stack *Stack) error
 }
 
+// ConstantOperator defines the interface for constant operations.
+type ConstantOperator interface {
+	ListConstants() (string, error)
+	ClearConstants()
+}
+
 // Operator is the combined interface for all operator implementations.
 // This allows RPN to depend on an abstraction instead of the concrete Operations type.
 type Operator interface {
@@ -69,6 +76,7 @@ type Operator interface {
 	HyperOperator
 	StackOperator
 	VariableOperator
+	ConstantOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
 	// AssignLeft assigns a value to a variable (for := operator)
@@ -79,9 +87,10 @@ type Operator interface {
 
 // Operations provides operator implementations and stack manipulation.
 type Operations struct {
-	vars VariableStore
-	mode CalculationMode
-	mu   sync.RWMutex
+	vars    VariableStore
+	consts  ConstantsProvider
+	mode    CalculationMode
+	mu      sync.RWMutex
 }
 
 // Ensure Operations implements Operator at compile time.
@@ -91,9 +100,11 @@ var _ Operator = (*Operations)(nil)
 
 // NewOperations creates a new Operations instance with the given variable store.
 func NewOperations(vars VariableStore) *Operations {
+	consts := NewConstants()
 	return &Operations{
-		vars: vars,
-		mode: FloatMode, // default
+		vars:   vars,
+		consts: consts,
+		mode:   FloatMode, // default
 	}
 }
 
@@ -169,7 +180,9 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerCommandOperator("showstack", func(stack *Stack) (string, error) { return op.Show(stack) })
 	registry.registerCommandOperator("print", func(stack *Stack) (string, error) { return op.Show(stack) })
 	registry.registerCommandOperator("vars", func(stack *Stack) (string, error) { return op.ListVariables() })
+	registry.registerCommandOperator("constants", func(stack *Stack) (string, error) { return op.ListConstants() })
 	registry.registerCommandOperator("clear", func(stack *Stack) (string, error) { op.ClearVariables(); return "All variables cleared", nil })
+	registry.registerCommandOperator("clearconstants", func(stack *Stack) (string, error) { op.ClearConstants(); return "All constants cleared", nil })
 
 	// Register hyper operators
 	registry.registerHyperOperator("[+]", func(stack *Stack) error { return op.HyperAdd(stack) })
@@ -261,7 +274,11 @@ func (o *Operations) Add(stack *Stack) error {
 	}
 
 	// Use the Number interface for arithmetic
-	stack.Push(aVal.Add(bVal))
+	result, err := aVal.Add(bVal)
+	if err != nil {
+		return fmt.Errorf("addition error: %w", err)
+	}
+	stack.Push(result)
 	return nil
 }
 
@@ -277,7 +294,11 @@ func (o *Operations) Subtract(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for -: %w", err)
 	}
 
-	stack.Push(a.Sub(b))
+	result, err := a.Sub(b)
+	if err != nil {
+		return fmt.Errorf("subtraction error: %w", err)
+	}
+	stack.Push(result)
 	return nil
 }
 
@@ -293,7 +314,11 @@ func (o *Operations) Multiply(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for *: %w", err)
 	}
 
-	stack.Push(a.Mul(b))
+	result, err := a.Mul(b)
+	if err != nil {
+		return fmt.Errorf("multiplication error: %w", err)
+	}
+	stack.Push(result)
 	return nil
 }
 
@@ -333,7 +358,11 @@ func (o *Operations) Power(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for ^: %w", err)
 	}
 
-	stack.Push(a.Pow(b))
+	result, err := a.Pow(b)
+	if err != nil {
+		return fmt.Errorf("power error: %w", err)
+	}
+	stack.Push(result)
 	return nil
 }
 
@@ -378,7 +407,10 @@ func (o *Operations) Log2(stack *Stack) error {
 
 	// Use Float64() to convert value to float64, handling boolean values:
 	// - true → 1, false → 0
-	val := a.Float64()
+	val, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value: %w", err)
+	}
 	if val <= 0 {
 		return fmt.Errorf("log2 undefined for non-positive numbers")
 	}
@@ -398,7 +430,10 @@ func (o *Operations) Log10(stack *Stack) error {
 
 	// Use Float64() to convert value to float64, handling boolean values:
 	// - true → 1, false → 0
-	val := a.Float64()
+	val, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value: %w", err)
+	}
 	if val <= 0 {
 		return fmt.Errorf("log10 undefined for non-positive numbers")
 	}
@@ -418,7 +453,10 @@ func (o *Operations) Ln(stack *Stack) error {
 
 	// Use Float64() to convert value to float64, handling boolean values:
 	// - true → 1, false → 0
-	val := a.Float64()
+	val, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value: %w", err)
+	}
 	if val <= 0 {
 		return fmt.Errorf("ln undefined for non-positive numbers")
 	}
@@ -455,7 +493,11 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 	// Process left-associative with Number interface
 	sum := 0.0
 	for i := 0; i < len(values); i++ {
-		sum += values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperadd: failed to get float64 value: %w", err)
+		}
+		sum += val
 	}
 	mode := o.GetMode()
 	stack.Push(NewNumber(sum, mode))
@@ -474,7 +516,11 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 		if err != nil {
 			return fmt.Errorf("hypermultiply: %w", err)
 		}
-		product *= val.Float64()
+		floatVal, err := val.Float64()
+		if err != nil {
+			return fmt.Errorf("hypermultiply: failed to get float64 value: %w", err)
+		}
+		product *= floatVal
 	}
 	mode := o.GetMode()
 	stack.Push(NewNumber(product, mode))
@@ -503,9 +549,17 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 	}
 
 	// Process left-associative with Number interface
-	result := values[0].Float64()
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
+	}
+	result := firstVal
 	for i := 1; i < len(values); i++ {
-		result -= values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
+		}
+		result -= val
 	}
 	mode := o.GetMode()
 	stack.Push(NewNumber(result, mode))
@@ -534,9 +588,16 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 	}
 
 	// Process left-associative with Number interface
-	result := values[0].Float64()
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+	}
+	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val := values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+		}
 		if val == 0 {
 			return fmt.Errorf("division by zero")
 		}
@@ -569,9 +630,17 @@ func (o *Operations) HyperPower(stack *Stack) error {
 	}
 
 	// Process left-associative with Number interface
-	result := values[0].Float64()
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+	}
+	result := firstVal
 	for i := 1; i < len(values); i++ {
-		result = math.Pow(result, values[i].Float64())
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+		}
+		result = math.Pow(result, val)
 	}
 	mode := o.GetMode()
 	stack.Push(NewNumber(result, mode))
@@ -600,9 +669,16 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	}
 
 	// Process left-associative with Number interface
-	result := values[0].Float64()
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+	}
+	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val := values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+		}
 		if val == 0 {
 			return fmt.Errorf("modulo by zero")
 		}
@@ -639,7 +715,10 @@ func (o *Operations) HyperLog2(stack *Stack) error {
 	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val := values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperlog2: failed to get float64 value: %w", err)
+		}
 		if val <= 0 {
 			return fmt.Errorf("hyperlog2 undefined for non-positive numbers")
 		}
@@ -678,7 +757,10 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val := values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperlog10: failed to get float64 value: %w", err)
+		}
 		if val <= 0 {
 			return fmt.Errorf("hyperlog10 undefined for non-positive numbers")
 		}
@@ -717,7 +799,10 @@ func (o *Operations) HyperLn(stack *Stack) error {
 	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val := values[i].Float64()
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperln: failed to get float64 value: %w", err)
+		}
 		if val <= 0 {
 			return fmt.Errorf("hyperln undefined for non-positive numbers")
 		}
@@ -742,7 +827,16 @@ func (o *Operations) GT(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for gt: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() > b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal > bVal))
 	return nil
 }
 
@@ -758,7 +852,16 @@ func (o *Operations) LT(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lt: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() < b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal < bVal))
 	return nil
 }
 
@@ -774,7 +877,16 @@ func (o *Operations) GTE(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for gte: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() >= b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal >= bVal))
 	return nil
 }
 
@@ -790,7 +902,16 @@ func (o *Operations) LTE(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for lte: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() <= b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal <= bVal))
 	return nil
 }
 
@@ -806,7 +927,16 @@ func (o *Operations) EQ(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for eq: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() == b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal == bVal))
 	return nil
 }
 
@@ -822,7 +952,16 @@ func (o *Operations) NEQ(stack *Stack) error {
 		return fmt.Errorf("insufficient operands for neq: %w", err)
 	}
 
-	stack.Push(NewFloatFromBool(a.Float64() != b.Float64()))
+	aVal, err := a.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for a: %w", err)
+	}
+	bVal, err := b.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for b: %w", err)
+	}
+
+	stack.Push(NewFloatFromBool(aVal != bVal))
 	return nil
 }
 
@@ -911,7 +1050,11 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 	}
 
 	// Convert Number to float64 for variable storage
-	return o.vars.SetVariable(name, val.Float64())
+	valF, err := val.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+	}
+	return o.vars.SetVariable(name, valF)
 }
 
 // UseVariable pushes a variable's value onto the stack.
@@ -957,6 +1100,34 @@ func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
 }
 
+// ListConstants lists all constants.
+// Usage: `constants`
+func (o *Operations) ListConstants() (string, error) {
+	infos := o.consts.ListConstants()
+	if len(infos) == 0 {
+		return "No constants defined", nil
+	}
+	var sb strings.Builder
+	for i, info := range infos {
+		if i > 0 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(info.Name)
+		sb.WriteString(" = ")
+		// Use Number interface for consistent formatting
+		num := NewNumber(info.Value, FloatMode)
+		sb.WriteString(num.String())
+	}
+	return sb.String(), nil
+}
+
+// ClearConstants removes all constants from storage.
+// Note: This clears only user-defined constants; built-in constants are preserved.
+// Usage: `clearconstants`
+func (o *Operations) ClearConstants() {
+	o.consts.ReloadBuiltInConstants()
+}
+
 // AssignLeft assigns a value to a variable (for =: operator).
 // Stack order: value name =: (value on bottom, name on top).
 // This function pops name first (top of stack), then value.
@@ -983,7 +1154,11 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 		varName = name.String()
 	}
 
-	return o.vars.SetVariable(varName, val.Float64())
+	valF, err := val.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+	}
+	return o.vars.SetVariable(varName, valF)
 }
 
 // AssignRight assigns a value to a variable (for := operator).
@@ -1012,5 +1187,9 @@ func (o *Operations) AssignRight(stack *Stack) error {
 		varName = name.String()
 	}
 
-	return o.vars.SetVariable(varName, val.Float64())
+	valF, err := val.Float64()
+	if err != nil {
+		return fmt.Errorf("failed to get float64 value for variable: %w", err)
+	}
+	return o.vars.SetVariable(varName, valF)
 }
