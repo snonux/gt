@@ -465,6 +465,12 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		stack.Push(NewNumber(val, r.mode))
 		return "", nil
 	}
+	// Check if it's a constant reference (before operators)
+	if val, exists := r.consts.GetConstant(token); exists {
+		stack.Push(NewNumber(val, r.mode))
+		return "", nil
+	}
+
 
 	// Handle standard operators (common logic extracted for DRY)
 	// This must be done BEFORE pushing Symbol for unknown identifiers,
