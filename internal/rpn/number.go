@@ -186,12 +186,23 @@ func (f *Float) Mod(other Number) (Number, error) {
 // IsZero returns true if the float is zero.
 // For boolean values, false (0) is zero, true (1) is not zero.
 func (f *Float) IsZero() bool {
-	return f.Float64() == 0
+	val, _ := f.Float64()
+	return val == 0
 }
 
 // IsNegative returns true if the float is negative.
 func (f *Float) IsNegative() bool {
 	return f.n < 0
+}
+
+// IsString returns true if this number represents a string value.
+func (f *Float) IsString() bool {
+	return false
+}
+
+// IsSymbol returns true if this number represents a symbol.
+func (f *Float) IsSymbol() bool {
+	return false
 }
 
 // Compare returns -1, 0, or 1 if this float is less than, equal to, or greater than another.
@@ -373,6 +384,16 @@ func (r *Rat) IsNegative() bool {
 	return r.n.Sign() < 0
 }
 
+// IsString returns true if this number represents a string value.
+func (r *Rat) IsString() bool {
+	return false
+}
+
+// IsSymbol returns true if this number represents a symbol.
+func (r *Rat) IsSymbol() bool {
+	return false
+}
+
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
 func (r *Rat) Compare(other Number) (int, error) {
 	otherRat, ok := other.(*Rat)
@@ -393,7 +414,8 @@ func ToRat(n Number) *big.Rat {
 
 // ToFloat converts a Number to float64.
 func ToFloat(n Number) float64 {
-	return n.Float64()
+	val, _ := n.Float64()
+	return val
 }
 
 // StringNum represents a string value on the stack for variable names.
@@ -433,6 +455,7 @@ func (s *StringNum) IsNegative() bool                 { return false }
 func (s *StringNum) Compare(other Number) (int, error) { return 0, fmt.Errorf("string not supported for comparison") }
 func (s *StringNum) Bool() (bool, error)              { return false, fmt.Errorf("string not supported for Bool()") }
 func (s *StringNum) IsBool() bool                     { return false }
+func (s *StringNum) IsSymbol() bool                   { return false }
 
 // Symbol represents a variable symbol on the stack.
 // Symbols are created when:
@@ -491,6 +514,9 @@ func (s *Symbol) IsZero() bool {
 	return false
 }
 func (s *Symbol) IsNegative() bool {
+	return false
+}
+func (s *Symbol) IsString() bool {
 	return false
 }
 func (s *Symbol) Compare(other Number) (int, error) {

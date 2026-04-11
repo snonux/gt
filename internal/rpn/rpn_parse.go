@@ -345,13 +345,17 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 					if err != nil {
 						return "", fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
 					}
-					if err := r.vars.SetVariable(token, val.Float64()); err != nil {
+						valF, err := val.Float64()
+					if err != nil {
+						return "", fmt.Errorf("failed to get float64 value for variable %q: %w", token, err)
+					}
+					if err := r.vars.SetVariable(token, valF); err != nil {
 						return "", fmt.Errorf("failed to set variable %q: %w", token, err)
 					}
 					// Skip the operator token (next one) since we handled it inline
 					// We've consumed both tokens, so we're done
 					// Return confirmation message showing the assignment
-					return fmt.Sprintf("%s = %.10g", token, val.Float64()), nil
+						return fmt.Sprintf("%s = %.10g", token, valF), nil
 				} else if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
 					// This token is a variable name (not a number)
 					shouldPushName = true
