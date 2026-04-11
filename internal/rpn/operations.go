@@ -58,6 +58,30 @@ func buildError(op string, err error) error {
 	return fmt.Errorf("%s: %w", op, err)
 }
 
+// popAll pops all values from stack into a slice and reverses them for left-to-right processing.
+// Returns values in order from bottom to top of stack (first pushed to last pushed).
+func popAll(stack *Stack, op string) ([]Number, error) {
+	if stack.Len() < 2 {
+		return nil, fmt.Errorf("insufficient operands for %s: need at least 2 values", op)
+	}
+
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return nil, fmt.Errorf("%s: failed to pop: %w", op, err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	return values, nil
+}
+
 // ArithmeticOperator defines the interface for basic arithmetic operators.
 type ArithmeticOperator interface {
 	Add(stack *Stack) error
@@ -527,23 +551,9 @@ func (o *Operations) Ln(stack *Stack) error {
 
 // HyperAdd pops all values from stack, adds them left-associative (with boolean-to-number coercion), and pushes result.
 func (o *Operations) HyperAdd(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperadd: need at least 2 values")
-	}
-
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperadd: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
+	values, err := popAll(stack, "hyperadd")
+	if err != nil {
+		return err
 	}
 
 	// Process left-associative with Number interface
@@ -551,7 +561,7 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 	for i := 0; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperadd: failed to get float64 value: %w", err)
+			return buildError("hyperadd", fmt.Errorf("failed to get float64 value: %w", err))
 		}
 		sum += val
 	}
@@ -585,35 +595,21 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 
 // HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
 func (o *Operations) HyperSubtract(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hypersubtract: need at least 2 values")
-	}
-
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hypersubtract: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
+	values, err := popAll(stack, "hypersubtract")
+	if err != nil {
+		return err
 	}
 
 	// Process left-associative with Number interface
 	firstVal, err := values[0].Float64()
 	if err != nil {
-		return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
+		return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
+			return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
 		}
 		result -= val
 	}
