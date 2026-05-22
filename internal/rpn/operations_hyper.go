@@ -26,12 +26,12 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
-	if err := validateSameCategory(metrics, "[+]"); err != nil {
+	if err := validateCategories(metrics, "[+]"); err != nil {
 		return err
 	}
 
 	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
+	resultMetric := resultMetricForAdd(metrics)
 
 	// Convert all to base units, sum, convert back
 	pm := o.GetPrefixMode()
@@ -92,12 +92,12 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
-	if err := validateSameCategory(metrics, "[-]"); err != nil {
+	if err := validateCategories(metrics, "[-]"); err != nil {
 		return err
 	}
 
 	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
+	resultMetric := resultMetricForAdd(metrics)
 
 	// Convert all to base units, subtract, convert back
 	pm := o.GetPrefixMode()
@@ -191,12 +191,12 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
-	if err := validateSameCategory(metrics, "[%]"); err != nil {
+	if err := validateCategories(metrics, "[%]"); err != nil {
 		return err
 	}
 
 	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
+	resultMetric := resultMetricForAdd(metrics)
 
 	// Convert all to base units, compute modulo, convert back
 	pm := o.GetPrefixMode()
@@ -297,40 +297,4 @@ func (o *Operations) HyperLn(stack *Stack) error {
 	return nil
 }
 
-// resultMetricForHyperAdd finds the appropriate result metric for add/subtract/modulo hyper operations.
-// When Cool absorbs a non-Cool category, use the first non-Cool metric.
-// When all are Cool, use Cool.
-func resultMetricForHyperAdd(metrics []*Metric) *Metric {
-	for _, m := range metrics {
-		if m != nil && m.Category != Universal {
-			return m
-		}
-	}
-	// All Universal (Cool) or empty slice — default to Cool.
-	// In practice, metrics is never empty (popAll enforces >= 2 operands),
-	// but we handle it defensively.
-	if len(metrics) > 0 && metrics[0] != nil {
-		return metrics[0]
-	}
-	m, _ := GetMetricRegistry().Find("Cool")
-	return m
-}
 
-// validateSameCategory checks that all metrics belong to the same category.
-// Cool (Universal) absorbs — it is compatible with any single non-Universal category.
-// Returns an error if metrics span multiple non-Universal categories.
-func validateSameCategory(metrics []*Metric, opName string) error {
-	var dominantCat Category = Universal
-	for _, m := range metrics {
-		if m == nil || m.Category == Universal {
-			continue
-		}
-		if dominantCat == Universal {
-			dominantCat = m.Category
-		} else if m.Category != dominantCat {
-			return fmt.Errorf("%s: incompatible metrics: mixed %s and %s categories",
-				opName, dominantCat, m.Category)
-		}
-	}
-	return nil
-}
