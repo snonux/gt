@@ -171,6 +171,10 @@ type Operator interface {
 	MetricList(stack *Stack) (string, error)
 	MetricCategory(stack *Stack, categoryName string) (string, error)
 	MetricCompatible(stack *Stack) (string, error)
+	// Custom metric commands
+	CustomList(stack *Stack) (string, error)
+	CustomDefine(name string, factor float64, category string) error
+	CustomUndefine(name string) error
 }
 
 // Operations provides operator implementations and stack manipulation.

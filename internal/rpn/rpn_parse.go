@@ -393,6 +393,53 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			}
 		}
 
+		// Handle multi-word custom command: custom <subcommand>
+		if token == "custom" && i+1 < len(tokens) {
+			subCmd := tokens[i+1]
+			switch subCmd {
+			case "show":
+				result, err := r.ops.MetricShow(stack)
+				if err != nil {
+					return "", fmt.Errorf("rpn: custom show: %w", err)
+				}
+				return result, nil
+			case "list":
+				result, err := r.ops.CustomList(stack)
+				if err != nil {
+					return "", fmt.Errorf("rpn: custom list: %w", err)
+				}
+				return result, nil
+			case "define":
+				if i+4 < len(tokens) {
+					name := tokens[i+2]
+					factorStr := tokens[i+3]
+					category := tokens[i+4]
+					factor, err := strconv.ParseFloat(factorStr, 64)
+					if err != nil {
+						return "", fmt.Errorf("rpn: custom define: invalid factor %q", factorStr)
+					}
+					err = r.ops.CustomDefine(name, factor, category)
+					if err != nil {
+						return "", fmt.Errorf("rpn: custom define: %w", err)
+					}
+					return fmt.Sprintf("defined custom metric %q (factor: %g, category: %s)", name, factor, category), nil
+				}
+				return "", fmt.Errorf("rpn: custom define: usage: custom define <name> <factor> <category>")
+			case "undefine":
+				if i+2 < len(tokens) {
+					name := tokens[i+2]
+					err := r.ops.CustomUndefine(name)
+					if err != nil {
+						return "", fmt.Errorf("rpn: custom undefine: %w", err)
+					}
+					return fmt.Sprintf("removed custom metric %q", name), nil
+				}
+				return "", fmt.Errorf("rpn: custom undefine: usage: custom undefine <name>")
+			default:
+				return "", fmt.Errorf("rpn: unknown custom subcommand %q. Use: show, list, define, undefine", subCmd)
+			}
+		}
+
 		// Check if this is a variable name for assignment (:= or =:)
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name

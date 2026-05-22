@@ -97,3 +97,45 @@ func parseCategory(name string) (Category, bool) {
 		return 0, false
 	}
 }
+
+// CustomList returns all custom metric names.
+func (o *Operations) CustomList(stack *Stack) (string, error) {
+	reg := o.metricRegistry
+	metrics := reg.ListByCategory(Custom)
+	var names []string
+	for _, m := range metrics {
+		names = append(names, m.Name)
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		return "no custom metrics defined", nil
+	}
+	return strings.Join(names, ", "), nil
+}
+
+// CustomDefine registers a custom metric.
+func (o *Operations) CustomDefine(name string, factor float64, category string) error {
+	reg := o.metricRegistry
+	// Check if already exists
+	if _, ok := reg.Find(name); ok {
+		return fmt.Errorf("metric %q already exists", name)
+	}
+	cat, ok := parseCategory(category)
+	if !ok {
+		return fmt.Errorf("unknown category %q", category)
+	}
+	m := &Metric{
+		Name:     name,
+		Category: cat,
+		BaseUnit: cat.String() + "_base",
+		Factor:   func(PrefixMode) float64 { return factor },
+		IsCustom: true,
+	}
+	reg.Register(m)
+	return nil
+}
+
+// CustomUndefine removes a custom metric.
+func (o *Operations) CustomUndefine(name string) error {
+	return o.metricRegistry.Unregister(name)
+}
