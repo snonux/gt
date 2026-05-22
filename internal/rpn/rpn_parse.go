@@ -335,6 +335,20 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			continue
 		}
 
+		// Check for @ prefix: standalone metric (e.g., @GB, @Mbps)
+		// Pushes a Number with value 1 and the looked-up metric
+		if len(token) > 1 && token[0] == '@' {
+			metricName := token[1:]
+			if metric, ok := GetMetricRegistry().FindWithAliases(metricName); ok {
+				if stack.Len() >= r.maxStack {
+					return "", fmt.Errorf("stack overflow")
+				}
+				stack.Push(NewNumber(1, r.mode, metric))
+				continue
+			}
+			return "", fmt.Errorf("unknown metric %q in %q", metricName, token)
+		}
+
 		// Check if this is a variable name for assignment (:= or =:)
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name

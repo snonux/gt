@@ -780,3 +780,66 @@ func TestParseNumberWithMetricExactMatch(t *testing.T) {
 		t.Error("parseNumberWithMetric(100Bps) should fail (B = bytes)")
 	}
 }
+
+func TestAtPrefixMetricParsing(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		token      string
+		wantMetric string
+		wantOK     bool
+	}{
+		{"@GB", "GB", true},
+		{"@Mbps", "Mbps", true},
+		{"@hr", "hr", true},
+		{"@sec", "s", true},  // alias
+		{"@foot", "ft", true}, // alias
+		{"@nope", "", false},
+		{"@", "", false},
+	}
+
+	for _, tt := range tests {
+		// Simulate the @ prefix logic from rpn_parse.go
+		if len(tt.token) <= 1 || tt.token[0] != '@' {
+			continue
+		}
+		metricName := tt.token[1:]
+		metric, ok := reg.FindWithAliases(metricName)
+		if ok != tt.wantOK {
+			t.Errorf("@%s ok = %v, want %v", metricName, ok, tt.wantOK)
+			continue
+		}
+		if ok && tt.wantMetric != "" {
+			expected, _ := reg.Find(tt.wantMetric)
+			if metric != expected {
+				t.Errorf("@%s = %q, want %q", metricName, metric.Name, tt.wantMetric)
+			}
+		}
+	}
+}
+
+func TestAtPrefixIntegration(t *testing.T) {
+	// Test that @GB parses correctly through the full RPN pipeline
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// Parse a standalone @ metric
+	result, err := rpn.ParseAndEvaluate("@GB")
+	if err != nil {
+		t.Fatalf("ParseAndEvaluate(@GB) failed: %v", err)
+	}
+	// Should push 1 with GB metric; display is "1"
+	if result != "1" {
+		t.Errorf("@GB result = %q, want %q", result, "1")
+	}
+
+	// The stack should have a number with the GB metric
+	stack := rpn.GetCurrentStack()
+	if len(stack) != 1 {
+		t.Fatalf("expected 1 item on stack, got %d", len(stack))
+	}
+	m := stack[0].Metric()
+	if m == nil || m.Name != "GB" {
+		t.Errorf("stack[0].Metric() = %v, want GB", m)
+	}
+}
