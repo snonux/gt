@@ -187,6 +187,15 @@ func TestBuiltInMetricFactors(t *testing.T) {
 		{"GiB", SI, 8 * 1073741824},
 		{"TiB", SI, 8 * float64(uint64(1)<<40)},
 		{"PiB", SI, 8 * float64(uint64(1)<<50)},
+		// SI-prefixed in IEC mode (use 1024-based factors)
+		{"KB", IEC, 8 * 1024},
+		{"MB", IEC, 8 * 1048576},
+		{"GB", IEC, 8 * 1073741824},
+		{"TB", IEC, 8 * float64(uint64(1)<<40)},
+		{"PB", IEC, 8 * float64(uint64(1)<<50)},
+		// IEC-prefixed are the same in both modes
+		{"KiB", IEC, 8192},
+		{"MiB", IEC, 8 * 1048576},
 		// Time (base: seconds)
 		{"ms", SI, 0.001},
 		{"s", SI, 1},

@@ -68,15 +68,17 @@ func registerBuiltInMetrics(r *MetricRegistry) {
 	})
 
 	// SI-prefixed data size (KB, MB, GB, TB, PB)
+	// In SI mode: powers of 1000. In IEC mode: powers of 1024.
 	siPrefixes := []struct {
-		name     string
-		multiple float64
+		name      string
+		siFactor  float64 // 8 * 1000^n
+		power1024 int
 	}{
-		{"KB", 1e3},
-		{"MB", 1e6},
-		{"GB", 1e9},
-		{"TB", 1e12},
-		{"PB", 1e15},
+		{"KB", 8 * 1e3, 10},
+		{"MB", 8 * 1e6, 20},
+		{"GB", 8 * 1e9, 30},
+		{"TB", 8 * 1e12, 40},
+		{"PB", 8 * 1e15, 50},
 	}
 	for _, p := range siPrefixes {
 		p := p
@@ -84,8 +86,13 @@ func registerBuiltInMetrics(r *MetricRegistry) {
 			Name:     p.name,
 			Category: DataSize,
 			BaseUnit: "bits",
-			Factor:   func(PrefixMode) float64 { return 8 * p.multiple },
-			IsRate:   false,
+			Factor: func(mode PrefixMode) float64 {
+				if mode == IEC {
+					return 8 * float64(uint64(1)<<uint64(p.power1024))
+				}
+				return p.siFactor
+			},
+			IsRate: false,
 		})
 	}
 
