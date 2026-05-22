@@ -366,7 +366,7 @@ func (o *Operations) Add(stack *Stack) error {
 	resultMetric := compatibleMetric(aM, bM)
 	resultVal := convertFromBase(aBase+bBase, resultMetric, SI)
 
-	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -393,7 +393,7 @@ func (o *Operations) Subtract(stack *Stack) error {
 	resultMetric := compatibleMetric(aM, bM)
 	resultVal := convertFromBase(aBase-bBase, resultMetric, SI)
 
-	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -418,7 +418,7 @@ func (o *Operations) Multiply(stack *Stack) error {
 	resultMetric := resultMetricForMul(aM, bM)
 	resultVal := convertFromBase(aBase*bBase, resultMetric, SI)
 
-	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -451,7 +451,7 @@ func (o *Operations) Divide(stack *Stack) error {
 	resultMetric := resultMetricForDiv(aM, bM)
 	resultVal := convertFromBase(aBase/bBase, resultMetric, SI)
 
-	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -472,7 +472,7 @@ func (o *Operations) Power(stack *Stack) error {
 		return buildError("power", err)
 	}
 
-	stack.Push(NewNumber(math.Pow(aF, bF), o.mode, GetCoolMetric()))
+	stack.Push(NewNumber(math.Pow(aF, bF), o.GetMode(), GetCoolMetric()))
 	return nil
 }
 
@@ -510,7 +510,7 @@ func (o *Operations) Modulo(stack *Stack) error {
 	resultMetric := compatibleMetric(aM, bM)
 	resultVal := convertFromBase(math.Mod(aBase, bBase), resultMetric, SI)
 
-	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -544,11 +544,11 @@ func (o *Operations) FastPower(stack *Stack) error {
 
 	// Result is unitless (Cool metric)
 	if exp == 0 {
-		stack.Push(NewNumber(1, o.mode, GetCoolMetric()))
+		stack.Push(NewNumber(1, o.GetMode(), GetCoolMetric()))
 		return nil
 	}
 	resultVal := binaryExponentiationFloat(aF, exp)
-	stack.Push(NewNumber(resultVal, o.mode, GetCoolMetric()))
+	stack.Push(NewNumber(resultVal, o.GetMode(), GetCoolMetric()))
 	return nil
 }
 
