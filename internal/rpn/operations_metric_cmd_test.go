@@ -380,3 +380,89 @@ func TestPrefixMode(t *testing.T) {
 		})
 	}
 }
+
+func TestCustomDefineAndList(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// Define a custom metric
+	result, err := rpn.ParseAndEvaluate("custom define foobar 42 Custom")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "defined") {
+		t.Errorf("expected 'defined' in result, got: %s", result)
+	}
+
+	// List custom metrics
+	result, err = rpn.ParseAndEvaluate("custom list")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "foobar") {
+		t.Errorf("expected 'foobar' in custom list, got: %s", result)
+	}
+
+	// Use the custom metric
+	result, err = rpn.ParseAndEvaluate("10foobar 5 +")
+	if err != nil {
+		t.Fatalf("unexpected error using custom metric: %v", err)
+	}
+
+	// Undefine
+	result, err = rpn.ParseAndEvaluate("custom undefine foobar")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "removed") {
+		t.Errorf("expected 'removed' in result, got: %s", result)
+	}
+}
+
+func TestCustomDefineDuplicate(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	_, err := rpn.ParseAndEvaluate("custom define Cool 1 Universal")
+	if err == nil {
+		t.Error("expected error for duplicate metric name")
+	}
+}
+
+func TestCustomDefineInvalidCategory(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	_, err := rpn.ParseAndEvaluate("custom define foo 1 Nope")
+	if err == nil {
+		t.Error("expected error for invalid category")
+	}
+}
+
+func TestCustomUndefineBuiltIn(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	_, err := rpn.ParseAndEvaluate("custom undefine Cool")
+	if err == nil {
+		t.Error("expected error for undefining built-in metric")
+	}
+}
+
+func TestCustomUndefineNotFound(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	_, err := rpn.ParseAndEvaluate("custom undefine nonexistent")
+	if err == nil {
+		t.Error("expected error for undefining non-existent metric")
+	}
+}
+
+func TestCustomListEmpty(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("custom list")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "no custom") {
+		t.Errorf("expected 'no custom' when empty, got: %s", result)
+	}
+}

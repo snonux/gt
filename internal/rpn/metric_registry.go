@@ -160,3 +160,25 @@ func (r *MetricRegistry) ListByCategory(cat Category) []*Metric {
 	}
 	return result
 }
+
+// Unregister removes a custom metric from the registry.
+// Returns error if the metric is not custom (built-in metrics cannot be removed).
+func (r *MetricRegistry) Unregister(name string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	m, ok := r.metrics[name]
+	if !ok {
+		return fmt.Errorf("metric %q not found", name)
+	}
+	if !m.IsCustom {
+		return fmt.Errorf("cannot remove built-in metric %q", name)
+	}
+	delete(r.metrics, name)
+	// Also remove any aliases pointing to this metric
+	for alias, canonical := range r.aliases {
+		if canonical == name {
+			delete(r.aliases, alias)
+		}
+	}
+	return nil
+}
