@@ -4,6 +4,7 @@
 package rpn
 
 import (
+	"errors"
 	"fmt"
 	"math"
 )
@@ -222,79 +223,47 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	return nil
 }
 
-// HyperLog2 pops all values from stack, computes sum of log2 for all values, and pushes result.
-// No metric validation; uses raw float64 values. Result is always Cool (unitless).
-func (o *Operations) HyperLog2(stack *Stack) error {
-	values, err := popAll(stack, "[lg]")
+// hyperLog computes the sum of a log function over all stack values.
+// Each value must be positive. Result is pushed with Cool metric.
+func (o *Operations) hyperLog(stack *Stack, opName string, logFn func(float64) float64, errMsg string) error {
+	values, err := popAll(stack, opName)
 	if err != nil {
 		return err
 	}
 
-	var result float64 = 0
-	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
+	var result float64
+	for i, v := range values {
+		val, err := v.Float64()
 		if err != nil {
-			return buildError("[lg]", fmt.Errorf("operand %d: %w", i, err))
+			return buildError(opName, fmt.Errorf("operand %d: %w", i, err))
 		}
 		if val <= 0 {
-			return buildError("[lg]", fmt.Errorf("log2 undefined for non-positive numbers"))
+			return buildError(opName, errors.New(errMsg))
 		}
-		result += math.Log2(val)
+		result += logFn(val)
 	}
 
 	cool := coolMetric(o.metricRegistry)
 	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
+}
+
+// HyperLog2 pops all values from stack, computes sum of log2 for all values, and pushes result.
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
+func (o *Operations) HyperLog2(stack *Stack) error {
+	return o.hyperLog(stack, "[lg]", math.Log2, "log2 undefined for non-positive numbers")
 }
 
 // HyperLog10 pops all values from stack, computes sum of log10 for all values, and pushes result.
 // No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperLog10(stack *Stack) error {
-	values, err := popAll(stack, "[log]")
-	if err != nil {
-		return err
-	}
-
-	var result float64 = 0
-	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
-		if err != nil {
-			return buildError("[log]", fmt.Errorf("operand %d: %w", i, err))
-		}
-		if val <= 0 {
-			return buildError("[log]", fmt.Errorf("log10 undefined for non-positive numbers"))
-		}
-		result += math.Log10(val)
-	}
-
-	cool := coolMetric(o.metricRegistry)
-	stack.Push(NewNumber(result, o.GetMode(), cool))
-	return nil
+	return o.hyperLog(stack, "[log]", math.Log10, "log10 undefined for non-positive numbers")
 }
 
 // HyperLn pops all values from stack, computes sum of natural log for all values, and pushes result.
 // No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperLn(stack *Stack) error {
-	values, err := popAll(stack, "[ln]")
-	if err != nil {
-		return err
-	}
-
-	var result float64 = 0
-	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
-		if err != nil {
-			return buildError("[ln]", fmt.Errorf("operand %d: %w", i, err))
-		}
-		if val <= 0 {
-			return buildError("[ln]", fmt.Errorf("ln undefined for non-positive numbers"))
-		}
-		result += math.Log(val)
-	}
-
-	cool := coolMetric(o.metricRegistry)
-	stack.Push(NewNumber(result, o.GetMode(), cool))
-	return nil
+	return o.hyperLog(stack, "[ln]", math.Log, "ln undefined for non-positive numbers")
 }
 
 
