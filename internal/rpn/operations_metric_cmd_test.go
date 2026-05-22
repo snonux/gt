@@ -4,6 +4,7 @@
 package rpn
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -246,5 +247,177 @@ func TestMetricCompatibleEmptyStack(t *testing.T) {
 	_, err := rpn.ParseAndEvaluate("metric compatible")
 	if err == nil {
 		t.Error("expected error for empty stack")
+	}
+}
+
+func TestPrefixModeEndToEndConvert(t *testing.T) {
+	// SI mode: 1GB → MB = 1000
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1GB @MB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	if resultVal < 999.9 || resultVal > 1000.1 {
+		t.Errorf("SI: 1GB→MB = %g, want 1000", resultVal)
+	}
+
+	// IEC mode: 1GB → MB = 1024
+	vars2 := NewVariables()
+	rpn2 := NewRPN(vars2)
+	_, err = rpn2.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result2, err := rpn2.ParseAndEvaluate("1GB @MB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal2, _ := strconv.ParseFloat(result2, 64)
+	if resultVal2 < 1023.9 || resultVal2 > 1024.1 {
+		t.Errorf("IEC: 1GB→MB = %g, want 1024", resultVal2)
+	}
+}
+
+func TestPrefixModeAffectsCrossMetricConvert(t *testing.T) {
+	// SI mode: 1GiB → GB = ~1.07374
+	// (GiB is always 2^30, GB in SI mode is 10^9)
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1GiB @GB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	if resultVal < 1.07 || resultVal > 1.08 {
+		t.Errorf("SI: 1GiB→GB = %g, want ~1.074", resultVal)
+	}
+
+	// IEC mode: 1GiB → GB = 1.0
+	// (GiB is 2^30, GB in IEC mode is also 2^30)
+	vars2 := NewVariables()
+	rpn2 := NewRPN(vars2)
+	_, err = rpn2.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result2, err := rpn2.ParseAndEvaluate("1GiB @GB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal2, _ := strconv.ParseFloat(result2, 64)
+	if resultVal2 < 0.999 || resultVal2 > 1.001 {
+		t.Errorf("IEC: 1GiB→GB = %g, want 1.0", resultVal2)
+	}
+}
+
+func TestPrefixModeAffectsArithmetic(t *testing.T) {
+	// SI mode: 1024KB + 1KB in SI = 1024*8000 + 8000 = 8232800 bits → /8000 = 1025KB
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1024KB 1KB + @KB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	if resultVal < 1024.9 || resultVal > 1025.1 {
+		t.Errorf("SI: 1024KB+1KB→KB = %g, want 1025", resultVal)
+	}
+
+	// IEC mode: 1024KB + 1KB where KB = 8*1024 bits
+	// 1024*8192 + 8192 = 8401408 bits → /8192 = 1025KB
+	vars2 := NewVariables()
+	rpn2 := NewRPN(vars2)
+	_, err = rpn2.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result2, err := rpn2.ParseAndEvaluate("1024KB 1KB + @KB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal2, _ := strconv.ParseFloat(result2, 64)
+	if resultVal2 < 1024.9 || resultVal2 > 1025.1 {
+		t.Errorf("IEC: 1024KB+1KB→KB = %g, want 1025", resultVal2)
+	}
+}
+
+func TestPrefixModeAffectsComparison(t *testing.T) {
+	// SI mode: 1GB (8e9 bits) vs 1000MB (1000*8e6 = 8e9 bits) → equal
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1GB 1000MB eq")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "true" {
+		t.Errorf("SI: 1GB == 1000MB should be true, got %s", result)
+	}
+
+	// IEC mode: 1GB (8*2^30 bits) vs 1000MB (1000*8*2^20 bits)
+	// 8*2^30 = 8589934592, 1000*8*2^20 = 8388608000 → not equal
+	vars2 := NewVariables()
+	rpn2 := NewRPN(vars2)
+	_, err = rpn2.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result2, err := rpn2.ParseAndEvaluate("1GB 1000MB eq")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result2 != "false" {
+		t.Errorf("IEC: 1GB == 1000MB should be false, got %s", result2)
+	}
+
+	// IEC mode: 1GB == 1024MB (both use 2^30 / 2^20) — use fresh RPN to avoid stack carryover
+	vars3 := NewVariables()
+	rpn3 := NewRPN(vars3)
+	_, err = rpn3.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result3, err := rpn3.ParseAndEvaluate("1GB 1024MB eq")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result3 != "true" {
+		t.Errorf("IEC: 1GB == 1024MB should be true, got %s", result3)
+	}
+}
+
+func TestMetricShowReflectsPrefixMode(t *testing.T) {
+	// In SI mode, GB factor should be 8e+09
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1GB metric show")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "GB") {
+		t.Errorf("expected 'GB' in result, got: %s", result)
+	}
+	// SI GB factor = 8e9, formatted with %.0g = "8e+09"
+	if !strings.Contains(result, "8e+09") {
+		t.Errorf("SI mode GB factor should be 8e+09, got: %s", result)
+	}
+
+	// Switch to IEC mode, GB factor should be 8*2^30 = 8589934592
+	// formatted with %.0g = "9e+09"
+	vars2 := NewVariables()
+	rpn2 := NewRPN(vars2)
+	_, err = rpn2.ParseAndEvaluate("metric binary set")
+	if err != nil {
+		t.Fatalf("metric binary set failed: %v", err)
+	}
+	result2, err := rpn2.ParseAndEvaluate("1GB metric show")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// IEC GB factor = 8*2^30 ≈ 8.59e9, formatted with %.0g = "9e+09"
+	// (different from SI's "8e+09")
+	if !strings.Contains(result2, "9e+09") {
+		t.Errorf("IEC mode GB factor should be ~9e+09, got: %s", result2)
 	}
 }

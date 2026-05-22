@@ -22,17 +22,18 @@ func (o *Operations) Add(stack *Stack) error {
 		return metricError("+", aM, bM)
 	}
 
+	pm := o.GetPrefixMode()
 	// Convert both to base units, add, convert back to result metric
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError("addition", err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError("addition", err)
 	}
 	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, aBase+bBase, resultMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, aBase+bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -50,16 +51,17 @@ func (o *Operations) Subtract(stack *Stack) error {
 		return metricError("-", aM, bM)
 	}
 
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	pm := o.GetPrefixMode()
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError("subtraction", err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError("subtraction", err)
 	}
 	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, aBase-bBase, resultMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, aBase-bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -74,17 +76,18 @@ func (o *Operations) Multiply(stack *Stack) error {
 
 	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
+	pm := o.GetPrefixMode()
 	// Convert both to base units, multiply, convert back to result metric
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError("multiplication", err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError("multiplication", err)
 	}
 	resultMetric := resultMetricForMul(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, aBase*bBase, resultMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, aBase*bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -108,16 +111,17 @@ func (o *Operations) Divide(stack *Stack) error {
 
 	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	pm := o.GetPrefixMode()
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError("division", err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError("division", err)
 	}
 	resultMetric := resultMetricForDiv(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -167,16 +171,17 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return metricError("%", aM, bM)
 	}
 
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	pm := o.GetPrefixMode()
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError("modulo", err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError("modulo", err)
 	}
 	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
