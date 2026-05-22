@@ -683,3 +683,100 @@ func TestGetCoolMetric(t *testing.T) {
 		t.Errorf("GetCoolMetric().Category = %s, want Universal", cool.Category)
 	}
 }
+
+func TestParseNumberWithMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		token      string
+		wantNum    float64
+		wantMetric string
+		wantOK     bool
+	}{
+		{"100Mbps", 100, "Mbps", true},
+		{"5.5GB", 5.5, "GB", true},
+		{"2hr", 2, "hr", true},
+		{"3km", 3, "km", true},
+		{"10lb", 10, "lb", true},
+		{"-2.5kB", -2.5, "KB", true},
+		{"1e6bps", 1e6, "bps", true},
+		{"1E9Gbps", 1e9, "Gbps", true},
+		// Plain number — no metric
+		{"42", 0, "", false},
+		// Plain number with decimal
+		{"3.14", 0, "", false},
+		// Unknown suffix
+		{"100xyz", 0, "", false},
+		// Empty
+		{"", 0, "", false},
+		// Just a letter
+		{"Mbps", 0, "", false},
+		// Negative
+		{"-5MB", -5, "MB", true},
+		// Positive sign
+		{"+3hr", 3, "hr", true},
+	}
+
+	for _, tt := range tests {
+		num, metric, ok := parseNumberWithMetric(tt.token)
+		if ok != tt.wantOK {
+			t.Errorf("parseNumberWithMetric(%q) ok = %v, want %v", tt.token, ok, tt.wantOK)
+			continue
+		}
+		if ok {
+			if num != tt.wantNum {
+				t.Errorf("parseNumberWithMetric(%q) num = %g, want %g", tt.token, num, tt.wantNum)
+			}
+			if metric == nil {
+				t.Errorf("parseNumberWithMetric(%q) metric = nil", tt.token)
+				continue
+			}
+			if metric.Name != tt.wantMetric {
+				// Check if it's an alias that resolved to the expected name
+				expected, _ := reg.Find(tt.wantMetric)
+				if expected == nil || metric.Name != expected.Name {
+					t.Errorf("parseNumberWithMetric(%q) metric = %q, want %q", tt.token, metric.Name, tt.wantMetric)
+				}
+			}
+		}
+	}
+}
+
+func TestParseNumberWithMetricAliases(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		token      string
+		wantMetric string
+	}{
+		{"1bit/s", "bps"},
+		{"1kbit/s", "Kbps"},
+		{"1mbit/s", "Mbps"},
+		{"2sec", "s"},
+		{"3secs", "s"},
+		{"5knot", "knots"},
+		{"1mile", "mi"},
+		{"2miles", "mi"},
+		{"1foot", "ft"},
+		{"2feet", "ft"},
+	}
+
+	for _, tt := range tests {
+		_, metric, ok := parseNumberWithMetric(tt.token)
+		if !ok {
+			t.Fatalf("parseNumberWithMetric(%q) = false, want true", tt.token)
+		}
+		expected, _ := reg.Find(tt.wantMetric)
+		if metric != expected {
+			t.Errorf("parseNumberWithMetric(%q) = %q, want %q", tt.token, metric.Name, tt.wantMetric)
+		}
+	}
+}
+
+func TestParseNumberWithMetricExactMatch(t *testing.T) {
+	// Bps (capital B) should NOT resolve to bps
+	_, _, ok := parseNumberWithMetric("100Bps")
+	if ok {
+		t.Error("parseNumberWithMetric(100Bps) should fail (B = bytes)")
+	}
+}
