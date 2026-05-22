@@ -368,14 +368,12 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			case "binary":
 				if i+2 < len(tokens) && tokens[i+2] == "set" {
 					r.prefixMode = IEC
-					i += 2 // skip "binary" and "set"
 					return "prefix mode: IEC", nil
 				}
 				return "", fmt.Errorf("rpn: metric binary: use 'metric binary set'")
 			case "decimal":
 				if i+2 < len(tokens) && tokens[i+2] == "set" {
 					r.prefixMode = SI
-					i += 2 // skip "decimal" and "set"
 					return "prefix mode: SI", nil
 				}
 				return "", fmt.Errorf("rpn: metric decimal: use 'metric decimal set'")

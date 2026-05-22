@@ -22,7 +22,7 @@ func (o *Operations) MetricShow(stack *Stack) (string, error) {
 	if m == nil || m.Category == Universal {
 		return "Cool (Universal)", nil
 	}
-	factor := m.Factor(SI) // use SI for display
+	factor := m.Factor(SI) // display uses SI; prefixMode is not yet wired into computations
 	return fmt.Sprintf("%s, %s, base: %s, factor: %.0g", m.Name, m.Category, m.BaseUnit, factor), nil
 }
 

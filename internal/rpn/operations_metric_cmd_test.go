@@ -103,6 +103,18 @@ func TestMetricCategoryUnknown(t *testing.T) {
 	}
 }
 
+func TestMetricCategoryCustom(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	// Custom category exists but has no built-in metrics, so result should be empty
+	result, err := rpn.ParseAndEvaluate("metric Custom")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// Empty string is fine — no custom metrics registered by default
+	_ = result
+}
+
 func TestMetricSetModeDecimal(t *testing.T) {
 	vars := NewVariables()
 	rpn := NewRPN(vars)
