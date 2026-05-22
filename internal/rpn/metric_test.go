@@ -1,0 +1,362 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Paul Buetow
+
+package rpn
+
+import (
+	"fmt"
+	"testing"
+)
+
+func TestCategoryString(t *testing.T) {
+	tests := []struct {
+		cat    Category
+		expect string
+	}{
+		{Universal, "Universal"},
+		{DataRate, "DataRate"},
+		{DataSize, "DataSize"},
+		{Time, "Time"},
+		{Weight, "Weight"},
+		{Speed, "Speed"},
+		{Distance, "Distance"},
+		{Custom, "Custom"},
+	}
+	for _, tt := range tests {
+		if got := tt.cat.String(); got != tt.expect {
+			t.Errorf("Category(%d).String() = %q, want %q", tt.cat, got, tt.expect)
+		}
+	}
+}
+
+func TestPrefixModeString(t *testing.T) {
+	if got := SI.String(); got != "SI" {
+		t.Errorf("SI.String() = %q, want %q", got, "SI")
+	}
+	if got := IEC.String(); got != "IEC" {
+		t.Errorf("IEC.String() = %q, want %q", got, "IEC")
+	}
+}
+
+func TestMetricString(t *testing.T) {
+	m := &Metric{Name: "Mbps"}
+	if got := m.String(); got != "Mbps" {
+		t.Errorf("Metric.String() = %q, want %q", got, "Mbps")
+	}
+}
+
+func TestMetricRegistryRegisterAndFind(t *testing.T) {
+	reg := NewMetricRegistry()
+	m := &Metric{
+		Name:     "test",
+		Category: Custom,
+		BaseUnit: "test",
+		Factor:   func(PrefixMode) float64 { return 42 },
+	}
+	reg.Register(m)
+
+	found, ok := reg.Find("test")
+	if !ok {
+		t.Fatal("Find did not return metric")
+	}
+	if found != m {
+		t.Error("Find returned wrong metric")
+	}
+
+	_, ok = reg.Find("nope")
+	if ok {
+		t.Error("Find should not find unknown metric")
+	}
+}
+
+func TestMetricRegistryFindCaseInsensitive(t *testing.T) {
+	reg := NewMetricRegistry()
+	m := &Metric{
+		Name:     "MyUnit",
+		Category: Custom,
+		BaseUnit: "myunit",
+		Factor:   func(PrefixMode) float64 { return 1 },
+	}
+	reg.Register(m)
+
+	found, ok := reg.FindCaseInsensitive("myunit")
+	if !ok {
+		t.Fatal("FindCaseInsensitive did not find metric")
+	}
+	if found.Name != "MyUnit" {
+		t.Errorf("FindCaseInsensitive returned name %q, want %q", found.Name, "MyUnit")
+	}
+
+	found, ok = reg.FindCaseInsensitive("MYUNIT")
+	if !ok || found.Name != "MyUnit" {
+		t.Error("FindCaseInsensitive should match any case")
+	}
+}
+
+func TestMetricRegistryDuplicatePanics(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{
+		Name:   "dup",
+		Category: Custom,
+		Factor: func(PrefixMode) float64 { return 1 },
+	})
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic on duplicate register")
+		}
+	}()
+	reg.Register(&Metric{
+		Name:   "dup",
+		Category: Custom,
+		Factor: func(PrefixMode) float64 { return 2 },
+	})
+}
+
+func TestMetricRegistryList(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{Name: "a", Category: Custom, Factor: func(PrefixMode) float64 { return 1 }})
+	reg.Register(&Metric{Name: "b", Category: Custom, Factor: func(PrefixMode) float64 { return 2 }})
+	reg.Register(&Metric{Name: "c", Category: Time, Factor: func(PrefixMode) float64 { return 3 }})
+
+	all := reg.List()
+	if len(all) != 3 {
+		t.Errorf("List() returned %d metrics, want 3", len(all))
+	}
+
+	timeMetrics := reg.ListByCategory(Time)
+	if len(timeMetrics) != 1 || timeMetrics[0].Name != "c" {
+		t.Errorf("ListByCategory(Time) = %v, want [c]", timeMetrics)
+	}
+
+	customMetrics := reg.ListByCategory(Custom)
+	if len(customMetrics) != 2 {
+		t.Errorf("ListByCategory(Custom) = %d metrics, want 2", len(customMetrics))
+	}
+}
+
+func TestDefaultRegistryHasBuiltIns(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	// Check some expected built-in metrics exist
+	expectedNames := []string{
+		"Cool", "bps", "Mbps", "Gbps", "bits", "bytes", "KB", "GB", "KiB", "MiB",
+		"ms", "s", "min", "hr", "day",
+	}
+	for _, name := range expectedNames {
+		m, ok := reg.Find(name)
+		if !ok {
+			t.Errorf("expected built-in metric %q not found", name)
+			continue
+		}
+		if m.Name != name {
+			t.Errorf("metric name = %q, want %q", m.Name, name)
+		}
+	}
+}
+
+func TestBuiltInMetricFactors(t *testing.T) {
+	reg := GetMetricRegistry()
+	tolerance := 0.0001
+
+	tests := []struct {
+		name    string
+		mode    PrefixMode
+		expect  float64
+	}{
+		// Universal
+		{"Cool", SI, 1},
+		{"Cool", IEC, 1},
+		// DataRate
+		{"bps", SI, 1},
+		{"Kbps", SI, 1e3},
+		{"Mbps", SI, 1e6},
+		{"Gbps", SI, 1e9},
+		{"Tbps", SI, 1e12},
+		// DataSize (base: bits)
+		{"bits", SI, 1},
+		{"bytes", SI, 8},
+		{"KB", SI, 8000},    // 8 * 1000
+		{"MB", SI, 8e6},
+		{"GB", SI, 8e9},
+		{"TB", SI, 8e12},
+		{"PB", SI, 8e15},
+		// IEC (base: bits)
+		{"KiB", SI, 8192},       // 8 * 1024
+		{"MiB", SI, 8 * 1048576},
+		{"GiB", SI, 8 * 1073741824},
+		{"TiB", SI, 8 * float64(uint64(1)<<40)},
+		{"PiB", SI, 8 * float64(uint64(1)<<50)},
+		// Time (base: seconds)
+		{"ms", SI, 0.001},
+		{"s", SI, 1},
+		{"min", SI, 60},
+		{"hr", SI, 3600},
+		{"day", SI, 86400},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		got := m.Factor(tt.mode)
+		if got < tt.expect-tolerance || got > tt.expect+tolerance {
+			t.Errorf("%s.Factor(%s) = %g, want %g (tolerance %g)", tt.name, tt.mode, got, tt.expect, tolerance)
+		}
+	}
+}
+
+func TestBuiltInMetricCategories(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		name     string
+		category Category
+	}{
+		{"Cool", Universal},
+		{"bps", DataRate},
+		{"Mbps", DataRate},
+		{"Gbps", DataRate},
+		{"bits", DataSize},
+		{"bytes", DataSize},
+		{"KB", DataSize},
+		{"GB", DataSize},
+		{"KiB", DataSize},
+		{"MiB", DataSize},
+		{"ms", Time},
+		{"s", Time},
+		{"min", Time},
+		{"hr", Time},
+		{"day", Time},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		if m.Category != tt.category {
+			t.Errorf("%s.Category = %s, want %s", tt.name, m.Category, tt.category)
+		}
+	}
+}
+
+func TestBuiltInMetricBaseUnits(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		name     string
+		baseUnit string
+	}{
+		{"Cool", "cool"},
+		{"bps", "bps"},
+		{"Mbps", "bps"},
+		{"bits", "bits"},
+		{"bytes", "bits"},
+		{"KB", "bits"},
+		{"GB", "bits"},
+		{"KiB", "bits"},
+		{"ms", "seconds"},
+		{"s", "seconds"},
+		{"min", "seconds"},
+		{"hr", "seconds"},
+		{"day", "seconds"},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		if m.BaseUnit != tt.baseUnit {
+			t.Errorf("%s.BaseUnit = %q, want %q", tt.name, m.BaseUnit, tt.baseUnit)
+		}
+	}
+}
+
+func TestBuiltInMetricIsRate(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	rateMetrics := []string{"bps", "Kbps", "Mbps", "Gbps", "Tbps"}
+	for _, name := range rateMetrics {
+		m, ok := reg.Find(name)
+		if !ok {
+			t.Fatalf("metric %q not found", name)
+		}
+		if !m.IsRate {
+			t.Errorf("%s.IsRate = false, want true", name)
+		}
+	}
+
+	nonRateMetrics := []string{"Cool", "bits", "bytes", "KB", "GB", "ms", "s", "min", "hr", "day"}
+	for _, name := range nonRateMetrics {
+		m, ok := reg.Find(name)
+		if !ok {
+			t.Fatalf("metric %q not found", name)
+		}
+		if m.IsRate {
+			t.Errorf("%s.IsRate = true, want false", name)
+		}
+	}
+}
+
+func TestGetMetricRegistrySingleton(t *testing.T) {
+	r1 := GetMetricRegistry()
+	r2 := GetMetricRegistry()
+	if r1 != r2 {
+		t.Error("GetMetricRegistry should return the same instance")
+	}
+}
+
+func TestNewMetricRegistryIsEmpty(t *testing.T) {
+	reg := NewMetricRegistry()
+	if got := len(reg.List()); got != 0 {
+		t.Errorf("NewMetricRegistry returned %d metrics, want 0", got)
+	}
+	_, ok := reg.Find("Cool")
+	if ok {
+		t.Error("NewMetricRegistry should not have built-in metrics")
+	}
+}
+
+func TestMetricRegistryListImmutability(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{Name: "a", Category: Custom, Factor: func(PrefixMode) float64 { return 1 }})
+
+	list := reg.List()
+	originalLen := len(list)
+	list = append(list, &Metric{Name: "fake"}) // mutate the returned slice
+	if got := len(reg.List()); got != originalLen {
+		t.Errorf("modifying returned slice affected registry: len = %d, want %d", got, originalLen)
+	}
+}
+
+func TestMetricRegistryConcurrent(t *testing.T) {
+	reg := NewMetricRegistry()
+	const n = 50
+	done := make(chan bool, n*2)
+
+	for i := 0; i < n; i++ {
+		i := i
+		go func() {
+			reg.Register(&Metric{
+				Name:     fmt.Sprintf("m%d", i),
+				Category: Custom,
+				Factor:   func(PrefixMode) float64 { return 1 },
+			})
+			done <- true
+		}()
+		go func() {
+			reg.Find(fmt.Sprintf("m%d", i))
+			done <- true
+		}()
+	}
+
+	for i := 0; i < n*2; i++ {
+		<-done
+	}
+
+	if got := len(reg.List()); got != n {
+		t.Errorf("concurrent register: got %d metrics, want %d", got, n)
+	}
+}
