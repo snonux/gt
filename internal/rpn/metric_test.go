@@ -866,7 +866,7 @@ func TestMetricAwareArithmetic(t *testing.T) {
 		wantErr bool
 	}{
 		{"100Mbps 50Mbps +", 150, "Mbps", false},
-		{"1 100hr +", 100, "hr", false},
+		{"1 100hr +", 101, "hr", false},
 		{"3 4 +", 7, "Cool", false},
 		{"100Mbps 1hr *", 360000000000, "bits", false},
 		{"1000000000bits 1s /", 1000000000, "bps", false},
@@ -942,7 +942,7 @@ func TestMetricOperationsUnit(t *testing.T) {
 				s.Push(NewFloatWithMetric(100, mbps))
 			},
 			op:      func(o *Operations, s *Stack) error { return o.Add(s) },
-			wantVal: 100.000005,
+			wantVal: 105,
 			wantMet: "Mbps",
 		},
 		{
@@ -1066,16 +1066,15 @@ func TestConvertCoolAbsorbing(t *testing.T) {
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 
-	// Cool to metric: 100 @GB convert → 100 * 1 / (8e9) = 1.25e-8 GB
+	// Cool to metric: 100 @GB convert → 100 GB
+	// With Cool absorption, 100 is treated as 100 in GB's space
 	result, err := rpn.ParseAndEvaluate("100 @GB convert")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	resultVal, _ := strconv.ParseFloat(result, 64)
-	expected := 100.0 / 8e9
-	tolerance := expected * 0.001 // 0.1% relative tolerance
-	if resultVal < expected-tolerance || resultVal > expected+tolerance {
-		t.Errorf("result = %g, want %g (relative tolerance %g)", resultVal, expected, tolerance)
+	if resultVal != 100 {
+		t.Errorf("result = %g, want 100", resultVal)
 	}
 	stack := rpn.GetCurrentStack()
 	if len(stack) > 0 {

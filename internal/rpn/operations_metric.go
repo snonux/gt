@@ -50,12 +50,19 @@ func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
 }
 
 // convertToBase converts a Number's value to its metric's base unit.
-// Returns the converted float64 value.
-func convertToBase(reg *MetricRegistry, n Number, mode PrefixMode) (float64, error) {
+// When the number's metric is Cool (Universal) and resultMetric is non-Cool,
+// the Cool value is treated in resultMetric's space (not base units).
+// Returns the converted float64 value in base units.
+func convertToBase(reg *MetricRegistry, n Number, mode PrefixMode, resultMetric *Metric) (float64, error) {
 	m := resolveMetric(reg, n)
 	val, err := n.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("convertToBase: %w", err)
+	}
+	// Cool absorbing: if operand is Cool but result metric is not,
+	// treat the Cool value as units of the result metric.
+	if m.Category == Universal && resultMetric != nil && resultMetric.Category != Universal {
+		return val * resultMetric.Factor(mode), nil
 	}
 	return val * m.Factor(mode), nil
 }
@@ -177,7 +184,7 @@ func (o *Operations) Convert(stack *Stack) error {
 	}
 	// 5. Convert through base unit: value → base → target
 	pm := o.GetPrefixMode()
-	baseVal, err := convertToBase(o.metricRegistry, value, pm)
+	baseVal, err := convertToBase(o.metricRegistry, value, pm, targetMetric)
 	if err != nil {
 		return buildError("convert", err)
 	}

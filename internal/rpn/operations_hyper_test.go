@@ -36,9 +36,9 @@ func TestHyperAddCoolAbsorbing(t *testing.T) {
 	reg := GetMetricRegistry()
 	tolerance := 0.001
 
-	// 5 (Cool) 100Mbps 10Mbps [+] ≈ 110.000005Mbps
-	// Cool (factor 1.0) contributes 5 base units (bps) which is negligible
-	// Result metric is Mbps (first non-Cool), value ≈ 110Mbps
+	// 5 (Cool) 100Mbps 10Mbps [+] = 115Mbps
+	// With Cool absorption, 5 is treated as 5 Mbps
+	// 5 + 100 + 10 = 115 Mbps
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 	result, err := rpn.ParseAndEvaluate("5 100Mbps 10Mbps [+]")
@@ -46,8 +46,8 @@ func TestHyperAddCoolAbsorbing(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 110-tolerance || resultVal > 110+tolerance {
-		t.Errorf("result = %g, want ~110", resultVal)
+	if resultVal < 115-tolerance || resultVal > 115+tolerance {
+		t.Errorf("result = %g, want 115", resultVal)
 	}
 	stack := rpn.GetCurrentStack()
 	m := stack[len(stack)-1].Metric()
@@ -182,8 +182,8 @@ func TestHyperSubtractMixedUnits(t *testing.T) {
 func TestHyperSubtractCoolAbsorbing(t *testing.T) {
 	reg := GetMetricRegistry()
 
-	// 100km 5 [-] = 100km - 5m = 99.995km
-	// Cool (factor 1.0) contributes 5 base units (meters) = 0.005km
+	// 100km 5 [-] = 100km - 5km = 95km
+	// With Cool absorption, 5 is treated as 5 in km's space
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 	result, err := rpn.ParseAndEvaluate("100km 5 [-]")
@@ -191,8 +191,8 @@ func TestHyperSubtractCoolAbsorbing(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 99.99 || resultVal > 99.996 {
-		t.Errorf("result = %g, want ~99.995", resultVal)
+	if resultVal < 94 || resultVal > 96 {
+		t.Errorf("result = %g, want 95", resultVal)
 	}
 	stack := rpn.GetCurrentStack()
 	m := stack[len(stack)-1].Metric()
