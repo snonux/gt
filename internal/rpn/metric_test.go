@@ -556,3 +556,130 @@ func TestAliasWinsOverCaseInsensitive(t *testing.T) {
 		t.Errorf("alias 'bar' should resolve to 'Foo', got %v (ok=%v)", m, ok)
 	}
 }
+
+func TestNumberDefaultMetricIsCool(t *testing.T) {
+	cool, _ := GetMetricRegistry().Find("Cool")
+
+	// Float defaults to Cool
+	f := NewFloat(42)
+	if f.Metric() != cool {
+		t.Errorf("NewFloat().Metric() = %v, want Cool", f.Metric())
+	}
+
+	// Rat defaults to Cool
+	r := NewRat(42)
+	if r.Metric() != cool {
+		t.Errorf("NewRat().Metric() = %v, want Cool", r.Metric())
+	}
+
+	// NewNumber defaults to Cool
+	n := NewNumber(42, FloatMode)
+	if n.Metric() != cool {
+		t.Errorf("NewNumber().Metric() = %v, want Cool", n.Metric())
+	}
+}
+
+func TestNewFloatWithMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+	mbps, _ := reg.Find("Mbps")
+
+	f := NewFloatWithMetric(100, mbps)
+	if f.Metric() != mbps {
+		t.Errorf("NewFloatWithMetric.Metric() = %v, want Mbps", f.Metric())
+	}
+}
+
+func TestNewRatWithMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+	gb, _ := reg.Find("GB")
+
+	r := NewRatWithMetric(5, gb)
+	if r.Metric() != gb {
+		t.Errorf("NewRatWithMetric.Metric() = %v, want GB", r.Metric())
+	}
+}
+
+func TestNewNumberWithMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+	hr, _ := reg.Find("hr")
+
+	n := NewNumber(2, FloatMode, hr)
+	if n.Metric() != hr {
+		t.Errorf("NewNumber(metric).Metric() = %v, want hr", n.Metric())
+	}
+}
+
+func TestFloatSetMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+	mbps, _ := reg.Find("Mbps")
+	gbps, _ := reg.Find("Gbps")
+
+	f := NewFloatWithMetric(100, mbps)
+	g := f.SetMetric(gbps)
+
+	// Original unchanged
+	if f.Metric() != mbps {
+		t.Error("SetMetric should not modify original")
+	}
+
+	// New number has the new metric
+	if g.Metric() != gbps {
+		t.Errorf("SetMetric result = %v, want Gbps", g.Metric())
+	}
+
+	// Value preserved
+	val, _ := g.Float64()
+	if val != 100 {
+		t.Errorf("SetMetric result value = %g, want 100", val)
+	}
+}
+
+func TestRatSetMetric(t *testing.T) {
+	reg := GetMetricRegistry()
+	kg, _ := reg.Find("kg")
+	lb, _ := reg.Find("lb")
+
+	r := NewRatWithMetric(5, kg)
+	s := r.SetMetric(lb)
+
+	if r.Metric() != kg {
+		t.Error("SetMetric should not modify original")
+	}
+	if s.Metric() != lb {
+		t.Errorf("SetMetric result = %v, want lb", s.Metric())
+	}
+
+	val, _ := s.Float64()
+	if val != 5 {
+		t.Errorf("SetMetric result value = %g, want 5", val)
+	}
+}
+
+func TestStringNumMetric(t *testing.T) {
+	cool, _ := GetMetricRegistry().Find("Cool")
+	s := NewStringNum("hello")
+	if s.Metric() != cool {
+		t.Errorf("StringNum.Metric() = %v, want Cool", s.Metric())
+	}
+}
+
+func TestSymbolMetric(t *testing.T) {
+	cool, _ := GetMetricRegistry().Find("Cool")
+	s := NewSymbol("x")
+	if s.Metric() != cool {
+		t.Errorf("Symbol.Metric() = %v, want Cool", s.Metric())
+	}
+}
+
+func TestGetCoolMetric(t *testing.T) {
+	cool := GetCoolMetric()
+	if cool == nil {
+		t.Fatal("GetCoolMetric returned nil")
+	}
+	if cool.Name != "Cool" {
+		t.Errorf("GetCoolMetric().Name = %q, want %q", cool.Name, "Cool")
+	}
+	if cool.Category != Universal {
+		t.Errorf("GetCoolMetric().Category = %s, want Universal", cool.Category)
+	}
+}

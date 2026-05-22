@@ -55,15 +55,30 @@ type Number interface {
 	IsString() bool
 	// IsSymbol returns true if this number represents a symbol.
 	IsSymbol() bool
+	// Metric returns the metric unit for this number. Returns the Cool default if none set.
+	Metric() *Metric
+	// SetMetric returns a copy of this Number with the given metric attached.
+	SetMetric(m *Metric) Number
 }
 
-// NewNumber creates a Number from a float64 value.
+// NewNumber creates a Number from a float64 value with the given metric.
 // The actual type depends on the current calculation mode.
-func NewNumber(value float64, mode CalculationMode) Number {
-	if mode == RationalMode {
-		return NewRat(value)
+// If metric is nil or omitted, defaults to Cool.
+func NewNumber(value float64, mode CalculationMode, metric ...*Metric) Number {
+	m := GetCoolMetric()
+	if len(metric) > 0 && metric[0] != nil {
+		m = metric[0]
 	}
-	return NewFloat(value)
+	if mode == RationalMode {
+		return NewRatWithMetric(value, m)
+	}
+	return NewFloatWithMetric(value, m)
+}
+
+// GetCoolMetric returns the universal default metric.
+func GetCoolMetric() *Metric {
+	m, _ := GetMetricRegistry().Find("Cool")
+	return m
 }
 
 // Float is a Number implementation using float64.
@@ -72,16 +87,22 @@ type Float struct {
 	n       float64
 	isBool  bool
 	boolVal bool
+	metric  *Metric
 }
 
-// NewFloat creates a new Float number.
+// NewFloat creates a new Float number with the Cool metric.
 func NewFloat(n float64) *Float {
-	return &Float{n: n, isBool: false, boolVal: false}
+	return &Float{n: n, isBool: false, boolVal: false, metric: GetCoolMetric()}
+}
+
+// NewFloatWithMetric creates a new Float number with the given metric.
+func NewFloatWithMetric(n float64, metric *Metric) *Float {
+	return &Float{n: n, isBool: false, boolVal: false, metric: metric}
 }
 
 // NewFloatFromBool creates a new Float representing a boolean.
 func NewFloatFromBool(b bool) *Float {
-	return &Float{n: 0, isBool: true, boolVal: b}
+	return &Float{n: 0, isBool: true, boolVal: b, metric: GetCoolMetric()}
 }
 
 // String returns the string representation of the float.
@@ -268,6 +289,16 @@ func (f *Float) IsSymbol() bool {
 	return false
 }
 
+// Metric returns the metric for this number.
+func (f *Float) Metric() *Metric {
+	return f.metric
+}
+
+// SetMetric returns a copy of this Float with the given metric.
+func (f *Float) SetMetric(m *Metric) Number {
+	return &Float{n: f.n, isBool: f.isBool, boolVal: f.boolVal, metric: m}
+}
+
 // Compare returns -1, 0, or 1 if this float is less than, equal to, or greater than another.
 func (f *Float) Compare(other Number) (int, error) {
 	otherF, err := other.Float64()
@@ -289,13 +320,21 @@ type Rat struct {
 	n       *big.Rat
 	isBool  bool
 	boolVal bool
+	metric  *Metric
 }
 
-// NewRat creates a new Rat number from a float64.
+// NewRat creates a new Rat number from a float64 with the Cool metric.
 func NewRat(n float64) *Rat {
 	r := &big.Rat{}
 	r.SetFloat64(n)
-	return &Rat{n: r, isBool: false, boolVal: false}
+	return &Rat{n: r, isBool: false, boolVal: false, metric: GetCoolMetric()}
+}
+
+// NewRatWithMetric creates a new Rat number from a float64 with the given metric.
+func NewRatWithMetric(n float64, metric *Metric) *Rat {
+	r := &big.Rat{}
+	r.SetFloat64(n)
+	return &Rat{n: r, isBool: false, boolVal: false, metric: metric}
 }
 
 // NewRatFromBool creates a new Rat representing a boolean.
@@ -306,7 +345,7 @@ func NewRatFromBool(b bool) *Rat {
 	} else {
 		r.SetInt64(0)
 	}
-	return &Rat{n: r, isBool: true, boolVal: b}
+	return &Rat{n: r, isBool: true, boolVal: b, metric: GetCoolMetric()}
 }
 
 // NewRatFromString creates a new Rat number from a string representation.
@@ -505,6 +544,18 @@ func (r *Rat) IsSymbol() bool {
 	return false
 }
 
+// Metric returns the metric for this number.
+func (r *Rat) Metric() *Metric {
+	return r.metric
+}
+
+// SetMetric returns a copy of this Rat with the given metric.
+func (r *Rat) SetMetric(m *Metric) Number {
+	n := &big.Rat{}
+	n.Set(r.n)
+	return &Rat{n: n, isBool: r.isBool, boolVal: r.boolVal, metric: m}
+}
+
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
 func (r *Rat) Compare(other Number) (int, error) {
 	otherRat, ok := other.(*Rat)
@@ -568,6 +619,8 @@ func (s *StringNum) Compare(other Number) (int, error) { return 0, fmt.Errorf("s
 func (s *StringNum) Bool() (bool, error)              { return false, fmt.Errorf("string not supported for Bool()") }
 func (s *StringNum) IsBool() bool                     { return false }
 func (s *StringNum) IsSymbol() bool                   { return false }
+func (s *StringNum) Metric() *Metric                  { return GetCoolMetric() }
+func (s *StringNum) SetMetric(m *Metric) Number       { return s }
 
 // Symbol represents a variable symbol on the stack.
 // Symbols are created when:
@@ -642,4 +695,10 @@ func (s *Symbol) Bool() (bool, error) {
 }
 func (s *Symbol) IsBool() bool {
 	return false
+}
+func (s *Symbol) Metric() *Metric {
+	return GetCoolMetric()
+}
+func (s *Symbol) SetMetric(m *Metric) Number {
+	return s
 }
