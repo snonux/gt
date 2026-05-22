@@ -6,10 +6,10 @@ package rpn
 import "fmt"
 
 // resolveMetric returns the metric for a Number, defaulting to Cool if nil.
-func resolveMetric(n Number) *Metric {
+func resolveMetric(reg *MetricRegistry, n Number) *Metric {
 	m := n.Metric()
 	if m == nil {
-		return GetCoolMetric()
+		return coolMetric(reg)
 	}
 	return m
 }
@@ -29,12 +29,12 @@ func categoriesCompatible(a, b *Metric) bool {
 // compatibleMetric returns the resulting metric for + and - operations.
 // Cool absorbs: if either is Cool, result is the other's metric (or Cool if both).
 // Same category: result uses left operand's metric.
-func compatibleMetric(a, b *Metric) *Metric {
+func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
 	if a == nil {
-		a = GetCoolMetric()
+		a = coolMetric(reg)
 	}
 	if b == nil {
-		b = GetCoolMetric()
+		b = coolMetric(reg)
 	}
 	if a.Category == Universal && b.Category == Universal {
 		return a // Cool
@@ -52,7 +52,7 @@ func compatibleMetric(a, b *Metric) *Metric {
 // convertToBase converts a Number's value to its metric's base unit.
 // Returns the converted float64 value.
 func convertToBase(n Number, mode PrefixMode) (float64, error) {
-	m := resolveMetric(n)
+	m := resolveMetric(GetMetricRegistry(), n)
 	val, err := n.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("convertToBase: %w", err)
@@ -63,23 +63,16 @@ func convertToBase(n Number, mode PrefixMode) (float64, error) {
 // convertFromBase converts a base-unit value back to the given metric.
 func convertFromBase(baseVal float64, m *Metric, mode PrefixMode) float64 {
 	if m == nil {
-		m = GetCoolMetric()
+		m = coolMetric(GetMetricRegistry())
 	}
 	return baseVal / m.Factor(mode)
 }
 
 // resultMetricForMul computes the resulting metric for multiplication.
-// Cross-category inference rules:
-//   - DataRate × Time → DataSize
-//   - Time × DataRate → DataSize
-//   - Speed × Time → Distance
-//   - Time × Speed → Distance
-//   - Universal × X → X (Cool absorbs)
-//   - Otherwise → Cool (result is unitless product)
-func resultMetricForMul(a, b *Metric) *Metric {
+func resultMetricForMul(reg *MetricRegistry, a, b *Metric) *Metric {
 	if a == nil || a.Category == Universal {
 		if b == nil {
-			return GetCoolMetric()
+			return coolMetric(reg)
 		}
 		return b
 	}
@@ -90,34 +83,26 @@ func resultMetricForMul(a, b *Metric) *Metric {
 	// Cross-category inference
 	switch {
 	case a.Category == DataRate && b.Category == Time:
-		return findBaseMetric("bits")
+		return baseMetric(reg, "bits")
 	case a.Category == Time && b.Category == DataRate:
-		return findBaseMetric("bits")
+		return baseMetric(reg, "bits")
 	case a.Category == Speed && b.Category == Time:
-		return findBaseMetric("m")
+		return baseMetric(reg, "m")
 	case a.Category == Time && b.Category == Speed:
-		return findBaseMetric("m")
+		return baseMetric(reg, "m")
 	default:
-		return GetCoolMetric()
+		return coolMetric(reg)
 	}
 }
 
 // resultMetricForDiv computes the resulting metric for division.
-// Cross-category inference rules:
-//   - DataSize / Time → DataRate (base unit)
-//   - Distance / Time → Speed (base unit)
-//   - DataRate / DataRate → Cool (ratio)
-//   - Speed / Speed → Cool (ratio)
-//   - Universal / X → X
-//   - X / Universal → X
-//   - Otherwise → Cool
-func resultMetricForDiv(a, b *Metric) *Metric {
+func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) *Metric {
 	if a == nil && b == nil {
-		return GetCoolMetric()
+		return coolMetric(reg)
 	}
 	if b == nil || b.Category == Universal {
 		if a == nil {
-			return GetCoolMetric()
+			return coolMetric(reg)
 		}
 		return a
 	}
@@ -128,11 +113,11 @@ func resultMetricForDiv(a, b *Metric) *Metric {
 	// Cross-category inference
 	switch {
 	case a.Category == DataSize && b.Category == Time:
-		return findBaseMetric("bps")
+		return baseMetric(reg, "bps")
 	case a.Category == Distance && b.Category == Time:
-		return findBaseMetric("mps")
+		return baseMetric(reg, "mps")
 	default:
-		return GetCoolMetric()
+		return coolMetric(reg)
 	}
 }
 
@@ -150,10 +135,18 @@ func metricError(op string, a, b *Metric) error {
 		op, aName, aCat, bName, bCat)
 }
 
-// findBaseMetric looks up a base metric from the global registry.
-// Panics if not found (indicates misconfiguration).
-func findBaseMetric(name string) *Metric {
-	m, ok := GetMetricRegistry().Find(name)
+// coolMetric returns the Cool metric from the registry.
+func coolMetric(reg *MetricRegistry) *Metric {
+	m, ok := reg.Find("Cool")
+	if !ok {
+		panic("metric registry missing Cool metric")
+	}
+	return m
+}
+
+// baseMetric looks up a base metric from the registry.
+func baseMetric(reg *MetricRegistry, name string) *Metric {
+	m, ok := reg.Find(name)
 	if !ok {
 		panic(fmt.Sprintf("metric registry missing base unit %q", name))
 	}

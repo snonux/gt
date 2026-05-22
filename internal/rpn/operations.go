@@ -349,7 +349,7 @@ func (o *Operations) Add(stack *Stack) error {
 		return err
 	}
 
-	aM, bM := resolveMetric(a), resolveMetric(b)
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 	if !categoriesCompatible(aM, bM) {
 		return metricError("+", aM, bM)
 	}
@@ -363,7 +363,7 @@ func (o *Operations) Add(stack *Stack) error {
 	if err != nil {
 		return buildError("addition", err)
 	}
-	resultMetric := compatibleMetric(aM, bM)
+	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
 	resultVal := convertFromBase(aBase+bBase, resultMetric, SI)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -377,7 +377,7 @@ func (o *Operations) Subtract(stack *Stack) error {
 		return err
 	}
 
-	aM, bM := resolveMetric(a), resolveMetric(b)
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 	if !categoriesCompatible(aM, bM) {
 		return metricError("-", aM, bM)
 	}
@@ -390,7 +390,7 @@ func (o *Operations) Subtract(stack *Stack) error {
 	if err != nil {
 		return buildError("subtraction", err)
 	}
-	resultMetric := compatibleMetric(aM, bM)
+	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
 	resultVal := convertFromBase(aBase-bBase, resultMetric, SI)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -404,7 +404,7 @@ func (o *Operations) Multiply(stack *Stack) error {
 		return err
 	}
 
-	aM, bM := resolveMetric(a), resolveMetric(b)
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
 	// Convert both to base units, multiply, convert back to result metric
 	aBase, err := convertToBase(a, SI)
@@ -415,7 +415,7 @@ func (o *Operations) Multiply(stack *Stack) error {
 	if err != nil {
 		return buildError("multiplication", err)
 	}
-	resultMetric := resultMetricForMul(aM, bM)
+	resultMetric := resultMetricForMul(o.metricRegistry, aM, bM)
 	resultVal := convertFromBase(aBase*bBase, resultMetric, SI)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -438,7 +438,7 @@ func (o *Operations) Divide(stack *Stack) error {
 		return err
 	}
 
-	aM, bM := resolveMetric(a), resolveMetric(b)
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
 	aBase, err := convertToBase(a, SI)
 	if err != nil {
@@ -448,7 +448,7 @@ func (o *Operations) Divide(stack *Stack) error {
 	if err != nil {
 		return buildError("division", err)
 	}
-	resultMetric := resultMetricForDiv(aM, bM)
+	resultMetric := resultMetricForDiv(o.metricRegistry, aM, bM)
 	resultVal := convertFromBase(aBase/bBase, resultMetric, SI)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -494,7 +494,7 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
-	aM, bM := resolveMetric(a), resolveMetric(b)
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 	if !categoriesCompatible(aM, bM) {
 		return metricError("%", aM, bM)
 	}
@@ -507,7 +507,7 @@ func (o *Operations) Modulo(stack *Stack) error {
 	if err != nil {
 		return buildError("modulo", err)
 	}
-	resultMetric := compatibleMetric(aM, bM)
+	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
 	resultVal := convertFromBase(math.Mod(aBase, bBase), resultMetric, SI)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
