@@ -14,39 +14,50 @@ func resolveMetric(reg *MetricRegistry, n Number) *Metric {
 	return m
 }
 
+// validateCategories checks that all metrics belong to the same category.
+// Cool (Universal) absorbs — it is compatible with any single non-Universal category.
+// Returns nil if compatible, error if metrics span multiple non-Universal categories.
+// Works for both binary (2 metrics) and N-ary (slice) cases.
+func validateCategories(metrics []*Metric, opName string) error {
+	var dominantCat Category = Universal
+	for _, m := range metrics {
+		if m == nil || m.Category == Universal {
+			continue
+		}
+		if dominantCat == Universal {
+			dominantCat = m.Category
+		} else if m.Category != dominantCat {
+			return fmt.Errorf("%s: incompatible metrics: mixed %s and %s categories",
+				opName, dominantCat, m.Category)
+		}
+	}
+	return nil
+}
+
+// resultMetricForAdd finds the appropriate result metric for add/subtract/modulo operations.
+// When Cool absorbs a non-Cool category, use the first non-Cool metric.
+// When all are Cool, use Cool.
+func resultMetricForAdd(metrics []*Metric) *Metric {
+	for _, m := range metrics {
+		if m != nil && m.Category != Universal {
+			return m
+		}
+	}
+	if len(metrics) > 0 && metrics[0] != nil {
+		return metrics[0]
+	}
+	m, _ := GetMetricRegistry().Find("Cool")
+	return m
+}
+
 // categoriesCompatible checks if two metrics are compatible for arithmetic.
-// Cool (Universal) is compatible with anything. Same category is compatible.
 func categoriesCompatible(a, b *Metric) bool {
-	if a == nil || b == nil {
-		return true
-	}
-	if a.Category == Universal || b.Category == Universal {
-		return true
-	}
-	return a.Category == b.Category
+	return validateCategories([]*Metric{a, b}, "") == nil
 }
 
 // compatibleMetric returns the resulting metric for + and - operations.
-// Cool absorbs: if either is Cool, result is the other's metric (or Cool if both).
-// Same category: result uses left operand's metric.
 func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
-	if a == nil {
-		a = coolMetric(reg)
-	}
-	if b == nil {
-		b = coolMetric(reg)
-	}
-	if a.Category == Universal && b.Category == Universal {
-		return a // Cool
-	}
-	if a.Category == Universal {
-		return b
-	}
-	if b.Category == Universal {
-		return a
-	}
-	// Same category: use left operand's metric
-	return a
+	return resultMetricForAdd([]*Metric{a, b})
 }
 
 // convertToBase converts a Number's value to its metric's base unit.
