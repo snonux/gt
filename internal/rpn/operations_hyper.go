@@ -61,7 +61,7 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 
 	var product float64 = 1
 	for i, v := range values {
-		val, err := v.Float64()
+		val, err := toFloat64(v, "[*]")
 		if err != nil {
 			return buildError("[*]", fmt.Errorf("operand %d: %w", i, err))
 		}
@@ -129,13 +129,13 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 		return err
 	}
 
-	firstVal, err := values[0].Float64()
+	firstVal, err := toFloat64(values[0], "[/]")
 	if err != nil {
 		return buildError("[/]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "[/]")
 		if err != nil {
 			return buildError("[/]", fmt.Errorf("operand %d: %w", i, err))
 		}
@@ -158,13 +158,13 @@ func (o *Operations) HyperPower(stack *Stack) error {
 		return err
 	}
 
-	firstVal, err := values[0].Float64()
+	firstVal, err := toFloat64(values[0], "[^]")
 	if err != nil {
 		return buildError("[^]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "[^]")
 		if err != nil {
 			return buildError("[^]", fmt.Errorf("operand %d: %w", i, err))
 		}
@@ -233,7 +233,7 @@ func (o *Operations) hyperLog(stack *Stack, opName string, logFn func(float64) f
 
 	var result float64
 	for i, v := range values {
-		val, err := v.Float64()
+		val, err := toFloat64(v, opName)
 		if err != nil {
 			return buildError(opName, fmt.Errorf("operand %d: %w", i, err))
 		}

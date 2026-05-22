@@ -63,9 +63,9 @@ func (r *RPN) SetMode(mode CalculationMode) {
 }
 
 // GetCurrentStack returns a copy of the current stack for inspection.
-// Returns []Number to preserve value types (numbers and booleans).
+// Returns []StackValue to preserve value types (numbers, booleans, strings, symbols).
 // This method is thread-safe for concurrent reads.
-func (r *RPN) GetCurrentStack() []Number {
+func (r *RPN) GetCurrentStack() []StackValue {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	if r.currentStack == nil {
@@ -74,10 +74,10 @@ func (r *RPN) GetCurrentStack() []Number {
 	return r.currentStack.Values()
 }
 
-// SetCurrentStack sets the current stack from a slice of numbers.
+// SetCurrentStack sets the current stack from a slice of StackValues.
 // This is useful for restoring stack state.
 // This method is thread-safe for writes.
-func (r *RPN) SetCurrentStack(values []Number) {
+func (r *RPN) SetCurrentStack(values []StackValue) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.currentStack = NewStack()
@@ -86,10 +86,10 @@ func (r *RPN) SetCurrentStack(values []Number) {
 	}
 }
 
-// Stack returns the current stack as a slice of Numbers.
+// Stack returns the current stack as a slice of StackValues.
 // This is a convenience wrapper around GetCurrentStack().
 // Returns nil if the stack is empty or nil.
-func (r *RPN) Stack() []Number {
+func (r *RPN) Stack() []StackValue {
 	return r.GetCurrentStack()
 }
 

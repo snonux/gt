@@ -459,7 +459,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 					if err != nil {
 						return "", fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
 					}
-					valF, err := val.Float64()
+					valF, err := toFloat64(val, token)
 					if err != nil {
 						return "", fmt.Errorf("failed to get float64 value for variable %q: %w", token, err)
 					}

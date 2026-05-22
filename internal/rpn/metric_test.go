@@ -1004,7 +1004,7 @@ func TestMetricOperationsUnit(t *testing.T) {
 				t.Fatalf("expected 1 item on stack, got %d", s.Len())
 			}
 			result, _ := s.Pop()
-			val, _ := result.Float64()
+			val, _ := toFloat64(result, "check")
 			if val < tc.wantVal-tolerance || val > tc.wantVal+tolerance {
 				t.Errorf("val = %g, want %g (tolerance %g)", val, tc.wantVal, tolerance)
 			}

@@ -25,8 +25,8 @@ func (o *VariableOperations) AssignVariable(stack *Stack, name string) error {
 		return err
 	}
 
-	// Convert Number to float64 for variable storage
-	valF, err := val.Float64()
+	// Convert StackValue to float64 for variable storage
+	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
 		return fmt.Errorf("failed to get float64 value for variable: %w", err)
 	}

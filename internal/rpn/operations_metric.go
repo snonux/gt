@@ -5,8 +5,8 @@ package rpn
 
 import "fmt"
 
-// resolveMetric returns the metric for a Number, defaulting to Cool if nil.
-func resolveMetric(reg *MetricRegistry, n Number) *Metric {
+// resolveMetric returns the metric for a StackValue, defaulting to Cool if nil.
+func resolveMetric(reg *MetricRegistry, n StackValue) *Metric {
 	m := n.Metric()
 	if m == nil {
 		return coolMetric(reg)
@@ -60,13 +60,17 @@ func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
 	return resultMetricForAdd([]*Metric{a, b})
 }
 
-// convertToBase converts a Number's value to its metric's base unit.
-// When the number's metric is Cool (Universal) and resultMetric is non-Cool,
+// convertToBase converts a StackValue's value to its metric's base unit.
+// When the value's metric is Cool (Universal) and resultMetric is non-Cool,
 // the Cool value is treated in resultMetric's space (not base units).
 // Returns the converted float64 value in base units.
-func convertToBase(reg *MetricRegistry, n Number, mode PrefixMode, resultMetric *Metric) (float64, error) {
+func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMetric *Metric) (float64, error) {
+	nv, ok := n.(NumericValue)
+	if !ok {
+		return 0, fmt.Errorf("convertToBase: value %q is not numeric", n)
+	}
 	m := resolveMetric(reg, n)
-	val, err := n.Float64()
+	val, err := nv.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("convertToBase: %w", err)
 	}

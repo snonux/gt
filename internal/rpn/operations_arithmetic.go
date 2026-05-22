@@ -100,7 +100,11 @@ func (o *Operations) Divide(stack *Stack) error {
 		return err
 	}
 
-	if b.IsZero() {
+	bF, err := toFloat64(b, "/")
+	if err != nil {
+		return err
+	}
+	if bF == 0 {
 		return buildError("/", fmt.Errorf("division by zero"))
 	}
 
@@ -144,11 +148,11 @@ func (o *Operations) Power(stack *Stack) error {
 		return err
 	}
 
-	aF, err := a.Float64()
+	aF, err := toFloat64(a, "power")
 	if err != nil {
 		return buildError("power", err)
 	}
-	bF, err := b.Float64()
+	bF, err := toFloat64(b, "power")
 	if err != nil {
 		return buildError("power", err)
 	}
@@ -171,7 +175,11 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
 	}
 
-	if b.IsZero() {
+	bF, err := toFloat64(b, "%")
+	if err != nil {
+		return err
+	}
+	if bF == 0 {
 		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
@@ -209,7 +217,7 @@ func (o *Operations) FastPower(stack *Stack) error {
 		return err
 	}
 
-	bVal, err := b.Float64()
+	bVal, err := toFloat64(b, "**")
 	if err != nil {
 		return buildError("**", fmt.Errorf("exponent must be a number: %w", err))
 	}
@@ -219,7 +227,7 @@ func (o *Operations) FastPower(stack *Stack) error {
 		return buildError("**", fmt.Errorf("exponent must be an integer, got %v", bVal))
 	}
 
-	aF, err := a.Float64()
+	aF, err := toFloat64(a, "**")
 	if err != nil {
 		return buildError("**", err)
 	}

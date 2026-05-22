@@ -25,7 +25,7 @@ func (o *HyperOperations) HyperAdd(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -39,12 +39,12 @@ func (o *HyperOperations) HyperAdd(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative with Number interface
+	// Process left-associative
 	sum := 0.0
-	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
+	for i, v := range values {
+		val, err := toFloat64(v, "hyperadd")
 		if err != nil {
-			return fmt.Errorf("hyperadd: failed to get float64 value: %w", err)
+			return fmt.Errorf("hyperadd: operand %d: %w", i, err)
 		}
 		sum += val
 	}
@@ -64,7 +64,7 @@ func (o *HyperOperations) HyperMultiply(stack *Stack) error {
 		if err != nil {
 			return fmt.Errorf("hypermultiply: %w", err)
 		}
-		floatVal, err := val.Float64()
+		floatVal, err := toFloat64(val, "hypermultiply")
 		if err != nil {
 			return fmt.Errorf("hypermultiply: failed to get float64 value: %w", err)
 		}
@@ -81,7 +81,7 @@ func (o *HyperOperations) HyperSubtract(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -95,14 +95,14 @@ func (o *HyperOperations) HyperSubtract(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
+	// Process left-associative
+	firstVal, err := toFloat64(values[0], "hypersubtract")
 	if err != nil {
 		return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hypersubtract")
 		if err != nil {
 			return fmt.Errorf("hypersubtract: failed to get float64 value: %w", err)
 		}
@@ -119,7 +119,7 @@ func (o *HyperOperations) HyperDivide(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -133,14 +133,14 @@ func (o *HyperOperations) HyperDivide(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
+	// Process left-associative
+	firstVal, err := toFloat64(values[0], "hyperdivide")
 	if err != nil {
 		return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hyperdivide")
 		if err != nil {
 			return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
 		}
@@ -160,7 +160,7 @@ func (o *HyperOperations) HyperPower(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -174,14 +174,14 @@ func (o *HyperOperations) HyperPower(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
+	// Process left-associative
+	firstVal, err := toFloat64(values[0], "hyperpower")
 	if err != nil {
 		return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hyperpower")
 		if err != nil {
 			return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
 		}
@@ -198,7 +198,7 @@ func (o *HyperOperations) HyperModulo(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -212,14 +212,14 @@ func (o *HyperOperations) HyperModulo(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
+	// Process left-associative
+	firstVal, err := toFloat64(values[0], "hypermodulo")
 	if err != nil {
 		return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hypermodulo")
 		if err != nil {
 			return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
 		}
@@ -240,7 +240,7 @@ func (o *HyperOperations) HyperLog2(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -254,10 +254,10 @@ func (o *HyperOperations) HyperLog2(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the log2 of all values with Number interface
+	// Sum the log2 of all values
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hyperlog2")
 		if err != nil {
 			return fmt.Errorf("hyperlog2: failed to get float64 value: %w", err)
 		}
@@ -280,7 +280,7 @@ func (o *HyperOperations) HyperLog10(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -297,7 +297,7 @@ func (o *HyperOperations) HyperLog10(stack *Stack) error {
 	// Sum the log10 of all values
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hyperlog10")
 		if err != nil {
 			return fmt.Errorf("hyperlog10: failed to get float64 value: %w", err)
 		}
@@ -320,7 +320,7 @@ func (o *HyperOperations) HyperLn(stack *Stack) error {
 	}
 
 	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
+	var values []StackValue
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
@@ -334,10 +334,10 @@ func (o *HyperOperations) HyperLn(stack *Stack) error {
 		values[i], values[j] = values[j], values[i]
 	}
 
-	// Sum the natural log of all values with Number interface
+	// Sum the natural log of all values
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
+		val, err := toFloat64(values[i], "hyperln")
 		if err != nil {
 			return fmt.Errorf("hyperln: failed to get float64 value: %w", err)
 		}

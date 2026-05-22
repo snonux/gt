@@ -8,38 +8,52 @@ import (
 	"math/big"
 )
 
-// Number represents a number that can be used in RPN calculations.
-// It can be either a float64 or a *big.Rat for precise rational calculations.
-// Booleans are also supported through IsBool() and Bool() methods.
-// Arithmetic is handled by Operations (metric-aware); this interface provides
-// value inspection and comparison only.
-type Number interface {
-	// String returns the string representation of the number.
+// StackValue represents a value on the RPN stack.
+// All stack items implement this interface, including numeric values,
+// strings, and symbols.
+type StackValue interface {
+	// String returns the string representation of the value.
 	String() string
+	// IsBool returns true if this value represents a boolean value.
+	IsBool() bool
+	// IsString returns true if this value represents a string value.
+	IsString() bool
+	// IsSymbol returns true if this value represents a symbol.
+	IsSymbol() bool
+	// Metric returns the metric unit for this value.
+	Metric() *Metric
+}
+
+// NumericValue represents a numeric value that supports arithmetic operations.
+// Float and Rat implement this; StringNum and Symbol do not.
+type NumericValue interface {
+	StackValue
 	// Float64 returns the float64 representation.
-	// Returns error if the number is not representable (e.g., StringNum, Symbol).
 	Float64() (float64, error)
 	// IsZero returns true if the number is zero.
 	IsZero() bool
 	// IsNegative returns true if the number is negative.
 	IsNegative() bool
-	// Compare returns -1, 0, or 1 if this number is less than, equal to, or greater than another.
-	// Returns error if the operation is not supported (e.g., StringNum, Symbol).
-	Compare(other Number) (int, error)
-	// IsBool returns true if this number represents a boolean value.
-	IsBool() bool
+	// Compare returns -1, 0, or 1 if this number is less than, equal to, or
+	// greater than another.
+	Compare(other NumericValue) (int, error)
 	// Bool returns the boolean value.
 	// Returns error if the number is not a boolean.
 	Bool() (bool, error)
-	// IsString returns true if this number represents a string value.
-	IsString() bool
-	// IsSymbol returns true if this number represents a symbol.
-	IsSymbol() bool
-	// Metric returns the metric unit for this number. Returns the Cool default if none set.
-	Metric() *Metric
-	// SetMetric returns a copy of this Number with the given metric attached.
-	SetMetric(m *Metric) Number
+	// SetMetric returns a copy of this NumericValue with the given metric attached.
+	SetMetric(m *Metric) NumericValue
 }
+
+// Number is the legacy alias for NumericValue, kept for backward compatibility.
+type Number = NumericValue
+
+// Compile-time interface satisfaction checks.
+var _ StackValue = (*Float)(nil)
+var _ NumericValue = (*Float)(nil)
+var _ StackValue = (*Rat)(nil)
+var _ NumericValue = (*Rat)(nil)
+var _ StackValue = (*StringNum)(nil)
+var _ StackValue = (*Symbol)(nil)
 
 // NewNumber creates a Number from a float64 value with the given metric.
 // The actual type depends on the current calculation mode.
@@ -153,12 +167,12 @@ func (f *Float) Metric() *Metric {
 }
 
 // SetMetric returns a copy of this Float with the given metric.
-func (f *Float) SetMetric(m *Metric) Number {
+func (f *Float) SetMetric(m *Metric) NumericValue {
 	return &Float{n: f.n, isBool: f.isBool, boolVal: f.boolVal, metric: m}
 }
 
 // Compare returns -1, 0, or 1 if this float is less than, equal to, or greater than another.
-func (f *Float) Compare(other Number) (int, error) {
+func (f *Float) Compare(other NumericValue) (int, error) {
 	otherF, err := other.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("cannot compare: %w", err)
@@ -284,14 +298,14 @@ func (r *Rat) Metric() *Metric {
 }
 
 // SetMetric returns a copy of this Rat with the given metric.
-func (r *Rat) SetMetric(m *Metric) Number {
+func (r *Rat) SetMetric(m *Metric) NumericValue {
 	n := &big.Rat{}
 	n.Set(r.n)
 	return &Rat{n: n, isBool: r.isBool, boolVal: r.boolVal, metric: m}
 }
 
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
-func (r *Rat) Compare(other Number) (int, error) {
+func (r *Rat) Compare(other NumericValue) (int, error) {
 	otherRat, ok := other.(*Rat)
 	if !ok {
 		return 0, fmt.Errorf("cannot compare: operand is not a rational number")
@@ -299,19 +313,23 @@ func (r *Rat) Compare(other Number) (int, error) {
 	return r.n.Cmp(otherRat.n), nil
 }
 
-// ToRat converts a Number to *big.Rat.
-// Returns nil if the number is not a Rat.
-func ToRat(n Number) *big.Rat {
+// ToRat converts a StackValue to *big.Rat.
+// Returns nil if the value is not a Rat.
+func ToRat(n StackValue) *big.Rat {
 	if r, ok := n.(*Rat); ok {
 		return r.n
 	}
 	return nil
 }
 
-// ToFloat converts a Number to float64.
-func ToFloat(n Number) float64 {
-	val, _ := n.Float64()
-	return val
+// ToFloat converts a StackValue to float64.
+// Returns 0 if the value is not numeric.
+func ToFloat(n StackValue) float64 {
+	if nv, ok := n.(NumericValue); ok {
+		val, _ := nv.Float64()
+		return val
+	}
+	return 0
 }
 
 // StringNum represents a string value on the stack for variable names.
@@ -329,24 +347,14 @@ func (s *StringNum) String() string {
 	return s.value
 }
 
-// Float64 returns error for string numbers (not numeric).
-func (s *StringNum) Float64() (float64, error) {
-	return 0, fmt.Errorf("string not supported for Float64()")
-}
-
 // IsString returns true for StringNum.
 func (s *StringNum) IsString() bool {
 	return true
 }
 
-func (s *StringNum) IsZero() bool                     { return false }
-func (s *StringNum) IsNegative() bool                 { return false }
-func (s *StringNum) Compare(other Number) (int, error) { return 0, fmt.Errorf("string not supported for comparison") }
-func (s *StringNum) Bool() (bool, error)              { return false, fmt.Errorf("string not supported for Bool()") }
-func (s *StringNum) IsBool() bool                     { return false }
-func (s *StringNum) IsSymbol() bool                   { return false }
-func (s *StringNum) Metric() *Metric                  { return GetCoolMetric() }
-func (s *StringNum) SetMetric(m *Metric) Number       { return s }
+func (s *StringNum) IsBool() bool    { return false }
+func (s *StringNum) IsSymbol() bool  { return false }
+func (s *StringNum) Metric() *Metric { return GetCoolMetric() }
 
 // Symbol represents a variable symbol on the stack.
 // Symbols are created when:
@@ -367,11 +375,6 @@ func (s *Symbol) String() string {
 	return ":" + s.name
 }
 
-// Float64 returns error for symbols (not numeric).
-func (s *Symbol) Float64() (float64, error) {
-	return 0, fmt.Errorf("symbol not supported for Float64()")
-}
-
 // Name returns the symbol name.
 func (s *Symbol) Name() string {
 	return s.name
@@ -382,27 +385,6 @@ func (s *Symbol) IsSymbol() bool {
 	return true
 }
 
-func (s *Symbol) IsZero() bool {
-	return false
-}
-func (s *Symbol) IsNegative() bool {
-	return false
-}
-func (s *Symbol) IsString() bool {
-	return false
-}
-func (s *Symbol) Compare(other Number) (int, error) {
-	return 0, fmt.Errorf("symbol not supported for comparison")
-}
-func (s *Symbol) Bool() (bool, error) {
-	return false, fmt.Errorf("symbol not supported for Bool()")
-}
-func (s *Symbol) IsBool() bool {
-	return false
-}
-func (s *Symbol) Metric() *Metric {
-	return GetCoolMetric()
-}
-func (s *Symbol) SetMetric(m *Metric) Number {
-	return s
-}
+func (s *Symbol) IsBool() bool    { return false }
+func (s *Symbol) IsString() bool  { return false }
+func (s *Symbol) Metric() *Metric { return GetCoolMetric() }
