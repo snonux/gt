@@ -547,7 +547,7 @@ func (o *Operations) FastPower(stack *Stack) error {
 		stack.Push(NewNumber(1, o.GetMode(), GetCoolMetric()))
 		return nil
 	}
-	resultVal := binaryExponentiationFloat(aF, exp)
+	resultVal := math.Pow(aF, float64(exp))
 	stack.Push(NewNumber(resultVal, o.GetMode(), GetCoolMetric()))
 	return nil
 }
