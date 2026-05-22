@@ -209,7 +209,7 @@ func NewRatFromString(s string) (*Rat, error) {
 	if !ok || rat == nil {
 		return nil, fmt.Errorf("invalid rational number: %s", s)
 	}
-	return &Rat{n: rat}, nil
+	return &Rat{n: rat, metric: GetCoolMetric()}, nil
 }
 
 // String returns the string representation of the rational number.
