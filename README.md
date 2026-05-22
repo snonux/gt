@@ -332,6 +332,151 @@ gt '100 7 3 [%]'      # 100 % 7 % 3 = 2
 # → 2
 ```
 
+## Metrics
+
+Every number on the stack carries a unit of measurement. The default unit is `Cool` (unitless). Numbers with metrics can be converted, combined, and compared with automatic unit handling.
+
+### Suffix Notation
+
+Attach a unit directly to a number (no space):
+
+```bash
+gt '100Mbps 1hr *'     # 100 Mbps × 1 hour = 360 Gbits
+# → 3.6e+11bits
+
+gt '5GB 2hr /'         # 5 GB ÷ 2 hours
+# → 5.555555556e+09bps
+
+gt '100km 1hr /'       # Speed from distance/time
+# → 27.77777778mps
+```
+
+### Available Metric Categories
+
+| Category | Units |
+|----------|-------|
+| DataRate | `bps`, `Kbps`, `Mbps`, `Gbps`, `Tbps` (also `bit/s`, `mbit/s`, etc.) |
+| DataSize | `bits`, `bytes`, `KB`, `MB`, `GB`, `TB`, `PB`, `KiB`, `MiB`, `GiB`, `TiB`, `PiB` |
+| Time | `ms`, `s`, `min`, `hr`, `day` (also `sec`, `secs`) |
+| Weight | `mg`, `g`, `kg`, `lb`, `oz`, `ton` |
+| Speed | `mps`, `kmh`, `mph`, `knots` (also `knot`) |
+| Distance | `m`, `km`, `mi`, `ft`, `in`, `nm` (also `mile`, `miles`, `foot`, `feet`) |
+| Universal | `Cool` (default, unitless) |
+
+### Unit Conversion
+
+Convert a value to a different unit using `@` prefix and `convert`:
+
+```bash
+gt '1000Mbps @Gbps convert'    # 1000 Mbps → 1 Gbps
+# → 1Gbps
+
+gt '1hr @min convert'          # 1 hour → 60 min
+# → 60min
+
+gt '1km @mi convert'           # 1 km → ~0.6214 mi
+# → 0.6213711922mi
+```
+
+### Metric-Aware Arithmetic
+
+**Addition and Subtraction** require compatible categories:
+
+```bash
+gt '100Mbps 50Mbps +'          # Same category: 150 Mbps
+# → 150Mbps
+
+gt '1km 500m +'                # Mixed units, same category: 1.5 km
+# → 1.5km
+
+gt '5 100Mbps +'               # Cool absorbs: 105 Mbps
+# → 105Mbps
+
+gt '100Mbps 2hr +'             # ERROR: incompatible categories
+```
+
+**Multiplication** supports cross-category inference:
+
+```bash
+gt '100Mbps 1hr *'             # rate × time = data size
+# → 3.6e+11bits
+
+gt '100kmh 1hr *'              # speed × time = distance
+# → 100000m
+```
+
+**Division** also supports cross-category inference:
+
+```bash
+gt '10GB 2hr /'                # data / time = rate
+# → 1.111111111e+10bps
+
+gt '1km 1s /'                  # distance / time = speed
+# → 1000mps
+```
+
+**Power** (`^`) always returns `Cool` (unitless) — `x^n` has different units than `x`:
+
+```bash
+gt '2hr 3 ^'                   # 2³ = 8 (not 8hr³)
+# → 8
+```
+
+### Prefix Modes: SI vs IEC
+
+Data size prefixes can use SI (1000-based) or IEC (1024-based) factors:
+
+```bash
+gt 'metric decimal set'        # SI mode (KB = 1000 bytes)
+# → prefix mode: SI
+
+gt 'metric binary set'         # IEC mode (KB = 1024 bytes)
+# → prefix mode: IEC
+
+gt '1GB @MB convert'           # SI: 1000 MB
+# → 1000MB
+
+gt 'metric binary set'         # Switch to IEC
+gt '1GB @MB convert'           # IEC: 1024 MB
+# → 1024MB
+```
+
+### Metric Commands
+
+```bash
+gt 'metric show'               # Show metric info for top of stack
+# → Mbps, DataRate, base: bps, factor: 1000000
+
+gt 'metric list'               # List all categories
+# → DataRate, DataSize, Distance, Speed, Time, Universal, Weight
+
+gt 'metric DataRate'           # List metrics in a category
+# → bps, Gbps, Kbps, Mbps, Tbps
+
+gt 'metric compatible'         # Check if top two stack metrics are compatible
+# → Mbps (DataRate) and Gbps (DataRate): true
+```
+
+### Custom Metrics
+
+Define your own units:
+
+```bash
+gt 'custom define foobar 42 Custom'    # Register custom unit
+# → defined custom metric "foobar" (factor: 42, category: Custom)
+
+gt '10foobar 5foobar +'               # Use it in arithmetic
+# → 15foobar
+
+gt 'custom list'                       # List custom metrics
+# → foobar
+
+gt 'custom undefine foobar'            # Remove custom unit
+# → removed custom metric "foobar"
+```
+
+Custom metrics can be defined in any category. They use the specified factor relative to the category's base unit.
+
 ## Building
 
 Using mage:
