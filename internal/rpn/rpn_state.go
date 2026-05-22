@@ -96,11 +96,13 @@ func (r *RPN) Stack() []Number {
 }
 
 // SetPrefixMode sets the prefix mode (SI or IEC).
+// Propagates to the Operations instance so arithmetic uses the correct mode.
 // This method is thread-safe for writes.
 func (r *RPN) SetPrefixMode(mode PrefixMode) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.prefixMode = mode
+	r.ops.SetPrefixMode(mode)
 }
 
 // GetPrefixMode returns the current prefix mode.

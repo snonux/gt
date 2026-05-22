@@ -18,11 +18,12 @@ func compareValues(o *Operations, stack *Stack, op string, cmp func(float64, flo
 		return metricError(op, aM, bM)
 	}
 
-	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	pm := o.GetPrefixMode()
+	aBase, err := convertToBase(o.metricRegistry, a, pm)
 	if err != nil {
 		return buildError(op, err)
 	}
-	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	bBase, err := convertToBase(o.metricRegistry, b, pm)
 	if err != nil {
 		return buildError(op, err)
 	}

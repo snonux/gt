@@ -156,6 +156,8 @@ type Operator interface {
 	PowerIntOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
+	// SetPrefixMode sets the prefix mode for data size calculations
+	SetPrefixMode(PrefixMode)
 	// Metric command handlers
 	MetricShow(stack *Stack) (string, error)
 	MetricList(stack *Stack) (string, error)
@@ -168,6 +170,7 @@ type Operations struct {
 	vars           VariableStore
 	consts         ConstantsProvider
 	mode           CalculationMode
+	prefixMode     PrefixMode
 	metricRegistry *MetricRegistry
 	mu             sync.RWMutex
 }
@@ -184,6 +187,7 @@ func NewOperations(vars VariableStore) *Operations {
 		vars:           vars,
 		consts:         consts,
 		mode:           FloatMode, // default
+		prefixMode:     SI,        // default
 		metricRegistry: GetMetricRegistry(),
 	}
 }
@@ -202,6 +206,22 @@ func (o *Operations) GetMode() CalculationMode {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 	return o.mode
+}
+
+// GetPrefixMode returns the current prefix mode.
+// This method is thread-safe for reads.
+func (o *Operations) GetPrefixMode() PrefixMode {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+	return o.prefixMode
+}
+
+// SetPrefixMode sets the prefix mode for data size calculations.
+// This method is thread-safe for writes.
+func (o *Operations) SetPrefixMode(mode PrefixMode) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.prefixMode = mode
 }
 
 // OperatorHandler represents a function that handles an operator.

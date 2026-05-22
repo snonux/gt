@@ -176,11 +176,12 @@ func (o *Operations) Convert(stack *Stack) error {
 		return metricError("convert", valueMetric, targetMetric)
 	}
 	// 5. Convert through base unit: value → base → target
-	baseVal, err := convertToBase(o.metricRegistry, value, SI)
+	pm := o.GetPrefixMode()
+	baseVal, err := convertToBase(o.metricRegistry, value, pm)
 	if err != nil {
 		return buildError("convert", err)
 	}
-	resultVal := convertFromBase(o.metricRegistry, baseVal, targetMetric, SI)
+	resultVal := convertFromBase(o.metricRegistry, baseVal, targetMetric, pm)
 	// 6. Push result with target metric
 	stack.Push(NewNumber(resultVal, o.GetMode(), targetMetric))
 	return nil
