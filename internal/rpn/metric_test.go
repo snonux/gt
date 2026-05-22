@@ -6,6 +6,7 @@ package rpn
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -1017,6 +1018,7 @@ func TestMetricOperationsUnit(t *testing.T) {
 }
 
 func TestConvertSameCategory(t *testing.T) {
+	reg := GetMetricRegistry()
 	tests := []struct {
 		expr    string
 		wantNum float64
@@ -1029,6 +1031,10 @@ func TestConvertSameCategory(t *testing.T) {
 		{"1hr @min convert", 60, "min", 0.001},
 		{"3.14kg @lb convert", 6.922, "lb", 0.01},
 		{"100mph @kmh convert", 160.934, "kmh", 0.01},
+		// Zero value
+		{"0GB @MB convert", 0, "MB", 0.0001},
+		// Negative value
+		{"-100km @mi convert", -62.1371, "mi", 0.001},
 	}
 
 	for _, tt := range tests {
@@ -1046,7 +1052,8 @@ func TestConvertSameCategory(t *testing.T) {
 			stack := rpn.GetCurrentStack()
 			if len(stack) > 0 {
 				m := stack[0].Metric()
-				if m == nil || m.Name != tt.wantMet {
+				expected, _ := reg.Find(tt.wantMet)
+				if m != expected {
 					t.Errorf("metric = %v, want %s", m, tt.wantMet)
 				}
 			}
@@ -1055,24 +1062,46 @@ func TestConvertSameCategory(t *testing.T) {
 }
 
 func TestConvertCoolAbsorbing(t *testing.T) {
+	reg := GetMetricRegistry()
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 
-	// Cool to metric: 100 @GB convert -> 100 * 1 / (8e9) = 1.25e-8 GB
+	// Cool to metric: 100 @GB convert → 100 * 1 / (8e9) = 1.25e-8 GB
 	result, err := rpn.ParseAndEvaluate("100 @GB convert")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	resultVal, _ := strconv.ParseFloat(result, 64)
 	expected := 100.0 / 8e9
-	if resultVal < expected-0.0001 || resultVal > expected+0.0001 {
-		t.Errorf("result = %g, want %g", resultVal, expected)
+	tolerance := expected * 0.001 // 0.1% relative tolerance
+	if resultVal < expected-tolerance || resultVal > expected+tolerance {
+		t.Errorf("result = %g, want %g (relative tolerance %g)", resultVal, expected, tolerance)
 	}
 	stack := rpn.GetCurrentStack()
 	if len(stack) > 0 {
 		m := stack[0].Metric()
-		if m == nil || m.Name != "GB" {
+		gb, _ := reg.Find("GB")
+		if m != gb {
 			t.Errorf("metric = %v, want GB", m)
+		}
+	}
+
+	// Metric to Cool: 1hr @Cool convert → 3600 Cool
+	rpn2 := NewRPN(NewVariables())
+	result2, err := rpn2.ParseAndEvaluate("1hr @Cool convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal2, _ := strconv.ParseFloat(result2, 64)
+	if resultVal2 != 3600 {
+		t.Errorf("metric→cool result = %g, want 3600", resultVal2)
+	}
+	stack2 := rpn2.GetCurrentStack()
+	if len(stack2) > 0 {
+		m := stack2[0].Metric()
+		cool, _ := reg.Find("Cool")
+		if m != cool {
+			t.Errorf("metric = %v, want Cool", m)
 		}
 	}
 }
@@ -1085,14 +1114,26 @@ func TestConvertIncompatible(t *testing.T) {
 	if err == nil {
 		t.Error("expected error for incompatible categories")
 	}
+	// Verify the error message mentions the incompatible metrics
+	if err != nil && !strings.Contains(err.Error(), "incompatible") {
+		t.Errorf("expected error to mention 'incompatible', got: %v", err)
+	}
 }
 
 func TestConvertInsufficientOperands(t *testing.T) {
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 
+	// Missing value (only target on stack)
 	_, err := rpn.ParseAndEvaluate("@Gbps convert")
 	if err == nil {
-		t.Error("expected error for insufficient operands")
+		t.Error("expected error for missing value operand")
+	}
+
+	// Missing target (only value on stack, no @X before convert)
+	rpn2 := NewRPN(NewVariables())
+	_, err = rpn2.ParseAndEvaluate("100Mbps convert")
+	if err == nil {
+		t.Error("expected error for missing target metric operand")
 	}
 }

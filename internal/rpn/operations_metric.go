@@ -155,7 +155,7 @@ func baseMetric(reg *MetricRegistry, name string) *Metric {
 
 // Convert converts a value from its current metric to a target metric.
 // Pops target metric (from @X syntax), then pops value to convert.
-// Validates category compatibility, computes result = value * fromFactor / toFactor,
+// Validates category compatibility, converts through base unit,
 // and pushes the result with the target metric.
 func (o *Operations) Convert(stack *Stack) error {
 	// 1. Pop target (from @X syntax)
@@ -175,14 +175,12 @@ func (o *Operations) Convert(stack *Stack) error {
 	if !categoriesCompatible(valueMetric, targetMetric) {
 		return metricError("convert", valueMetric, targetMetric)
 	}
-	// 5. Convert: value * fromFactor / toFactor
-	valueF, err := value.Float64()
+	// 5. Convert through base unit: value → base → target
+	baseVal, err := convertToBase(o.metricRegistry, value, SI)
 	if err != nil {
 		return buildError("convert", err)
 	}
-	fromFactor := valueMetric.Factor(SI)
-	toFactor := targetMetric.Factor(SI)
-	resultVal := valueF * fromFactor / toFactor
+	resultVal := convertFromBase(o.metricRegistry, baseVal, targetMetric, SI)
 	// 6. Push result with target metric
 	stack.Push(NewNumber(resultVal, o.GetMode(), targetMetric))
 	return nil
