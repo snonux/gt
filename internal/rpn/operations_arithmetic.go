@@ -128,7 +128,16 @@ func (o *Operations) Divide(stack *Stack) error {
 }
 
 // Power pops two values from stack, raises first to power of second (a ^ b), and pushes result.
-// Result is unitless (Cool metric).
+//
+// Result is always Cool (unitless). This is intentional: x^n has different physical
+// units than x, so retaining the input metric would be misleading. Examples:
+//
+//	2hr 3 ^  → 8 (Cool, not 8hr³)
+//	100Mbps 2 ^  → 10000 (Cool, not 10000Mbps)
+//	3 4 ^  → 81 (Cool)
+//
+// Scalar exponents (metric=Cool) also produce Cool results. There is no concept of
+// "preserving the base metric" for power operations.
 func (o *Operations) Power(stack *Stack) error {
 	a, b, err := popTwo(stack, "^")
 	if err != nil {
