@@ -899,3 +899,110 @@ func TestMetricAwareArithmetic(t *testing.T) {
 		})
 	}
 }
+
+func TestMetricOperationsUnit(t *testing.T) {
+	reg := GetMetricRegistry()
+	tolerance := 0.001
+
+	cases := []struct {
+		name     string
+		setup    func(s *Stack)
+		op       func(*Operations, *Stack) error
+		wantVal  float64
+		wantMet  string
+		wantErr  bool
+	}{
+		{
+			name: "same-category addition 1000bps+1Kbps",
+			setup: func(s *Stack) {
+				kbps, _ := reg.Find("Kbps")
+				bps, _ := reg.Find("bps")
+				s.Push(NewFloatWithMetric(1000, bps))
+				s.Push(NewFloatWithMetric(1, kbps))
+			},
+			op:      func(o *Operations, s *Stack) error { return o.Add(s) },
+			wantVal: 2000,
+			wantMet: "bps", // result in left operand's metric (bps)
+		},
+		{
+			name: "Cool absorbing metric 5+100Mbps",
+			setup: func(s *Stack) {
+				mbps, _ := reg.Find("Mbps")
+				s.Push(NewFloatWithMetric(5, GetCoolMetric()))
+				s.Push(NewFloatWithMetric(100, mbps))
+			},
+			op:      func(o *Operations, s *Stack) error { return o.Add(s) },
+			wantVal: 100.000005,
+			wantMet: "Mbps",
+		},
+		{
+			name: "incompatible categories 100bps+2hr",
+			setup: func(s *Stack) {
+				bps, _ := reg.Find("bps")
+				hr, _ := reg.Find("hr")
+				s.Push(NewFloatWithMetric(100, bps))
+				s.Push(NewFloatWithMetric(2, hr))
+			},
+			op:      func(o *Operations, s *Stack) error { return o.Add(s) },
+			wantErr: true,
+		},
+		{
+			name: "cross-category mul 100Mbps*2hr",
+			setup: func(s *Stack) {
+				mbps, _ := reg.Find("Mbps")
+				hr, _ := reg.Find("hr")
+				s.Push(NewFloatWithMetric(100, mbps))
+				s.Push(NewFloatWithMetric(2, hr))
+			},
+			op:      func(o *Operations, s *Stack) error { return o.Multiply(s) },
+			wantVal: 720000000000,
+			wantMet: "bits",
+		},
+		{
+			name: "cross-category div 10GB/2hr",
+			setup: func(s *Stack) {
+				gb, _ := reg.Find("GB")
+				hr, _ := reg.Find("hr")
+				s.Push(NewFloatWithMetric(10, gb))
+				s.Push(NewFloatWithMetric(2, hr))
+			},
+			op:      func(o *Operations, s *Stack) error { return o.Divide(s) },
+			wantVal: 11111111.111,
+			wantMet: "bps",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			vars := NewVariables()
+			ops := NewOperations(vars)
+			s := NewStack()
+			tc.setup(s)
+
+			err := tc.op(ops, s)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if s.Len() != 1 {
+				t.Fatalf("expected 1 item on stack, got %d", s.Len())
+			}
+			result, _ := s.Pop()
+			val, _ := result.Float64()
+			if val < tc.wantVal-tolerance || val > tc.wantVal+tolerance {
+				t.Errorf("val = %g, want %g (tolerance %g)", val, tc.wantVal, tolerance)
+			}
+			m := result.Metric()
+			expected, _ := reg.Find(tc.wantMet)
+			if m != expected {
+				t.Errorf("metric = %v, want %v", m, expected)
+			}
+		})
+	}
+}
