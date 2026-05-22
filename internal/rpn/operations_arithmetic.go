@@ -215,9 +215,35 @@ func (o *Operations) FastPower(stack *Stack) error {
 		stack.Push(NewNumber(1, o.GetMode(), GetCoolMetric()))
 		return nil
 	}
-	resultVal := math.Pow(aF, float64(exp))
+	resultVal := binaryExponentiationFloat(aF, exp)
 	stack.Push(NewNumber(resultVal, o.GetMode(), GetCoolMetric()))
 	return nil
+}
+
+// binaryExponentiationFloat computes base^exp using the square-and-multiply algorithm.
+// Time Complexity: O(log exp)
+// Space Complexity: O(1)
+func binaryExponentiationFloat(base float64, exp int) float64 {
+	if exp == 0 {
+		return 1.0
+	}
+
+	// Handle negative exponents: base^-exp = 1 / (base^exp)
+	if exp < 0 {
+		return 1.0 / binaryExponentiationFloat(base, -exp)
+	}
+
+	res := 1.0
+	for exp > 0 {
+		// If exponent is odd, multiply result by current base
+		if exp%2 == 1 {
+			res *= base
+		}
+		// Square the base and divide exponent by 2
+		base *= base
+		exp /= 2
+	}
+	return res
 }
 
 // Log2 pops one value from stack, computes log base 2 (log₂(a)), and pushes result.
