@@ -156,6 +156,11 @@ type Operator interface {
 	PowerIntOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
+	// Metric command handlers
+	MetricShow(stack *Stack) (string, error)
+	MetricList(stack *Stack) (string, error)
+	MetricCategory(stack *Stack, categoryName string) (string, error)
+	MetricCompatible(stack *Stack) (string, error)
 }
 
 // Operations provides operator implementations and stack manipulation.

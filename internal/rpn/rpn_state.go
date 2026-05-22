@@ -20,6 +20,7 @@ type RPN struct {
 	maxStack      int
 	currentStack  *Stack
 	mode          CalculationMode
+	prefixMode    PrefixMode
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
@@ -36,6 +37,7 @@ func NewRPN(vars VariableStore) *RPN {
 		maxStack:      1000, // Reasonable limit for RPN expressions
 		currentStack:  NewStack(),
 		mode:          FloatMode, // Default mode
+		prefixMode:    SI,        // Default prefix mode
 	}
 }
 
@@ -91,4 +93,20 @@ func (r *RPN) SetCurrentStack(values []Number) {
 // Returns nil if the stack is empty or nil.
 func (r *RPN) Stack() []Number {
 	return r.GetCurrentStack()
+}
+
+// SetPrefixMode sets the prefix mode (SI or IEC).
+// This method is thread-safe for writes.
+func (r *RPN) SetPrefixMode(mode PrefixMode) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.prefixMode = mode
+}
+
+// GetPrefixMode returns the current prefix mode.
+// This method is thread-safe for concurrent reads.
+func (r *RPN) GetPrefixMode() PrefixMode {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.prefixMode
 }
