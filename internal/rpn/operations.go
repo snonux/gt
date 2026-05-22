@@ -146,6 +146,12 @@ type PowerIntOperator interface {
 
 // Operator is the combined interface for all operator implementations.
 // This allows RPN to depend on an abstraction instead of the concrete Operations type.
+//
+// Design note: Operator intentionally mixes behavioral methods (arithmetic, stack,
+// boolean ops) with configuration methods (SetMode, SetPrefixMode, GetPrefixMode)
+// and metric command handlers. Per ISP this could be split, but RPN is the sole
+// client and splitting would add indirection without practical benefit. The
+// concrete *Operations type satisfies this interface exclusively.
 type Operator interface {
 	ArithmeticOperator
 	BooleanOperator
