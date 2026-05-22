@@ -349,6 +349,50 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			return "", fmt.Errorf("unknown metric %q in %q", metricName, token)
 		}
 
+		// Handle multi-word metric command: metric <subcommand>
+		if token == "metric" && i+1 < len(tokens) {
+			subCmd := tokens[i+1]
+			switch subCmd {
+			case "show":
+				result, err := r.ops.MetricShow(stack)
+				if err != nil {
+					return "", fmt.Errorf("rpn: metric show: %w", err)
+				}
+				return result, nil
+			case "list":
+				result, err := r.ops.MetricList(stack)
+				if err != nil {
+					return "", fmt.Errorf("rpn: metric list: %w", err)
+				}
+				return result, nil
+			case "binary":
+				if i+2 < len(tokens) && tokens[i+2] == "set" {
+					r.prefixMode = IEC
+					return "prefix mode: IEC", nil
+				}
+				return "", fmt.Errorf("rpn: metric binary: use 'metric binary set'")
+			case "decimal":
+				if i+2 < len(tokens) && tokens[i+2] == "set" {
+					r.prefixMode = SI
+					return "prefix mode: SI", nil
+				}
+				return "", fmt.Errorf("rpn: metric decimal: use 'metric decimal set'")
+			case "compatible":
+				result, err := r.ops.MetricCompatible(stack)
+				if err != nil {
+					return "", fmt.Errorf("rpn: metric compatible: %w", err)
+				}
+				return result, nil
+			default:
+				// Try as a category name
+				result, err := r.ops.MetricCategory(stack, subCmd)
+				if err != nil {
+					return "", fmt.Errorf("rpn: metric %s: %w", subCmd, err)
+				}
+				return result, nil
+			}
+		}
+
 		// Check if this is a variable name for assignment (:= or =:)
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name
