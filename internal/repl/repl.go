@@ -153,8 +153,6 @@ func (p *ReadlinePrompt) Run() error {
 
 		p.executor(input)
 	}
-
-	return nil
 }
 
 // Close closes the prompt instance.
