@@ -157,6 +157,7 @@ func TestHyperSubtractMetricAware(t *testing.T) {
 }
 
 func TestHyperSubtractMixedUnits(t *testing.T) {
+	reg := GetMetricRegistry()
 	tolerance := 0.001
 
 	// 2km 500m 100m [-] = (2000 - 500 - 100)m = 1400m = 1.4km
@@ -169,6 +170,57 @@ func TestHyperSubtractMixedUnits(t *testing.T) {
 	resultVal, _ := strconv.ParseFloat(result, 64)
 	if resultVal < 1.4-tolerance || resultVal > 1.4+tolerance {
 		t.Errorf("result = %g, want 1.4", resultVal)
+	}
+	stack := rpn.GetCurrentStack()
+	m := stack[len(stack)-1].Metric()
+	km, _ := reg.Find("km")
+	if m != km {
+		t.Errorf("metric = %v, want km", m)
+	}
+}
+
+func TestHyperSubtractCoolAbsorbing(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	// 100km 5 [-] = 100km - 5m = 99.995km
+	// Cool (factor 1.0) contributes 5 base units (meters) = 0.005km
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("100km 5 [-]")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	if resultVal < 99.99 || resultVal > 99.996 {
+		t.Errorf("result = %g, want ~99.995", resultVal)
+	}
+	stack := rpn.GetCurrentStack()
+	m := stack[len(stack)-1].Metric()
+	km, _ := reg.Find("km")
+	if m != km {
+		t.Errorf("metric = %v, want km", m)
+	}
+}
+
+func TestHyperSubtractNegativeResult(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	// 1km 2km [-] = -1km
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+	result, err := rpn.ParseAndEvaluate("1km 2km [-]")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	if resultVal < -1.1 || resultVal > -0.9 {
+		t.Errorf("result = %g, want -1", resultVal)
+	}
+	stack := rpn.GetCurrentStack()
+	m := stack[len(stack)-1].Metric()
+	km, _ := reg.Find("km")
+	if m != km {
+		t.Errorf("metric = %v, want km", m)
 	}
 }
 
@@ -249,8 +301,6 @@ func TestHyperModuloMetricAware(t *testing.T) {
 }
 
 func TestHyperModuloMixedUnits(t *testing.T) {
-	tolerance := 0.001
-
 	// 1000m 300m 200m [%] = ((1000 % 300) % 200)m = (100 % 200)m = 100m = 0.1km
 	// Result uses first operand's metric (m)
 	vars := NewVariables()
@@ -260,6 +310,7 @@ func TestHyperModuloMixedUnits(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	resultVal, _ := strconv.ParseFloat(result, 64)
+	tolerance := 0.001
 	if resultVal < 100-tolerance || resultVal > 100+tolerance {
 		t.Errorf("result = %g, want 100", resultVal)
 	}

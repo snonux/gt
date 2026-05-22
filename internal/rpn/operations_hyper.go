@@ -303,7 +303,14 @@ func resultMetricForHyperAdd(metrics []*Metric) *Metric {
 			return m
 		}
 	}
-	return metrics[0]
+	// All Universal (Cool) or empty slice — default to Cool.
+	// In practice, metrics is never empty (popAll enforces >= 2 operands),
+	// but we handle it defensively.
+	if len(metrics) > 0 && metrics[0] != nil {
+		return metrics[0]
+	}
+	m, _ := GetMetricRegistry().Find("Cool")
+	return m
 }
 
 // validateSameCategory checks that all metrics belong to the same category.
