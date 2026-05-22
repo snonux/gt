@@ -312,8 +312,14 @@ func TestPrefixModeAffectsCrossMetricConvert(t *testing.T) {
 	}
 }
 
-func TestPrefixModeAffectsArithmetic(t *testing.T) {
-	// SI mode: 1024KB + 1KB in SI = 1024*8000 + 8000 = 8232800 bits → /8000 = 1025KB
+func TestPrefixModeUsedInArithmetic(t *testing.T) {
+	// Same-metric addition: result is the same in both modes
+	// (conversion factors cancel out when input and output metrics match)
+	// This test verifies that GetPrefixMode() is called during arithmetic,
+	// not that SI vs IEC produces different results.
+	// For mode-dependent results, see TestPrefixModeEndToEndConvert.
+
+	// SI mode: 1024KB + 1KB → 1025KB
 	vars := NewVariables()
 	rpn := NewRPN(vars)
 	result, err := rpn.ParseAndEvaluate("1024KB 1KB + @KB convert")
@@ -325,8 +331,7 @@ func TestPrefixModeAffectsArithmetic(t *testing.T) {
 		t.Errorf("SI: 1024KB+1KB→KB = %g, want 1025", resultVal)
 	}
 
-	// IEC mode: 1024KB + 1KB where KB = 8*1024 bits
-	// 1024*8192 + 8192 = 8401408 bits → /8192 = 1025KB
+	// IEC mode: same result (factors cancel)
 	vars2 := NewVariables()
 	rpn2 := NewRPN(vars2)
 	_, err = rpn2.ParseAndEvaluate("metric binary set")
