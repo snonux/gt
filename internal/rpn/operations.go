@@ -155,10 +155,6 @@ type Operator interface {
 	PowerIntOperator
 	// SetMode sets the calculation mode for number formatting
 	SetMode(CalculationMode)
-	// AssignLeft assigns a value to a variable (for := operator)
-	AssignLeft(stack *Stack) error
-	// AssignRight assigns a value to a variable (for =: operator)
-	AssignRight(stack *Stack) error
 }
 
 // Operations provides operator implementations and stack manipulation.
