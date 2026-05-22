@@ -30,19 +30,20 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 		return err
 	}
 
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+
 	// Convert all to base units, sum, convert back
 	pm := o.GetPrefixMode()
 	var sum float64
 	for i, v := range values {
-		base, err := convertToBase(o.metricRegistry, v, pm)
+		base, err := convertToBase(o.metricRegistry, v, pm, resultMetric)
 		if err != nil {
 			return buildError("[+]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		sum += base
 	}
 
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
 	resultVal := convertFromBase(o.metricRegistry, sum, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -95,23 +96,24 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 		return err
 	}
 
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+
 	// Convert all to base units, subtract, convert back
 	pm := o.GetPrefixMode()
-	firstBase, err := convertToBase(o.metricRegistry, values[0], pm)
+	firstBase, err := convertToBase(o.metricRegistry, values[0], pm, resultMetric)
 	if err != nil {
 		return buildError("[-]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstBase
 	for i := 1; i < len(values); i++ {
-		base, err := convertToBase(o.metricRegistry, values[i], pm)
+		base, err := convertToBase(o.metricRegistry, values[i], pm, resultMetric)
 		if err != nil {
 			return buildError("[-]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		result -= base
 	}
 
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
 	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -193,15 +195,18 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		return err
 	}
 
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+
 	// Convert all to base units, compute modulo, convert back
 	pm := o.GetPrefixMode()
-	firstBase, err := convertToBase(o.metricRegistry, values[0], pm)
+	firstBase, err := convertToBase(o.metricRegistry, values[0], pm, resultMetric)
 	if err != nil {
 		return buildError("[%]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstBase
 	for i := 1; i < len(values); i++ {
-		base, err := convertToBase(o.metricRegistry, values[i], pm)
+		base, err := convertToBase(o.metricRegistry, values[i], pm, resultMetric)
 		if err != nil {
 			return buildError("[%]", fmt.Errorf("operand %d: %w", i, err))
 		}
@@ -211,8 +216,6 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		result = math.Mod(result, base)
 	}
 
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForHyperAdd(metrics)
 	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))

@@ -22,18 +22,18 @@ func (o *Operations) Add(stack *Stack) error {
 		return metricError("+", aM, bM)
 	}
 
-	pm := o.GetPrefixMode()
-	// Convert both to base units, add, convert back to result metric
-	aBase, err := convertToBase(o.metricRegistry, a, pm)
-	if err != nil {
-		return buildError("addition", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm)
-	if err != nil {
-		return buildError("addition", err)
-	}
-	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	resultVal := convertFromBase(o.metricRegistry, aBase+bBase, resultMetric, pm)
+		pm := o.GetPrefixMode()
+		resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
+		// Convert both to base units, add, convert back to result metric
+		aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+		if err != nil {
+			return buildError("addition", err)
+		}
+		bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+		if err != nil {
+			return buildError("addition", err)
+		}
+		resultVal := convertFromBase(o.metricRegistry, aBase+bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -52,15 +52,15 @@ func (o *Operations) Subtract(stack *Stack) error {
 	}
 
 	pm := o.GetPrefixMode()
-	aBase, err := convertToBase(o.metricRegistry, a, pm)
-	if err != nil {
-		return buildError("subtraction", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm)
-	if err != nil {
-		return buildError("subtraction", err)
-	}
 	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
+	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+	if err != nil {
+		return buildError("subtraction", err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+	if err != nil {
+		return buildError("subtraction", err)
+	}
 	resultVal := convertFromBase(o.metricRegistry, aBase-bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -77,16 +77,16 @@ func (o *Operations) Multiply(stack *Stack) error {
 	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
 	pm := o.GetPrefixMode()
-	// Convert both to base units, multiply, convert back to result metric
-	aBase, err := convertToBase(o.metricRegistry, a, pm)
-	if err != nil {
-		return buildError("multiplication", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm)
-	if err != nil {
-		return buildError("multiplication", err)
-	}
 	resultMetric := resultMetricForMul(o.metricRegistry, aM, bM)
+	// Convert both to base units, multiply, convert back to result metric
+	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+	if err != nil {
+		return buildError("multiplication", err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+	if err != nil {
+		return buildError("multiplication", err)
+	}
 	resultVal := convertFromBase(o.metricRegistry, aBase*bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -112,15 +112,15 @@ func (o *Operations) Divide(stack *Stack) error {
 	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
 
 	pm := o.GetPrefixMode()
-	aBase, err := convertToBase(o.metricRegistry, a, pm)
-	if err != nil {
-		return buildError("division", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm)
-	if err != nil {
-		return buildError("division", err)
-	}
 	resultMetric := resultMetricForDiv(o.metricRegistry, aM, bM)
+	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+	if err != nil {
+		return buildError("division", err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+	if err != nil {
+		return buildError("division", err)
+	}
 	resultVal := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
@@ -172,15 +172,15 @@ func (o *Operations) Modulo(stack *Stack) error {
 	}
 
 	pm := o.GetPrefixMode()
-	aBase, err := convertToBase(o.metricRegistry, a, pm)
-	if err != nil {
-		return buildError("modulo", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm)
-	if err != nil {
-		return buildError("modulo", err)
-	}
 	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
+	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+	if err != nil {
+		return buildError("modulo", err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+	if err != nil {
+		return buildError("modulo", err)
+	}
 	resultVal := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
