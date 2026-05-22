@@ -91,6 +91,7 @@ type ArithmeticOperator interface {
 	Log2(stack *Stack) error
 	Log10(stack *Stack) error
 	Ln(stack *Stack) error
+	Convert(stack *Stack) error
 }
 
 // BooleanOperator defines the interface for boolean comparison operators.
@@ -242,6 +243,7 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignLeft(stack) })
 	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
 	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
+	registry.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
 	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })

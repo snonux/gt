@@ -1015,3 +1015,84 @@ func TestMetricOperationsUnit(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertSameCategory(t *testing.T) {
+	tests := []struct {
+		expr    string
+		wantNum float64
+		wantMet string
+		tol     float64
+	}{
+		{"1000Mbps @Gbps convert", 1, "Gbps", 0.0001},
+		{"5GB @MiB convert", 4768.372, "MiB", 0.001},
+		{"100km @mi convert", 62.1371, "mi", 0.001},
+		{"1hr @min convert", 60, "min", 0.001},
+		{"3.14kg @lb convert", 6.922, "lb", 0.01},
+		{"100mph @kmh convert", 160.934, "kmh", 0.01},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expr, func(t *testing.T) {
+			vars := NewVariables()
+			rpn := NewRPN(vars)
+			result, err := rpn.ParseAndEvaluate(tt.expr)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			resultVal, _ := strconv.ParseFloat(result, 64)
+			if resultVal < tt.wantNum-tt.tol || resultVal > tt.wantNum+tt.tol {
+				t.Errorf("result = %g, want %g (tolerance %g)", resultVal, tt.wantNum, tt.tol)
+			}
+			stack := rpn.GetCurrentStack()
+			if len(stack) > 0 {
+				m := stack[0].Metric()
+				if m == nil || m.Name != tt.wantMet {
+					t.Errorf("metric = %v, want %s", m, tt.wantMet)
+				}
+			}
+		})
+	}
+}
+
+func TestConvertCoolAbsorbing(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// Cool to metric: 100 @GB convert -> 100 * 1 / (8e9) = 1.25e-8 GB
+	result, err := rpn.ParseAndEvaluate("100 @GB convert")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resultVal, _ := strconv.ParseFloat(result, 64)
+	expected := 100.0 / 8e9
+	if resultVal < expected-0.0001 || resultVal > expected+0.0001 {
+		t.Errorf("result = %g, want %g", resultVal, expected)
+	}
+	stack := rpn.GetCurrentStack()
+	if len(stack) > 0 {
+		m := stack[0].Metric()
+		if m == nil || m.Name != "GB" {
+			t.Errorf("metric = %v, want GB", m)
+		}
+	}
+}
+
+func TestConvertIncompatible(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	_, err := rpn.ParseAndEvaluate("100Mbps @hr convert")
+	if err == nil {
+		t.Error("expected error for incompatible categories")
+	}
+}
+
+func TestConvertInsufficientOperands(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	_, err := rpn.ParseAndEvaluate("@Gbps convert")
+	if err == nil {
+		t.Error("expected error for insufficient operands")
+	}
+}

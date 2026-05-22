@@ -152,3 +152,38 @@ func baseMetric(reg *MetricRegistry, name string) *Metric {
 	}
 	return m
 }
+
+// Convert converts a value from its current metric to a target metric.
+// Pops target metric (from @X syntax), then pops value to convert.
+// Validates category compatibility, computes result = value * fromFactor / toFactor,
+// and pushes the result with the target metric.
+func (o *Operations) Convert(stack *Stack) error {
+	// 1. Pop target (from @X syntax)
+	target, err := popStack(stack, "convert")
+	if err != nil {
+		return err
+	}
+	// 2. Pop value to convert
+	value, err := popStack(stack, "convert")
+	if err != nil {
+		return err
+	}
+	// 3. Get metrics
+	targetMetric := target.Metric()
+	valueMetric := resolveMetric(o.metricRegistry, value)
+	// 4. Validate same category (or Cool absorbing)
+	if !categoriesCompatible(valueMetric, targetMetric) {
+		return metricError("convert", valueMetric, targetMetric)
+	}
+	// 5. Convert: value * fromFactor / toFactor
+	valueF, err := value.Float64()
+	if err != nil {
+		return buildError("convert", err)
+	}
+	fromFactor := valueMetric.Factor(SI)
+	toFactor := targetMetric.Factor(SI)
+	resultVal := valueF * fromFactor / toFactor
+	// 6. Push result with target metric
+	stack.Push(NewNumber(resultVal, o.GetMode(), targetMetric))
+	return nil
+}
