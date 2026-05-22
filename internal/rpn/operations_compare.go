@@ -5,122 +5,64 @@ package rpn
 
 // comparison operators
 
-// GT pops two values from stack, compares (a > b), and pushes a boolean result.
-func (o *Operations) GT(stack *Stack) error {
-	a, b, err := popTwo(stack, "gt")
+// compareValues pops two values, checks metric compatibility,
+// converts to base units, and compares using the given function.
+func compareValues(o *Operations, stack *Stack, op string, cmp func(float64, float64) bool) error {
+	a, b, err := popTwo(stack, op)
 	if err != nil {
 		return err
 	}
 
-	aVal, err := toFloat64(a, "gt comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "gt comparison for b")
-	if err != nil {
-		return err
+	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
+	if !categoriesCompatible(aM, bM) {
+		return metricError(op, aM, bM)
 	}
 
-	stack.Push(NewFloatFromBool(aVal > bVal))
+	aBase, err := convertToBase(o.metricRegistry, a, SI)
+	if err != nil {
+		return buildError(op, err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, SI)
+	if err != nil {
+		return buildError(op, err)
+	}
+
+	stack.Push(NewFloatFromBool(cmp(aBase, bBase)))
 	return nil
+}
+
+// GT pops two values from stack, compares (a > b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
+func (o *Operations) GT(stack *Stack) error {
+	return compareValues(o, stack, "gt", func(a, b float64) bool { return a > b })
 }
 
 // LT pops two values from stack, compares (a < b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
 func (o *Operations) LT(stack *Stack) error {
-	a, b, err := popTwo(stack, "lt")
-	if err != nil {
-		return err
-	}
-
-	aVal, err := toFloat64(a, "lt comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "lt comparison for b")
-	if err != nil {
-		return err
-	}
-
-	stack.Push(NewFloatFromBool(aVal < bVal))
-	return nil
+	return compareValues(o, stack, "lt", func(a, b float64) bool { return a < b })
 }
 
 // GTE pops two values from stack, compares (a >= b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
 func (o *Operations) GTE(stack *Stack) error {
-	a, b, err := popTwo(stack, "gte")
-	if err != nil {
-		return err
-	}
-
-	aVal, err := toFloat64(a, "gte comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "gte comparison for b")
-	if err != nil {
-		return err
-	}
-
-	stack.Push(NewFloatFromBool(aVal >= bVal))
-	return nil
+	return compareValues(o, stack, "gte", func(a, b float64) bool { return a >= b })
 }
 
 // LTE pops two values from stack, compares (a <= b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
 func (o *Operations) LTE(stack *Stack) error {
-	a, b, err := popTwo(stack, "lte")
-	if err != nil {
-		return err
-	}
-
-	aVal, err := toFloat64(a, "lte comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "lte comparison for b")
-	if err != nil {
-		return err
-	}
-
-	stack.Push(NewFloatFromBool(aVal <= bVal))
-	return nil
+	return compareValues(o, stack, "lte", func(a, b float64) bool { return a <= b })
 }
 
 // EQ pops two values from stack, compares (a == b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
 func (o *Operations) EQ(stack *Stack) error {
-	a, b, err := popTwo(stack, "eq")
-	if err != nil {
-		return err
-	}
-
-	aVal, err := toFloat64(a, "eq comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "eq comparison for b")
-	if err != nil {
-		return err
-	}
-
-	stack.Push(NewFloatFromBool(aVal == bVal))
-	return nil
+	return compareValues(o, stack, "eq", func(a, b float64) bool { return a == b })
 }
 
 // NEQ pops two values from stack, compares (a != b), and pushes a boolean result.
+// Converts to base units for metric-aware comparison.
 func (o *Operations) NEQ(stack *Stack) error {
-	a, b, err := popTwo(stack, "neq")
-	if err != nil {
-		return err
-	}
-
-	aVal, err := toFloat64(a, "neq comparison for a")
-	if err != nil {
-		return err
-	}
-	bVal, err := toFloat64(b, "neq comparison for b")
-	if err != nil {
-		return err
-	}
-
-	stack.Push(NewFloatFromBool(aVal != bVal))
-	return nil
+	return compareValues(o, stack, "neq", func(a, b float64) bool { return a != b })
 }
