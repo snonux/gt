@@ -100,8 +100,10 @@ func (m *Metric) String() string {
 
 // MetricRegistry provides thread-safe storage and lookup for metrics.
 type MetricRegistry struct {
-	mu      sync.RWMutex
-	metrics map[string]*Metric
+	mu              sync.RWMutex
+	metrics         map[string]*Metric
+	aliases         map[string]string // alias name -> canonical metric name
+	exactMatchNames map[string]bool   // names that must match exactly (no case-insensitive fallback)
 }
 
 // Global registry instance.
@@ -111,9 +113,7 @@ var registryOnce sync.Once
 // GetMetricRegistry returns the global metric registry, initialized with built-in metrics.
 func GetMetricRegistry() *MetricRegistry {
 	registryOnce.Do(func() {
-		defaultRegistry = &MetricRegistry{
-			metrics: make(map[string]*Metric),
-		}
+		defaultRegistry = NewMetricRegistry()
 		registerBuiltInMetrics(defaultRegistry)
 	})
 	return defaultRegistry
@@ -122,7 +122,9 @@ func GetMetricRegistry() *MetricRegistry {
 // NewMetricRegistry creates a new empty registry (no built-in metrics).
 func NewMetricRegistry() *MetricRegistry {
 	return &MetricRegistry{
-		metrics: make(map[string]*Metric),
+		metrics:         make(map[string]*Metric),
+		aliases:         make(map[string]string),
+		exactMatchNames: make(map[string]bool),
 	}
 }
 
@@ -151,6 +153,69 @@ func (r *MetricRegistry) FindCaseInsensitive(name string) (*Metric, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	lower := strings.ToLower(name)
+	for _, m := range r.metrics {
+		if strings.ToLower(m.Name) == lower {
+			return m, true
+		}
+	}
+	return nil, false
+}
+
+// RegisterAlias maps an alternative name to an existing metric.
+// The canonical metric must already be registered.
+// Panics if the alias case-insensitively matches a MarkExactMatch name.
+func (r *MetricRegistry) RegisterAlias(alias, canonicalName string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.metrics[canonicalName]; !ok {
+		panic(fmt.Sprintf("cannot alias %q to %q: canonical metric not found", alias, canonicalName))
+	}
+	aliasLower := strings.ToLower(alias)
+	for emName := range r.exactMatchNames {
+		if strings.ToLower(emName) == aliasLower {
+			panic(fmt.Sprintf("cannot alias %q: conflicts with exact-match name %q", alias, emName))
+		}
+	}
+	r.aliases[alias] = canonicalName
+}
+
+// MarkExactMatch marks metric names that require exact case matching,
+// disabling case-insensitive fallback. Used for units where case matters
+// (e.g., bps vs Bps where lowercase b = bits, uppercase B = bytes).
+func (r *MetricRegistry) MarkExactMatch(names ...string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, name := range names {
+		r.exactMatchNames[name] = true
+	}
+}
+
+// FindWithAliases looks up a metric by name, resolving aliases.
+// Checks exact match first, then aliases, then case-insensitive (unless exact-match).
+func (r *MetricRegistry) FindWithAliases(name string) (*Metric, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	// Exact match
+	if m, ok := r.metrics[name]; ok {
+		return m, true
+	}
+
+	// Alias
+	if canonical, ok := r.aliases[name]; ok {
+		return r.metrics[canonical], true
+	}
+
+	// Case-insensitive (skip if exact-match guard matches)
+	lower := strings.ToLower(name)
+	if len(r.exactMatchNames) > 0 {
+		for emName := range r.exactMatchNames {
+			if strings.ToLower(emName) == lower {
+				return nil, false
+			}
+		}
+	}
+
 	for _, m := range r.metrics {
 		if strings.ToLower(m.Name) == lower {
 			return m, true
@@ -327,4 +392,141 @@ func registerBuiltInMetrics(r *MetricRegistry) {
 		Factor:   func(PrefixMode) float64 { return 86400 },
 		IsRate:   false,
 	})
+
+	// Weight (base: kilograms)
+	r.Register(&Metric{
+		Name:     "mg",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 1e-6 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "g",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 1e-3 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "kg",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 1 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "ton",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 1000 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "lb",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 0.45359237 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "oz",
+		Category: Weight,
+		BaseUnit: "kilograms",
+		Factor:   func(PrefixMode) float64 { return 0.028349523125 },
+		IsRate:   false,
+	})
+
+	// Speed (base: m/s)
+	r.Register(&Metric{
+		Name:     "mps",
+		Category: Speed,
+		BaseUnit: "m/s",
+		Factor:   func(PrefixMode) float64 { return 1 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "kmh",
+		Category: Speed,
+		BaseUnit: "m/s",
+		Factor:   func(PrefixMode) float64 { return 1.0 / 3.6 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "mph",
+		Category: Speed,
+		BaseUnit: "m/s",
+		Factor:   func(PrefixMode) float64 { return 0.44704 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "knots",
+		Category: Speed,
+		BaseUnit: "m/s",
+		Factor:   func(PrefixMode) float64 { return 1852.0 / 3600 },
+		IsRate:   false,
+	})
+
+	// Distance (base: meters)
+	r.Register(&Metric{
+		Name:     "m",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 1 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "km",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 1000 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "mi",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 1609.344 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "ft",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 0.3048 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "in",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 0.0254 },
+		IsRate:   false,
+	})
+	r.Register(&Metric{
+		Name:     "nm",
+		Category: Distance,
+		BaseUnit: "meters",
+		Factor:   func(PrefixMode) float64 { return 1852 },
+		IsRate:   false,
+	})
+
+	// Aliases (canonical name must exist first)
+	// Note: Bps is intentionally NOT an alias for bps (capital B = bytes)
+	
+	// Data rate units are case-sensitive: b = bits, B = bytes
+	r.MarkExactMatch("bps", "Kbps", "Mbps", "Gbps", "Tbps")
+	
+	r.RegisterAlias("bit/s", "bps")
+	r.RegisterAlias("kbit/s", "Kbps")
+	r.RegisterAlias("mbit/s", "Mbps")
+	r.RegisterAlias("gbit/s", "Gbps")
+	r.RegisterAlias("tbit/s", "Tbps")
+	r.RegisterAlias("sec", "s")
+	r.RegisterAlias("secs", "s")
+	r.RegisterAlias("knot", "knots")
+	r.RegisterAlias("mile", "mi")
+	r.RegisterAlias("miles", "mi")
+	r.RegisterAlias("foot", "ft")
+	r.RegisterAlias("feet", "ft")
 }

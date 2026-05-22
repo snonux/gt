@@ -360,3 +360,199 @@ func TestMetricRegistryConcurrent(t *testing.T) {
 		t.Errorf("concurrent register: got %d metrics, want %d", got, n)
 	}
 }
+
+func TestBuiltInWeightMetrics(t *testing.T) {
+	reg := GetMetricRegistry()
+	tolerance := 0.00001
+
+	tests := []struct {
+		name   string
+		expect float64
+	}{
+		{"mg", 1e-6},
+		{"g", 1e-3},
+		{"kg", 1},
+		{"ton", 1000},
+		{"lb", 0.45359237},
+		{"oz", 0.028349523125},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		if m.Category != Weight {
+			t.Errorf("%s.Category = %s, want Weight", tt.name, m.Category)
+		}
+		got := m.Factor(SI)
+		if got < tt.expect-tolerance || got > tt.expect+tolerance {
+			t.Errorf("%s.Factor(SI) = %g, want %g", tt.name, got, tt.expect)
+		}
+	}
+}
+
+func TestBuiltInSpeedMetrics(t *testing.T) {
+	reg := GetMetricRegistry()
+	tolerance := 0.001
+
+	tests := []struct {
+		name   string
+		expect float64
+	}{
+		{"mps", 1},
+		{"kmh", 1.0 / 3.6},
+		{"mph", 0.44704},
+		{"knots", 1852.0 / 3600},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		if m.Category != Speed {
+			t.Errorf("%s.Category = %s, want Speed", tt.name, m.Category)
+		}
+		got := m.Factor(SI)
+		if got < tt.expect-tolerance || got > tt.expect+tolerance {
+			t.Errorf("%s.Factor(SI) = %g, want %g", tt.name, got, tt.expect)
+		}
+	}
+}
+
+func TestBuiltInDistanceMetrics(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		name   string
+		expect float64
+	}{
+		{"m", 1},
+		{"km", 1000},
+		{"mi", 1609.344},
+		{"ft", 0.3048},
+		{"in", 0.0254},
+		{"nm", 1852},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.Find(tt.name)
+		if !ok {
+			t.Fatalf("metric %q not found", tt.name)
+		}
+		if m.Category != Distance {
+			t.Errorf("%s.Category = %s, want Distance", tt.name, m.Category)
+		}
+		got := m.Factor(SI)
+		if got != tt.expect {
+			t.Errorf("%s.Factor(SI) = %g, want %g", tt.name, got, tt.expect)
+		}
+	}
+}
+
+func TestMetricRegistryAliases(t *testing.T) {
+	reg := GetMetricRegistry()
+
+	tests := []struct {
+		alias    string
+		canonical string
+	}{
+		{"bit/s", "bps"},
+		{"kbit/s", "Kbps"},
+		{"mbit/s", "Mbps"},
+		{"gbit/s", "Gbps"},
+		{"tbit/s", "Tbps"},
+		{"sec", "s"},
+		{"secs", "s"},
+		{"knot", "knots"},
+		{"mile", "mi"},
+		{"miles", "mi"},
+		{"foot", "ft"},
+		{"feet", "ft"},
+	}
+
+	for _, tt := range tests {
+		m, ok := reg.FindWithAliases(tt.alias)
+		if !ok {
+			t.Fatalf("alias %q not found", tt.alias)
+		}
+		if m.Name != tt.canonical {
+			t.Errorf("alias %q resolved to %q, want %q", tt.alias, m.Name, tt.canonical)
+		}
+	}
+
+	// Bps should NOT resolve to bps (capital B = bytes)
+	if m, ok := reg.FindWithAliases("Bps"); ok {
+		t.Errorf("Bps should not resolve, but got %q", m.Name)
+	}
+
+	// Other case variations of exact-match names should also not resolve
+	for _, bad := range []string{"BPS", "KBPS", "MBPS", "GBPS", "TBPS"} {
+		if m, ok := reg.FindWithAliases(bad); ok {
+			t.Errorf("%s should not resolve (exact-match guard), got %q", bad, m.Name)
+		}
+	}
+}
+
+func TestFindWithAliasesPriority(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{
+		Name:   "Foo",
+		Category: Custom,
+		Factor: func(PrefixMode) float64 { return 1 },
+	})
+	reg.RegisterAlias("foo", "Foo")
+
+	// Exact match on canonical name
+	m, ok := reg.FindWithAliases("Foo")
+	if !ok || m.Name != "Foo" {
+		t.Errorf("exact match failed")
+	}
+
+	// Alias match
+	m, ok = reg.FindWithAliases("foo")
+	if !ok || m.Name != "Foo" {
+		t.Errorf("alias match failed")
+	}
+}
+
+func TestRegisterAliasPanicOnMissingCanonical(t *testing.T) {
+	reg := NewMetricRegistry()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic on alias to nonexistent metric")
+		}
+	}()
+	reg.RegisterAlias("nope", "doesNotExist")
+}
+
+func TestRegisterAliasRejectsExactMatchConflict(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{
+		Name:     "bps",
+		Category: Custom,
+		BaseUnit: "bps",
+		Factor:   func(PrefixMode) float64 { return 1 },
+	})
+	reg.MarkExactMatch("bps")
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("expected panic on alias conflicting with exact-match name")
+		}
+	}()
+	reg.RegisterAlias("Bps", "bps") // should panic
+}
+
+func TestAliasWinsOverCaseInsensitive(t *testing.T) {
+	reg := NewMetricRegistry()
+	reg.Register(&Metric{Name: "Foo", Category: Custom, Factor: func(PrefixMode) float64 { return 1 }})
+	reg.Register(&Metric{Name: "Bar", Category: Custom, Factor: func(PrefixMode) float64 { return 2 }})
+	reg.RegisterAlias("bar", "Foo") // alias "bar" -> "Foo"
+
+	m, ok := reg.FindWithAliases("bar")
+	if !ok || m.Name != "Foo" {
+		t.Errorf("alias 'bar' should resolve to 'Foo', got %v (ok=%v)", m, ok)
+	}
+}
