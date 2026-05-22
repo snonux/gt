@@ -27,6 +27,12 @@ func categoriesCompatible(a, b *Metric) bool {
 // Cool absorbs: if either is Cool, result is the other's metric (or Cool if both).
 // Same category: result uses left operand's metric.
 func compatibleMetric(a, b *Metric) *Metric {
+	if a == nil {
+		a = GetCoolMetric()
+	}
+	if b == nil {
+		b = GetCoolMetric()
+	}
 	if a.Category == Universal && b.Category == Universal {
 		return a // Cool
 	}
@@ -53,6 +59,9 @@ func convertToBase(n Number, mode PrefixMode) (float64, error) {
 
 // convertFromBase converts a base-unit value back to the given metric.
 func convertFromBase(baseVal float64, m *Metric, mode PrefixMode) float64 {
+	if m == nil {
+		m = GetCoolMetric()
+	}
 	return baseVal / m.Factor(mode)
 }
 
@@ -139,24 +148,36 @@ func metricError(op string, a, b *Metric) error {
 
 // dataSizeBaseMetric returns the DataSize base unit (bits).
 func dataSizeBaseMetric() *Metric {
-	m, _ := GetMetricRegistry().Find("bits")
+	m, ok := GetMetricRegistry().Find("bits")
+	if !ok {
+		panic("metric registry missing base unit 'bits'")
+	}
 	return m
 }
 
 // dataRateBaseMetric returns the DataRate base unit (bps).
 func dataRateBaseMetric() *Metric {
-	m, _ := GetMetricRegistry().Find("bps")
+	m, ok := GetMetricRegistry().Find("bps")
+	if !ok {
+		panic("metric registry missing base unit 'bps'")
+	}
 	return m
 }
 
 // distanceBaseMetric returns the Distance base unit (meters).
 func distanceBaseMetric() *Metric {
-	m, _ := GetMetricRegistry().Find("m")
+	m, ok := GetMetricRegistry().Find("m")
+	if !ok {
+		panic("metric registry missing base unit 'm'")
+	}
 	return m
 }
 
 // speedBaseMetric returns the Speed base unit (mps).
 func speedBaseMetric() *Metric {
-	m, _ := GetMetricRegistry().Find("mps")
+	m, ok := GetMetricRegistry().Find("mps")
+	if !ok {
+		panic("metric registry missing base unit 'mps'")
+	}
 	return m
 }
