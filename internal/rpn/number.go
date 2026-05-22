@@ -56,7 +56,11 @@ func NewNumber(value float64, mode CalculationMode, metric ...*Metric) Number {
 }
 
 // GetCoolMetric returns the universal default metric.
+// Returns a cached pointer after first call — no lock needed.
 func GetCoolMetric() *Metric {
+	if cachedCoolMetric != nil {
+		return cachedCoolMetric
+	}
 	m, _ := GetMetricRegistry().Find("Cool")
 	return m
 }

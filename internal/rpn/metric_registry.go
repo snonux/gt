@@ -20,12 +20,14 @@ type MetricRegistry struct {
 // Global registry instance.
 var defaultRegistry *MetricRegistry
 var registryOnce sync.Once
+var cachedCoolMetric *Metric // cached Cool metric pointer (set after init)
 
 // GetMetricRegistry returns the global metric registry, initialized with built-in metrics.
 func GetMetricRegistry() *MetricRegistry {
 	registryOnce.Do(func() {
 		defaultRegistry = NewMetricRegistry()
 		registerBuiltInMetrics(defaultRegistry)
+		cachedCoolMetric, _ = defaultRegistry.Find("Cool")
 	})
 	return defaultRegistry
 }
