@@ -639,3 +639,146 @@ func TestCLIBinaryExponentiationStdin(t *testing.T) {
 		})
 	}
 }
+
+// TestCLIMetricConversion tests metric unit conversion end-to-end.
+func TestCLIMetricConversion(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{
+			name:     "1000Mbps to Gbps",
+			args:     []string{"1000Mbps", "@Gbps", "convert"},
+			expected: "1",
+		},
+		{
+			name:     "1hr to min",
+			args:     []string{"1hr", "@min", "convert"},
+			expected: "60",
+		},
+		{
+			name:     "1km to mi",
+			args:     []string{"1km", "@mi", "convert"},
+			expected: "0.621",
+		},
+		{
+			name:     "Cool to GB",
+			args:     []string{"100", "@GB", "convert"},
+			expected: "100",
+		},
+		{
+			name:     "metric show",
+			args:     []string{"100Mbps", "metric", "show"},
+			expected: "Mbps",
+		},
+		{
+			name:     "metric list",
+			args:     []string{"metric", "list"},
+			expected: "DataRate",
+		},
+		{
+			name:     "metric DataRate",
+			args:     []string{"metric", "DataRate"},
+			expected: "bps",
+		},
+		{
+			name:     "metric compatible same category",
+			args:     []string{"100Mbps", "1Gbps", "metric", "compatible"},
+			expected: "true",
+		},
+		{
+			name:     "custom define and list",
+			args:     []string{"custom", "define", "myunit", "42", "Custom"},
+			expected: "defined",
+		},
+		{
+			name:     "metric binary set",
+			args:     []string{"metric", "binary", "set"},
+			expected: "IEC",
+		},
+		{
+			name:     "metric decimal set",
+			args:     []string{"metric", "decimal", "set"},
+			expected: "SI",
+		},
+		{
+			name:     "cross-category multiply Mbps*hr=bits",
+			args:     []string{"100Mbps", "1hr", "*"},
+			expected: "3.6e+11",
+		},
+		{
+			name:     "metric-aware addition same category",
+			args:     []string{"100Mbps", "50Mbps", "+"},
+			expected: "150",
+		},
+		{
+			name:     "hyper add metric-aware",
+			args:     []string{"100Mbps", "50Mbps", "25Mbps", "[+]"},
+			expected: "175",
+		},
+		{
+			name:     "hyper multiply returns Cool",
+			args:     []string{"3", "4", "5", "[*]"},
+			expected: "60",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath, tt.args...)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("command failed: %v\nOutput: %s", err, string(output))
+			}
+
+			outputStr := strings.TrimSpace(string(output))
+			if !strings.Contains(outputStr, tt.expected) {
+				t.Errorf("output should contain '%s', got: %s", tt.expected, outputStr)
+			}
+		})
+	}
+}
+
+// TestCLIMetricErrors tests that metric operations produce proper errors.
+func TestCLIMetricErrors(t *testing.T) {
+	binaryPath := buildBinary(t)
+
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{
+			name: "incompatible categories add",
+			args: []string{"100Mbps", "2hr", "+"},
+		},
+		{
+			name: "incompatible convert",
+			args: []string{"100Mbps", "@hr", "convert"},
+		},
+		{
+			name: "unknown metric",
+			args: []string{"@nope", "convert"},
+		},
+		{
+			name: "hyper add incompatible",
+			args: []string{"100Mbps", "2hr", "[+]"},
+		},
+		{
+			name: "custom undefine built-in",
+			args: []string{"custom", "undefine", "Cool"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(binaryPath, tt.args...)
+			output, err := cmd.CombinedOutput()
+			if err == nil {
+				t.Errorf("command should fail, but succeeded. Output: %s", string(output))
+			}
+		})
+	}
+}
