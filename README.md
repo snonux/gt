@@ -6,6 +6,7 @@ A simple AI-engineered command-line percentage calculator written in Go. No fron
 * GPT OSS 120b
 * Nemotron 3 Super
 * Gemma 4 Dense (31B)
+* Qwen 3.6 model variations
 * My human brain
 
 This is a toy project created to experience with local LLMs and how good they are at their jobs. 
