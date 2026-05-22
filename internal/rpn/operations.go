@@ -165,10 +165,11 @@ type Operator interface {
 
 // Operations provides operator implementations and stack manipulation.
 type Operations struct {
-	vars    VariableStore
-	consts  ConstantsProvider
-	mode    CalculationMode
-	mu      sync.RWMutex
+	vars           VariableStore
+	consts         ConstantsProvider
+	mode           CalculationMode
+	metricRegistry *MetricRegistry
+	mu             sync.RWMutex
 }
 
 // Ensure Operations implements Operator at compile time.
@@ -180,9 +181,10 @@ var _ Operator = (*Operations)(nil)
 func NewOperations(vars VariableStore) *Operations {
 	consts := NewConstants()
 	return &Operations{
-		vars:   vars,
-		consts: consts,
-		mode:   FloatMode, // default
+		vars:           vars,
+		consts:         consts,
+		mode:           FloatMode, // default
+		metricRegistry: GetMetricRegistry(),
 	}
 }
 

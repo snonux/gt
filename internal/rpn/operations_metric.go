@@ -17,6 +17,9 @@ func resolveMetric(n Number) *Metric {
 // categoriesCompatible checks if two metrics are compatible for arithmetic.
 // Cool (Universal) is compatible with anything. Same category is compatible.
 func categoriesCompatible(a, b *Metric) bool {
+	if a == nil || b == nil {
+		return true
+	}
 	if a.Category == Universal || b.Category == Universal {
 		return true
 	}
@@ -74,30 +77,27 @@ func convertFromBase(baseVal float64, m *Metric, mode PrefixMode) float64 {
 //   - Universal × X → X (Cool absorbs)
 //   - Otherwise → Cool (result is unitless product)
 func resultMetricForMul(a, b *Metric) *Metric {
-	if a.Category == Universal {
+	if a == nil || a.Category == Universal {
+		if b == nil {
+			return GetCoolMetric()
+		}
 		return b
 	}
-	if b.Category == Universal {
+	if b == nil || b.Category == Universal {
 		return a
 	}
 
 	// Cross-category inference
 	switch {
 	case a.Category == DataRate && b.Category == Time:
-		// Rate × Time = Size — use base unit of DataSize
-		return dataSizeBaseMetric()
+		return findBaseMetric("bits")
 	case a.Category == Time && b.Category == DataRate:
-		return dataSizeBaseMetric()
+		return findBaseMetric("bits")
 	case a.Category == Speed && b.Category == Time:
-		// Speed × Time = Distance — use base unit of Distance
-		return distanceBaseMetric()
+		return findBaseMetric("m")
 	case a.Category == Time && b.Category == Speed:
-		return distanceBaseMetric()
+		return findBaseMetric("m")
 	default:
-		// Same category or unknown combination → Cool (unitless)
-		if a.Category == b.Category {
-			return GetCoolMetric()
-		}
 		return GetCoolMetric()
 	}
 }
@@ -112,72 +112,50 @@ func resultMetricForMul(a, b *Metric) *Metric {
 //   - X / Universal → X
 //   - Otherwise → Cool
 func resultMetricForDiv(a, b *Metric) *Metric {
-	if a.Category == Universal && b.Category == Universal {
+	if a == nil && b == nil {
+		return GetCoolMetric()
+	}
+	if b == nil || b.Category == Universal {
+		if a == nil {
+			return GetCoolMetric()
+		}
 		return a
 	}
-	if b.Category == Universal {
-		return a
-	}
-	if a.Category == Universal {
+	if a == nil || a.Category == Universal {
 		return b
 	}
 
 	// Cross-category inference
 	switch {
 	case a.Category == DataSize && b.Category == Time:
-		return dataRateBaseMetric()
+		return findBaseMetric("bps")
 	case a.Category == Distance && b.Category == Time:
-		return speedBaseMetric()
-	case a.Category == DataRate && b.Category == Time:
-		// Rate / Time = Size per time² → Cool
-		return GetCoolMetric()
+		return findBaseMetric("mps")
 	default:
-		// Same category ratio → Cool
-		if a.Category == b.Category {
-			return GetCoolMetric()
-		}
 		return GetCoolMetric()
 	}
 }
 
 // metricError returns a descriptive error for incompatible metric operations.
 func metricError(op string, a, b *Metric) error {
+	aName, aCat := "Cool", "Universal"
+	if a != nil {
+		aName, aCat = a.Name, a.Category.String()
+	}
+	bName, bCat := "Cool", "Universal"
+	if b != nil {
+		bName, bCat = b.Name, b.Category.String()
+	}
 	return fmt.Errorf("%s: incompatible metrics %s (%s) and %s (%s)",
-		op, a.Name, a.Category, b.Name, b.Category)
+		op, aName, aCat, bName, bCat)
 }
 
-// dataSizeBaseMetric returns the DataSize base unit (bits).
-func dataSizeBaseMetric() *Metric {
-	m, ok := GetMetricRegistry().Find("bits")
+// findBaseMetric looks up a base metric from the global registry.
+// Panics if not found (indicates misconfiguration).
+func findBaseMetric(name string) *Metric {
+	m, ok := GetMetricRegistry().Find(name)
 	if !ok {
-		panic("metric registry missing base unit 'bits'")
-	}
-	return m
-}
-
-// dataRateBaseMetric returns the DataRate base unit (bps).
-func dataRateBaseMetric() *Metric {
-	m, ok := GetMetricRegistry().Find("bps")
-	if !ok {
-		panic("metric registry missing base unit 'bps'")
-	}
-	return m
-}
-
-// distanceBaseMetric returns the Distance base unit (meters).
-func distanceBaseMetric() *Metric {
-	m, ok := GetMetricRegistry().Find("m")
-	if !ok {
-		panic("metric registry missing base unit 'm'")
-	}
-	return m
-}
-
-// speedBaseMetric returns the Speed base unit (mps).
-func speedBaseMetric() *Metric {
-	m, ok := GetMetricRegistry().Find("mps")
-	if !ok {
-		panic("metric registry missing base unit 'mps'")
+		panic(fmt.Sprintf("metric registry missing base unit %q", name))
 	}
 	return m
 }
