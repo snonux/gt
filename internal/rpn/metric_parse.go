@@ -57,6 +57,17 @@ func parseNumberWithMetric(token string) (float64, *Metric, bool) {
 	numStr := token[:i]
 	metricName := token[i:]
 
+	// Early pre-check: skip unlikely metric suffixes to avoid
+	// unnecessary registry lookups for tokens like "10x", "42abc".
+	// All built-in metric names are >= 2 chars, except for three
+	// single-char metrics: s (seconds), m (meters), g (grams).
+	// Require suffix length >= 2, or be one of those known singles.
+	if len(metricName) < 2 {
+		if metricName != "s" && metricName != "m" && metricName != "g" {
+			return 0, nil, false
+		}
+	}
+
 	num, err := strconv.ParseFloat(numStr, 64)
 	if err != nil {
 		return 0, nil, false
