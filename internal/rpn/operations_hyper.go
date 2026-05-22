@@ -11,317 +11,316 @@ import (
 // Hyper operators - operate on all values on the stack
 
 // HyperAdd pops all values from stack, adds them left-associative (with boolean-to-number coercion), and pushes result.
+// Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
+// computation, and pushes the result with the first operand's metric.
 func (o *Operations) HyperAdd(stack *Stack) error {
-	values, err := popAll(stack, "hyperadd")
+	values, err := popAll(stack, "[+]")
 	if err != nil {
 		return err
 	}
 
-	// Process left-associative with Number interface
-	sum := 0.0
-	for i := 0; i < len(values); i++ {
-		val, err := values[i].Float64()
-		if err != nil {
-			return buildError("hyperadd", fmt.Errorf("failed to get float64 value: %w", err))
-		}
-		sum += val
+	// Resolve metrics for all values
+	metrics := make([]*Metric, len(values))
+	for i, v := range values {
+		metrics[i] = resolveMetric(o.metricRegistry, v)
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(sum, mode))
+
+	// Validate all are compatible (all same category, or Cool absorbs)
+	if err := validateSameCategory(metrics, "[+]"); err != nil {
+		return err
+	}
+
+	// Convert all to base units, sum, convert back
+	pm := o.GetPrefixMode()
+	var sum float64
+	for i, v := range values {
+		base, err := convertToBase(o.metricRegistry, v, pm)
+		if err != nil {
+			return buildError("[+]", fmt.Errorf("operand %d: %w", i, err))
+		}
+		sum += base
+	}
+
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+	resultVal := convertFromBase(o.metricRegistry, sum, resultMetric, pm)
+
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
 // HyperMultiply pops all values from stack, multiplies them left-associative, and pushes result.
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperMultiply(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hypermultiply: need at least 2 values")
-	}
-
-	product := 1.0
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hypermultiply: %w", err)
-		}
-		floatVal, err := val.Float64()
-		if err != nil {
-			return fmt.Errorf("hypermultiply: failed to get float64 value: %w", err)
-		}
-		product *= floatVal
-	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(product, mode))
-	return nil
-}
-
-// HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
-func (o *Operations) HyperSubtract(stack *Stack) error {
-	values, err := popAll(stack, "hypersubtract")
+	values, err := popAll(stack, "[*]")
 	if err != nil {
 		return err
 	}
 
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
-	if err != nil {
-		return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
-	}
-	result := firstVal
-	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+	var product float64 = 1
+	for i, v := range values {
+		val, err := v.Float64()
 		if err != nil {
-			return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
+			return buildError("[*]", fmt.Errorf("operand %d: %w", i, err))
 		}
-		result -= val
+		if i == 0 {
+			product = val
+		} else {
+			product *= val
+		}
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(product, o.GetMode(), cool))
+	return nil
+}
+
+// HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
+// Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
+// computation, and pushes the result with the first operand's metric.
+func (o *Operations) HyperSubtract(stack *Stack) error {
+	values, err := popAll(stack, "[-]")
+	if err != nil {
+		return err
+	}
+
+	// Resolve metrics for all values
+	metrics := make([]*Metric, len(values))
+	for i, v := range values {
+		metrics[i] = resolveMetric(o.metricRegistry, v)
+	}
+
+	// Validate all are compatible (all same category, or Cool absorbs)
+	if err := validateSameCategory(metrics, "[-]"); err != nil {
+		return err
+	}
+
+	// Convert all to base units, subtract, convert back
+	pm := o.GetPrefixMode()
+	firstBase, err := convertToBase(o.metricRegistry, values[0], pm)
+	if err != nil {
+		return buildError("[-]", fmt.Errorf("operand 0: %w", err))
+	}
+	result := firstBase
+	for i := 1; i < len(values); i++ {
+		base, err := convertToBase(o.metricRegistry, values[i], pm)
+		if err != nil {
+			return buildError("[-]", fmt.Errorf("operand %d: %w", i, err))
+		}
+		result -= base
+	}
+
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
 // HyperDivide pops all values from stack, divides them left-associative, and pushes result.
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperDivide(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperdivide: need at least 2 values")
+	values, err := popAll(stack, "[/]")
+	if err != nil {
+		return err
 	}
 
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperdivide: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Process left-associative with Number interface
 	firstVal, err := values[0].Float64()
 	if err != nil {
-		return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+		return buildError("[/]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+			return buildError("[/]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		if val == 0 {
-			return fmt.Errorf("division by zero")
+			return buildError("[/]", fmt.Errorf("division by zero at operand %d", i))
 		}
 		result /= val
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
 
 // HyperPower pops all values from stack, raises to power left-associative, and pushes result.
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperPower(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperpower: need at least 2 values")
+	values, err := popAll(stack, "[^]")
+	if err != nil {
+		return err
 	}
 
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperpower: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Process left-associative with Number interface
 	firstVal, err := values[0].Float64()
 	if err != nil {
-		return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+		return buildError("[^]", fmt.Errorf("operand 0: %w", err))
 	}
 	result := firstVal
 	for i := 1; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+			return buildError("[^]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		result = math.Pow(result, val)
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
 
 // HyperModulo pops all values from stack, computes modulo left-associative, and pushes result.
+// Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
+// computation, and pushes the result with the first operand's metric.
 func (o *Operations) HyperModulo(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hypermodulo: need at least 2 values")
-	}
-
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hypermodulo: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Process left-associative with Number interface
-	firstVal, err := values[0].Float64()
+	values, err := popAll(stack, "[%]")
 	if err != nil {
-		return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+		return err
 	}
-	result := firstVal
+
+	// Resolve metrics for all values
+	metrics := make([]*Metric, len(values))
+	for i, v := range values {
+		metrics[i] = resolveMetric(o.metricRegistry, v)
+	}
+
+	// Validate all are compatible (all same category, or Cool absorbs)
+	if err := validateSameCategory(metrics, "[%]"); err != nil {
+		return err
+	}
+
+	// Convert all to base units, compute modulo, convert back
+	pm := o.GetPrefixMode()
+	firstBase, err := convertToBase(o.metricRegistry, values[0], pm)
+	if err != nil {
+		return buildError("[%]", fmt.Errorf("operand 0: %w", err))
+	}
+	result := firstBase
 	for i := 1; i < len(values); i++ {
-		val, err := values[i].Float64()
+		base, err := convertToBase(o.metricRegistry, values[i], pm)
 		if err != nil {
-			return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+			return buildError("[%]", fmt.Errorf("operand %d: %w", i, err))
 		}
-		if val == 0 {
-			return fmt.Errorf("modulo by zero")
+		if base == 0 {
+			return buildError("[%]", fmt.Errorf("modulo by zero at operand %d", i))
 		}
-		result = math.Mod(result, val)
+		result = math.Mod(result, base)
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+
+	// Result metric: first non-Cool metric (Cool absorbs), or Cool
+	resultMetric := resultMetricForHyperAdd(metrics)
+	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+
+	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
 // HyperLog2 pops all values from stack, computes sum of log2 for all values, and pushes result.
-// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperLog2(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperlog2: need at least 2 values")
+	values, err := popAll(stack, "[lg]")
+	if err != nil {
+		return err
 	}
 
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperlog2: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Sum the log2 of all values using Float64() for value conversion:
-	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperlog2: failed to get float64 value: %w", err)
+			return buildError("[lg]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		if val <= 0 {
-			return fmt.Errorf("hyperlog2 undefined for non-positive numbers")
+			return buildError("[lg]", fmt.Errorf("log2 undefined for non-positive numbers"))
 		}
 		result += math.Log2(val)
 	}
 
-	// Push the result as a Number
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
 
 // HyperLog10 pops all values from stack, computes sum of log10 for all values, and pushes result.
-// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperLog10(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperlog10: need at least 2 values")
+	values, err := popAll(stack, "[log]")
+	if err != nil {
+		return err
 	}
 
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperlog10: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Sum the log10 of all values using Float64() for value conversion:
-	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperlog10: failed to get float64 value: %w", err)
+			return buildError("[log]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		if val <= 0 {
-			return fmt.Errorf("hyperlog10 undefined for non-positive numbers")
+			return buildError("[log]", fmt.Errorf("log10 undefined for non-positive numbers"))
 		}
 		result += math.Log10(val)
 	}
 
-	// Push the result as a Number
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
 
 // HyperLn pops all values from stack, computes sum of natural log for all values, and pushes result.
-// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+// No metric validation; uses raw float64 values. Result is always Cool (unitless).
 func (o *Operations) HyperLn(stack *Stack) error {
-	if stack.Len() < 2 {
-		return fmt.Errorf("insufficient operands for hyperln: need at least 2 values")
+	values, err := popAll(stack, "[ln]")
+	if err != nil {
+		return err
 	}
 
-	// Pop all values into a slice (in reverse order - top first)
-	var values []Number
-	for stack.Len() > 0 {
-		val, err := stack.Pop()
-		if err != nil {
-			return fmt.Errorf("hyperln: %w", err)
-		}
-		values = append(values, val)
-	}
-
-	// Reverse to get left-to-right order (first pushed = first in)
-	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
-	}
-
-	// Sum the natural log of all values using Float64() for value conversion:
-	// - true → 1, false → 0
 	var result float64 = 0
 	for i := 0; i < len(values); i++ {
 		val, err := values[i].Float64()
 		if err != nil {
-			return fmt.Errorf("hyperln: failed to get float64 value: %w", err)
+			return buildError("[ln]", fmt.Errorf("operand %d: %w", i, err))
 		}
 		if val <= 0 {
-			return fmt.Errorf("hyperln undefined for non-positive numbers")
+			return buildError("[ln]", fmt.Errorf("ln undefined for non-positive numbers"))
 		}
 		result += math.Log(val)
 	}
-	mode := o.GetMode()
-	stack.Push(NewNumber(result, mode))
+
+	cool := coolMetric(o.metricRegistry)
+	stack.Push(NewNumber(result, o.GetMode(), cool))
+	return nil
+}
+
+// resultMetricForHyperAdd finds the appropriate result metric for add/subtract/modulo hyper operations.
+// When Cool absorbs a non-Cool category, use the first non-Cool metric.
+// When all are Cool, use Cool.
+func resultMetricForHyperAdd(metrics []*Metric) *Metric {
+	for _, m := range metrics {
+		if m != nil && m.Category != Universal {
+			return m
+		}
+	}
+	return metrics[0]
+}
+
+// validateSameCategory checks that all metrics belong to the same category.
+// Cool (Universal) absorbs — it is compatible with any single non-Universal category.
+// Returns an error if metrics span multiple non-Universal categories.
+func validateSameCategory(metrics []*Metric, opName string) error {
+	var dominantCat Category = Universal
+	for _, m := range metrics {
+		if m == nil || m.Category == Universal {
+			continue
+		}
+		if dominantCat == Universal {
+			dominantCat = m.Category
+		} else if m.Category != dominantCat {
+			return fmt.Errorf("%s: incompatible metrics: mixed %s and %s categories",
+				opName, dominantCat, m.Category)
+		}
+	}
 	return nil
 }
