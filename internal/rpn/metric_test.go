@@ -5,6 +5,7 @@ package rpn
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -841,5 +842,60 @@ func TestAtPrefixIntegration(t *testing.T) {
 	m := stack[0].Metric()
 	if m == nil || m.Name != "GB" {
 		t.Errorf("stack[0].Metric() = %v, want GB", m)
+	}
+}
+
+func TestMetricAwareArithmetic(t *testing.T) {
+	reg := GetMetricRegistry()
+	tolerance := 0.001
+
+	tests := []struct {
+		expr    string
+		wantNum float64
+		wantMet string
+		wantErr bool
+	}{
+		{"100Mbps 50Mbps +", 150, "Mbps", false},
+		{"1 100hr +", 100, "hr", false},
+		{"3 4 +", 7, "Cool", false},
+		{"100Mbps 1hr *", 360000000000, "bits", false},
+		{"1000000000bits 1s /", 1000000000, "bps", false},
+		{"100kmh 1hr *", 100000, "m", false},
+		{"1km 1s /", 1000, "mps", false},
+		{"1Gbps 1000Mbps /", 1, "Cool", false},
+		{"100Mbps 2 ^", 10000, "Cool", false},
+		{"100Mbps 1hr +", 0, "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expr, func(t *testing.T) {
+			vars := NewVariables()
+			rpn := NewRPN(vars)
+			result, err := rpn.ParseAndEvaluate(tt.expr)
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected error, got %q", result)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			resultVal, err := strconv.ParseFloat(result, 64)
+			if err != nil {
+				t.Fatalf("failed to parse result %q: %v", result, err)
+			}
+			if resultVal < tt.wantNum-tolerance || resultVal > tt.wantNum+tolerance {
+				t.Errorf("result = %g, want %g (tolerance %g)", resultVal, tt.wantNum, tolerance)
+			}
+			stack := rpn.GetCurrentStack()
+			if len(stack) > 0 {
+				m := stack[0].Metric()
+				expected, _ := reg.Find(tt.wantMet)
+				if m != expected {
+					t.Errorf("metric = %v, want %v", m, expected)
+				}
+			}
+		})
 	}
 }

@@ -347,12 +347,24 @@ func (o *Operations) Add(stack *Stack) error {
 		return err
 	}
 
-	// Use the Number interface for arithmetic
-	result, err := a.Add(b)
+	aM, bM := resolveMetric(a), resolveMetric(b)
+	if !categoriesCompatible(aM, bM) {
+		return metricError("+", aM, bM)
+	}
+
+	// Convert both to base units, add, convert back to result metric
+	aBase, err := convertToBase(a, SI)
 	if err != nil {
 		return buildError("addition", err)
 	}
-	stack.Push(result)
+	bBase, err := convertToBase(b, SI)
+	if err != nil {
+		return buildError("addition", err)
+	}
+	resultMetric := compatibleMetric(aM, bM)
+	resultVal := convertFromBase(aBase+bBase, resultMetric, SI)
+
+	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
 	return nil
 }
 
@@ -363,11 +375,23 @@ func (o *Operations) Subtract(stack *Stack) error {
 		return err
 	}
 
-	result, err := a.Sub(b)
+	aM, bM := resolveMetric(a), resolveMetric(b)
+	if !categoriesCompatible(aM, bM) {
+		return metricError("-", aM, bM)
+	}
+
+	aBase, err := convertToBase(a, SI)
 	if err != nil {
 		return buildError("subtraction", err)
 	}
-	stack.Push(result)
+	bBase, err := convertToBase(b, SI)
+	if err != nil {
+		return buildError("subtraction", err)
+	}
+	resultMetric := compatibleMetric(aM, bM)
+	resultVal := convertFromBase(aBase-bBase, resultMetric, SI)
+
+	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
 	return nil
 }
 
@@ -378,11 +402,21 @@ func (o *Operations) Multiply(stack *Stack) error {
 		return err
 	}
 
-	result, err := a.Mul(b)
+	aM, bM := resolveMetric(a), resolveMetric(b)
+
+	// Convert both to base units, multiply, convert back to result metric
+	aBase, err := convertToBase(a, SI)
 	if err != nil {
 		return buildError("multiplication", err)
 	}
-	stack.Push(result)
+	bBase, err := convertToBase(b, SI)
+	if err != nil {
+		return buildError("multiplication", err)
+	}
+	resultMetric := resultMetricForMul(aM, bM)
+	resultVal := convertFromBase(aBase*bBase, resultMetric, SI)
+
+	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
 	return nil
 }
 
@@ -402,26 +436,41 @@ func (o *Operations) Divide(stack *Stack) error {
 		return err
 	}
 
-	result, err := a.Div(b)
+	aM, bM := resolveMetric(a), resolveMetric(b)
+
+	aBase, err := convertToBase(a, SI)
 	if err != nil {
 		return buildError("division", err)
 	}
-	stack.Push(result)
+	bBase, err := convertToBase(b, SI)
+	if err != nil {
+		return buildError("division", err)
+	}
+	resultMetric := resultMetricForDiv(aM, bM)
+	resultVal := convertFromBase(aBase/bBase, resultMetric, SI)
+
+	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
 	return nil
 }
 
 // Power pops two values from stack, raises first to power of second (a ^ b), and pushes result.
+// Result is unitless (Cool metric).
 func (o *Operations) Power(stack *Stack) error {
 	a, b, err := popTwo(stack, "^")
 	if err != nil {
 		return err
 	}
 
-	result, err := a.Pow(b)
+	aF, err := a.Float64()
 	if err != nil {
 		return buildError("power", err)
 	}
-	stack.Push(result)
+	bF, err := b.Float64()
+	if err != nil {
+		return buildError("power", err)
+	}
+
+	stack.Push(NewNumber(math.Pow(aF, bF), o.mode, GetCoolMetric()))
 	return nil
 }
 
@@ -432,7 +481,6 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return err
 	}
 
-	// Check if operands are symbols (not supported for arithmetic)
 	if sym, ok := a.(*Symbol); ok {
 		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
 	}
@@ -444,11 +492,23 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
-	result, err := a.Mod(b)
-	if err != nil {
-		return buildError("%", err)
+	aM, bM := resolveMetric(a), resolveMetric(b)
+	if !categoriesCompatible(aM, bM) {
+		return metricError("%", aM, bM)
 	}
-	stack.Push(result)
+
+	aBase, err := convertToBase(a, SI)
+	if err != nil {
+		return buildError("modulo", err)
+	}
+	bBase, err := convertToBase(b, SI)
+	if err != nil {
+		return buildError("modulo", err)
+	}
+	resultMetric := compatibleMetric(aM, bM)
+	resultVal := convertFromBase(math.Mod(aBase, bBase), resultMetric, SI)
+
+	stack.Push(NewNumber(resultVal, o.mode, resultMetric))
 	return nil
 }
 
@@ -465,7 +525,6 @@ func (o *Operations) FastPower(stack *Stack) error {
 		return err
 	}
 
-	// Get the integer exponent from b
 	bVal, err := b.Float64()
 	if err != nil {
 		return buildError("**", fmt.Errorf("exponent must be a number: %w", err))
@@ -476,11 +535,18 @@ func (o *Operations) FastPower(stack *Stack) error {
 		return buildError("**", fmt.Errorf("exponent must be an integer, got %v", bVal))
 	}
 
-	result, err := a.PowInt(exp)
+	aF, err := a.Float64()
 	if err != nil {
 		return buildError("**", err)
 	}
-	stack.Push(result)
+
+	// Result is unitless (Cool metric)
+	if exp == 0 {
+		stack.Push(NewNumber(1, o.mode, GetCoolMetric()))
+		return nil
+	}
+	resultVal := binaryExponentiationFloat(aF, exp)
+	stack.Push(NewNumber(resultVal, o.mode, GetCoolMetric()))
 	return nil
 }
 
