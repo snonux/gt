@@ -158,6 +158,8 @@ type Operator interface {
 	SetMode(CalculationMode)
 	// SetPrefixMode sets the prefix mode for data size calculations
 	SetPrefixMode(PrefixMode)
+	// GetPrefixMode returns the current prefix mode
+	GetPrefixMode() PrefixMode
 	// Metric command handlers
 	MetricShow(stack *Stack) (string, error)
 	MetricList(stack *Stack) (string, error)

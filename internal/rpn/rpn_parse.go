@@ -367,17 +367,12 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 				return result, nil
 			case "binary":
 				if i+2 < len(tokens) && tokens[i+2] == "set" {
-					// Lock order: r.mu → o.mu (same as RPN.SetPrefixMode)
-					// No deadlock risk: both paths acquire in the same direction.
-					// r.mu is held by evaluate(); o.mu is a separate mutex on Operations.
-					r.prefixMode = IEC
 					r.ops.SetPrefixMode(IEC)
 					return "prefix mode: IEC", nil
 				}
 				return "", fmt.Errorf("rpn: metric binary: use 'metric binary set'")
 			case "decimal":
 				if i+2 < len(tokens) && tokens[i+2] == "set" {
-					r.prefixMode = SI
 					r.ops.SetPrefixMode(SI)
 					return "prefix mode: SI", nil
 				}
