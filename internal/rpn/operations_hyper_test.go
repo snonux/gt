@@ -9,461 +9,200 @@ import (
 	"testing"
 )
 
-func TestHyperAddMetricAware(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// Same category: [100Mbps 50Mbps 25Mbps [+] ] = 175Mbps
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("100Mbps 50Mbps 25Mbps [+]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 175-tolerance || resultVal > 175+tolerance {
-		t.Errorf("result = %g, want 175", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	mbps, _ := reg.Find("Mbps")
-	if m != mbps {
-		t.Errorf("metric = %v, want Mbps", m)
-	}
-}
-
-func TestHyperAddCoolAbsorbing(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// 5 (Cool) 100Mbps 10Mbps [+] = 115Mbps
-	// With Cool absorption, 5 is treated as 5 Mbps
-	// 5 + 100 + 10 = 115 Mbps
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("5 100Mbps 10Mbps [+]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 115-tolerance || resultVal > 115+tolerance {
-		t.Errorf("result = %g, want 115", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	mbps, _ := reg.Find("Mbps")
-	if m != mbps {
-		t.Errorf("metric = %v, want Mbps", m)
-	}
-}
-
-func TestHyperAddIncompatible(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("100Mbps 2hr [+]")
-	if err == nil {
-		t.Error("expected error for incompatible categories")
-	}
-}
-
-func TestHyperAddMixedUnitsSameCategory(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// 1km 500m 100m [+] = 1600m converted back to km = 1.6km
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("1km 500m 100m [+]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 1.6-tolerance || resultVal > 1.6+tolerance {
-		t.Errorf("result = %g, want 1.6", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	km, _ := reg.Find("km")
-	if m != km {
-		t.Errorf("metric = %v, want km", m)
-	}
-}
-
-func TestHyperMultiplyMetricResultIsCool(t *testing.T) {
+// TestHyperMetricAwareOperations tests [+-%] ops that preserve metric categories.
+func TestHyperMetricAwareOperations(t *testing.T) {
 	reg := GetMetricRegistry()
 
-	// 3 4 5 [*] = 60 with Cool metric
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("3 4 5 [*]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name     string
+		expr     string
+		wantNum  float64
+		wantMet  string // empty skips metric check
+		tol      float64
+		wantErr  bool
+	}{
+		// Addition
+		{
+			name: "add same category", expr: "100Mbps 50Mbps 25Mbps [+]",
+			wantNum: 175, wantMet: "Mbps", tol: 0.001,
+		},
+		{
+			name: "add mixed units", expr: "1km 500m 100m [+]",
+			wantNum: 1.6, wantMet: "km", tol: 0.001,
+		},
+		{
+			name: "add cool absorbing", expr: "5 100Mbps 10Mbps [+]",
+			wantNum: 115, wantMet: "Mbps", tol: 0.001,
+		},
+		{
+			name: "add all cool", expr: "1 2 3 [+]",
+			wantNum: 6, wantMet: "Cool", tol: 0.001,
+		},
+		{
+			name: "add incompatible", expr: "100Mbps 2hr [+]",
+			wantErr: true,
+		},
+		// Subtraction
+		{
+			name: "sub same category", expr: "1000Mbps 100Mbps 50Mbps [-]",
+			wantNum: 850, wantMet: "Mbps", tol: 0.001,
+		},
+		{
+			name: "sub mixed units", expr: "2km 500m 100m [-]",
+			wantNum: 1.4, wantMet: "km", tol: 0.001,
+		},
+		{
+			name: "sub cool absorbing", expr: "100km 5 [-]",
+			wantNum: 95, wantMet: "km", tol: 1,
+		},
+		{
+			name: "sub negative", expr: "1km 2km [-]",
+			wantNum: -1, wantMet: "km", tol: 0.1,
+		},
+		{
+			name: "sub incompatible", expr: "100km 2hr [-]",
+			wantErr: true,
+		},
+		// Modulo
+		{
+			name: "mod same category", expr: "10km 3km 2km [%]",
+			wantNum: 1, wantMet: "km", tol: 0.001,
+		},
+		{
+			name: "mod mixed units", expr: "1000m 300m 200m [%]",
+			wantNum: 100, tol: 0.001,
+		},
+		{
+			name: "mod incompatible", expr: "100km 2hr [%]",
+			wantErr: true,
+		},
 	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal != 60 {
-		t.Errorf("result = %g, want 60", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			vars := NewVariables()
+			rpn := NewRPN(vars)
+			result, err := rpn.ParseAndEvaluate(tc.expr)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			got, _ := strconv.ParseFloat(result, 64)
+			tol := tc.tol
+			if tol == 0 {
+				tol = 0.001
+			}
+			if got < tc.wantNum-tol || got > tc.wantNum+tol {
+				t.Errorf("result = %g, want %g (tol %g)", got, tc.wantNum, tol)
+			}
+
+			if tc.wantMet != "" {
+				stack := rpn.GetCurrentStack()
+				m := stack[len(stack)-1].Metric()
+				want, _ := reg.Find(tc.wantMet)
+				if m != want {
+					t.Errorf("metric = %v, want %s", m, tc.wantMet)
+				}
+			}
+		})
 	}
 }
 
-func TestHyperMultiplyMixedMetricsIsCool(t *testing.T) {
+// TestHyperCoolResultOperations tests [*][/][^][lg][log][ln] ops that always
+// produce a Cool metric result.
+func TestHyperCoolResultOperations(t *testing.T) {
 	reg := GetMetricRegistry()
 
-	// 100Mbps 2hr [*] = 200 (raw product, Cool metric)
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("100Mbps 2hr [*]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tests := []struct {
+		name    string
+		expr    string
+		wantNum float64
+		tol     float64
+	}{
+		{
+			name: "multiply basic", expr: "3 4 5 [*]",
+			wantNum: 60, tol: 0.001,
+		},
+		{
+			name: "multiply mixed metrics", expr: "100Mbps 2hr [*]",
+			wantNum: 200, tol: 0.001,
+		},
+		{
+			name: "divide basic", expr: "100 20 2 [/]",
+			wantNum: 2.5, tol: 0.001,
+		},
+		{
+			name: "power basic", expr: "2 3 2 [^]",
+			wantNum: 64, tol: 0.001,
+		},
+		{
+			name: "log2 basic", expr: "2 4 8 [lg]",
+			wantNum: 6, tol: 0.001,
+		},
+		{
+			name: "log10 basic", expr: "10 100 [log]",
+			wantNum: 3, tol: 0.001,
+		},
+		{
+			name: "ln basic", expr: "2.718281828459045 7.38905609893065 [ln]",
+			wantNum: 3, tol: 0.001,
+		},
+		{
+			name:    "log2 with metrics", expr: "100Mbps 1000Mbps [lg]",
+			wantNum: math.Log2(100) + math.Log2(1000), tol: 0.01,
+		},
 	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal != 200 {
-		t.Errorf("result = %g, want 200", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			vars := NewVariables()
+			rpn := NewRPN(vars)
+			result, err := rpn.ParseAndEvaluate(tc.expr)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			got, _ := strconv.ParseFloat(result, 64)
+			if got < tc.wantNum-tc.tol || got > tc.wantNum+tc.tol {
+				t.Errorf("result = %g, want %g (tol %g)", got, tc.wantNum, tc.tol)
+			}
+
+			// All results must be Cool
+			stack := rpn.GetCurrentStack()
+			m := stack[len(stack)-1].Metric()
+			cool, _ := reg.Find("Cool")
+			if m != cool {
+				t.Errorf("metric = %v, want Cool", m)
+			}
+		})
 	}
 }
 
-func TestHyperSubtractMetricAware(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
+// TestHyperErrorCases covers expressions that must fail evaluation.
+func TestHyperErrorCases(t *testing.T) {
+	tests := []struct {
+		name string
+		expr string
+	}{
+		{"modulo by zero", "10km 0km [%]"},
+		{"divide by zero", "10 0 [/]"},
+		{"log2 non-positive", "0 5 [lg]"},
+	}
 
-	// 1000Mbps 100Mbps 50Mbps [-] = 850Mbps
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("1000Mbps 100Mbps 50Mbps [-]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 850-tolerance || resultVal > 850+tolerance {
-		t.Errorf("result = %g, want 850", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	mbps, _ := reg.Find("Mbps")
-	if m != mbps {
-		t.Errorf("metric = %v, want Mbps", m)
-	}
-}
-
-func TestHyperSubtractMixedUnits(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// 2km 500m 100m [-] = (2000 - 500 - 100)m = 1400m = 1.4km
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("2km 500m 100m [-]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 1.4-tolerance || resultVal > 1.4+tolerance {
-		t.Errorf("result = %g, want 1.4", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	km, _ := reg.Find("km")
-	if m != km {
-		t.Errorf("metric = %v, want km", m)
-	}
-}
-
-func TestHyperSubtractCoolAbsorbing(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// 100km 5 [-] = 100km - 5km = 95km
-	// With Cool absorption, 5 is treated as 5 in km's space
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("100km 5 [-]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 94 || resultVal > 96 {
-		t.Errorf("result = %g, want 95", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	km, _ := reg.Find("km")
-	if m != km {
-		t.Errorf("metric = %v, want km", m)
-	}
-}
-
-func TestHyperSubtractNegativeResult(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// 1km 2km [-] = -1km
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("1km 2km [-]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < -1.1 || resultVal > -0.9 {
-		t.Errorf("result = %g, want -1", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	km, _ := reg.Find("km")
-	if m != km {
-		t.Errorf("metric = %v, want km", m)
-	}
-}
-
-func TestHyperSubtractIncompatible(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("100km 2hr [-]")
-	if err == nil {
-		t.Error("expected error for incompatible categories")
-	}
-}
-
-func TestHyperDivideResultIsCool(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// 100 20 2 [/] = (100 / 20) / 2 = 2.5 with Cool metric
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("100 20 2 [/]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal != 2.5 {
-		t.Errorf("result = %g, want 2.5", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperPowerResultIsCool(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// 2 3 2 [^] = (2^3)^2 = 64 with Cool metric
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("2 3 2 [^]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal != 64 {
-		t.Errorf("result = %g, want 64", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperModuloMetricAware(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// 10km 3km 2km [%] = ((10 % 3) % 2)km = (1 % 2)km = 1km
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("10km 3km 2km [%]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 1-tolerance || resultVal > 1+tolerance {
-		t.Errorf("result = %g, want 1", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	km, _ := reg.Find("km")
-	if m != km {
-		t.Errorf("metric = %v, want km", m)
-	}
-}
-
-func TestHyperModuloMixedUnits(t *testing.T) {
-	// 1000m 300m 200m [%] = ((1000 % 300) % 200)m = (100 % 200)m = 100m = 0.1km
-	// Result uses first operand's metric (m)
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("1000m 300m 200m [%]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	tolerance := 0.001
-	if resultVal < 100-tolerance || resultVal > 100+tolerance {
-		t.Errorf("result = %g, want 100", resultVal)
-	}
-}
-
-func TestHyperModuloIncompatible(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("100km 2hr [%]")
-	if err == nil {
-		t.Error("expected error for incompatible categories")
-	}
-}
-
-func TestHyperLog2CoolResult(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// [lg] on all values → sum of log2: log2(2) + log2(4) + log2(8) = 1 + 2 + 3 = 6 → Cool
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("2 4 8 [lg]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 6-tolerance || resultVal > 6+tolerance {
-		t.Errorf("result = %g, want 6", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperLog10CoolResult(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// [log] on all values → sum of log10: log10(10) + log10(100) = 1 + 2 = 3 → Cool
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("10 100 [log]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 3-tolerance || resultVal > 3+tolerance {
-		t.Errorf("result = %g, want 3", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperLnCoolResult(t *testing.T) {
-	reg := GetMetricRegistry()
-	tolerance := 0.001
-
-	// [ln] on all values → sum of ln: ln(e) + ln(e*e) = 1 + 2 = 3 → Cool
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("2.718281828459045 7.38905609893065 [ln]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal < 3-tolerance || resultVal > 3+tolerance {
-		t.Errorf("result = %g, want 3", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperLogWithMetrics(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// [lg] with metrics still uses raw values and returns Cool
-	// log2(100) + log2(1000) ≈ 6.64 + 9.97 ≈ 16.61
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("100Mbps 1000Mbps [lg]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	expected := math.Log2(100) + math.Log2(1000)
-	tolerance := 0.01
-	if resultVal < expected-tolerance || resultVal > expected+tolerance {
-		t.Errorf("result = %g, want ~%g", resultVal, expected)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperAddAllCool(t *testing.T) {
-	reg := GetMetricRegistry()
-
-	// 1 2 3 [+] with no metrics = 6 Cool
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	result, err := rpn.ParseAndEvaluate("1 2 3 [+]")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	resultVal, _ := strconv.ParseFloat(result, 64)
-	if resultVal != 6 {
-		t.Errorf("result = %g, want 6", resultVal)
-	}
-	stack := rpn.GetCurrentStack()
-	m := stack[len(stack)-1].Metric()
-	cool, _ := reg.Find("Cool")
-	if m != cool {
-		t.Errorf("metric = %v, want Cool", m)
-	}
-}
-
-func TestHyperModuloByZero(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("10km 0km [%]")
-	if err == nil {
-		t.Error("expected error for modulo by zero")
-	}
-}
-
-func TestHyperDivideByZero(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("10 0 [/]")
-	if err == nil {
-		t.Error("expected error for division by zero")
-	}
-}
-
-func TestHyperLogNonPositive(t *testing.T) {
-	vars := NewVariables()
-	rpn := NewRPN(vars)
-	_, err := rpn.ParseAndEvaluate("0 5 [lg]")
-	if err == nil {
-		t.Error("expected error for log2 of non-positive number")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			vars := NewVariables()
+			rpn := NewRPN(vars)
+			_, err := rpn.ParseAndEvaluate(tc.expr)
+			if err == nil {
+				t.Fatal("expected error, got none")
+			}
+		})
 	}
 }
