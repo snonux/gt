@@ -1,0 +1,327 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Paul Buetow
+
+package rpn
+
+import (
+	"fmt"
+	"math"
+)
+
+// Hyper operators - operate on all values on the stack
+
+// HyperAdd pops all values from stack, adds them left-associative (with boolean-to-number coercion), and pushes result.
+func (o *Operations) HyperAdd(stack *Stack) error {
+	values, err := popAll(stack, "hyperadd")
+	if err != nil {
+		return err
+	}
+
+	// Process left-associative with Number interface
+	sum := 0.0
+	for i := 0; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return buildError("hyperadd", fmt.Errorf("failed to get float64 value: %w", err))
+		}
+		sum += val
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(sum, mode))
+	return nil
+}
+
+// HyperMultiply pops all values from stack, multiplies them left-associative, and pushes result.
+func (o *Operations) HyperMultiply(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hypermultiply: need at least 2 values")
+	}
+
+	product := 1.0
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hypermultiply: %w", err)
+		}
+		floatVal, err := val.Float64()
+		if err != nil {
+			return fmt.Errorf("hypermultiply: failed to get float64 value: %w", err)
+		}
+		product *= floatVal
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(product, mode))
+	return nil
+}
+
+// HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
+func (o *Operations) HyperSubtract(stack *Stack) error {
+	values, err := popAll(stack, "hypersubtract")
+	if err != nil {
+		return err
+	}
+
+	// Process left-associative with Number interface
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
+	}
+	result := firstVal
+	for i := 1; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return buildError("hypersubtract", fmt.Errorf("failed to get float64 value: %w", err))
+		}
+		result -= val
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperDivide pops all values from stack, divides them left-associative, and pushes result.
+func (o *Operations) HyperDivide(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperdivide: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperdivide: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative with Number interface
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+	}
+	result := firstVal
+	for i := 1; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperdivide: failed to get float64 value: %w", err)
+		}
+		if val == 0 {
+			return fmt.Errorf("division by zero")
+		}
+		result /= val
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperPower pops all values from stack, raises to power left-associative, and pushes result.
+func (o *Operations) HyperPower(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperpower: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperpower: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative with Number interface
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+	}
+	result := firstVal
+	for i := 1; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperpower: failed to get float64 value: %w", err)
+		}
+		result = math.Pow(result, val)
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperModulo pops all values from stack, computes modulo left-associative, and pushes result.
+func (o *Operations) HyperModulo(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hypermodulo: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hypermodulo: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Process left-associative with Number interface
+	firstVal, err := values[0].Float64()
+	if err != nil {
+		return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+	}
+	result := firstVal
+	for i := 1; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hypermodulo: failed to get float64 value: %w", err)
+		}
+		if val == 0 {
+			return fmt.Errorf("modulo by zero")
+		}
+		result = math.Mod(result, val)
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperLog2 pops all values from stack, computes sum of log2 for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLog2(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperlog2: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperlog2: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the log2 of all values using Float64() for value conversion:
+	// - true → 1, false → 0
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperlog2: failed to get float64 value: %w", err)
+		}
+		if val <= 0 {
+			return fmt.Errorf("hyperlog2 undefined for non-positive numbers")
+		}
+		result += math.Log2(val)
+	}
+
+	// Push the result as a Number
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperLog10 pops all values from stack, computes sum of log10 for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLog10(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperlog10: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperlog10: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the log10 of all values using Float64() for value conversion:
+	// - true → 1, false → 0
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperlog10: failed to get float64 value: %w", err)
+		}
+		if val <= 0 {
+			return fmt.Errorf("hyperlog10 undefined for non-positive numbers")
+		}
+		result += math.Log10(val)
+	}
+
+	// Push the result as a Number
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}
+
+// HyperLn pops all values from stack, computes sum of natural log for all values, and pushes result.
+// This follows the same pattern as HyperAdd (sum) and HyperMultiply (product).
+func (o *Operations) HyperLn(stack *Stack) error {
+	if stack.Len() < 2 {
+		return fmt.Errorf("insufficient operands for hyperln: need at least 2 values")
+	}
+
+	// Pop all values into a slice (in reverse order - top first)
+	var values []Number
+	for stack.Len() > 0 {
+		val, err := stack.Pop()
+		if err != nil {
+			return fmt.Errorf("hyperln: %w", err)
+		}
+		values = append(values, val)
+	}
+
+	// Reverse to get left-to-right order (first pushed = first in)
+	for i, j := 0, len(values)-1; i < j; i, j = i+1, j-1 {
+		values[i], values[j] = values[j], values[i]
+	}
+
+	// Sum the natural log of all values using Float64() for value conversion:
+	// - true → 1, false → 0
+	var result float64 = 0
+	for i := 0; i < len(values); i++ {
+		val, err := values[i].Float64()
+		if err != nil {
+			return fmt.Errorf("hyperln: failed to get float64 value: %w", err)
+		}
+		if val <= 0 {
+			return fmt.Errorf("hyperln undefined for non-positive numbers")
+		}
+		result += math.Log(val)
+	}
+	mode := o.GetMode()
+	stack.Push(NewNumber(result, mode))
+	return nil
+}

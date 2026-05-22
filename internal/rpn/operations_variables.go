@@ -1,0 +1,141 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Paul Buetow
+
+package rpn
+
+import "fmt"
+
+// variables operations
+
+// AssignVariable assigns a value from stack to a variable.
+// Usage: `name value =`
+func (o *Operations) AssignVariable(stack *Stack, name string) error {
+	if name == "" {
+		return fmt.Errorf("variable name cannot be empty")
+	}
+
+	if stack.Len() < 1 {
+		return buildError("=", fmt.Errorf("insufficient operands: need value"))
+	}
+
+	val, err := popStack(stack, "=")
+	if err != nil {
+		return err
+	}
+
+	// Convert Number to float64 for variable storage
+	valF, err := toFloat64(val, "assigning variable")
+	if err != nil {
+		return err
+	}
+	return o.vars.SetVariable(name, valF)
+}
+
+// UseVariable pushes a variable's value onto the stack.
+// Usage: `varname` (pushes stored value)
+func (o *Operations) UseVariable(stack *Stack, name string) error {
+	if name == "" {
+		return fmt.Errorf("variable name cannot be empty")
+	}
+
+	val, exists := o.vars.GetVariable(name)
+	if !exists {
+		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
+	}
+
+	mode := o.GetMode()
+	stack.Push(NewNumber(val, mode))
+	return nil
+}
+
+// DeleteVariable removes a variable.
+// Usage: `name d`
+func (o *Operations) DeleteVariable(name string) error {
+	if name == "" {
+		return fmt.Errorf("variable name cannot be empty")
+	}
+
+	deleted := o.vars.DeleteVariable(name)
+	if !deleted {
+		return fmt.Errorf("%w: %s", ErrVariableNotFound, name)
+	}
+	return nil
+}
+
+// ListVariables lists all variables.
+// Usage: `vars`
+func (o *Operations) ListVariables() (string, error) {
+	return o.vars.FormatVariables(), nil
+}
+
+// ClearVariables removes all variables.
+// Usage: `clear`
+func (o *Operations) ClearVariables() {
+	o.vars.ClearVariables()
+}
+
+// AssignLeft assigns a value to a variable (for =: operator).
+// Stack order: value name =: (value on bottom, name on top).
+// This function pops name first (top of stack), then value.
+// Usage: `value name =:` (e.g., `5 x =:`)
+func (o *Operations) AssignLeft(stack *Stack) error {
+	name, err := popStack(stack, "=:")
+	if err != nil {
+		return err
+	}
+
+	val, err := popStack(stack, "=:")
+	if err != nil {
+		return err
+	}
+
+	// Get the variable name - handle Symbol, StringNum, or convert to string
+	varName := ""
+	switch v := name.(type) {
+	case *Symbol:
+		varName = v.Name()
+	case *StringNum:
+		varName = v.String()
+	default:
+		varName = name.String()
+	}
+
+	valF, err := toFloat64(val, "assigning variable")
+	if err != nil {
+		return err
+	}
+	return o.vars.SetVariable(varName, valF)
+}
+
+// AssignRight assigns a value to a variable (for := operator).
+// Stack order: name value := (name on bottom, value on top).
+// This function pops value first (top of stack), then name.
+// Usage: `name value :=` (e.g., `x 5 :=`)
+func (o *Operations) AssignRight(stack *Stack) error {
+	val, err := popStack(stack, ":=")
+	if err != nil {
+		return err
+	}
+
+	name, err := popStack(stack, ":=")
+	if err != nil {
+		return err
+	}
+
+	// Get the variable name - handle Symbol, StringNum, or convert to string
+	varName := ""
+	switch v := name.(type) {
+	case *Symbol:
+		varName = v.Name()
+	case *StringNum:
+		varName = v.String()
+	default:
+		varName = name.String()
+	}
+
+	valF, err := toFloat64(val, "assigning variable")
+	if err != nil {
+		return err
+	}
+	return o.vars.SetVariable(varName, valF)
+}
