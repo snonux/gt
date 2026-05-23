@@ -213,17 +213,6 @@ gt 'pi'              # Now returns the constant π
 # → 3.141592654
 ```
 
-```bash
-gt 'vars'            # List all variables
-# x = 5
-
-gt 'delete x'        # Delete a specific variable
-# Variable removed
-
-gt 'clear'           # Clear all variables (also restores overridden built-in constants)
-# All variables cleared
-```
-
 See the Constant Management section for the `constants` command to list all available constants.
 
 ### Working with Variables
@@ -283,6 +272,54 @@ To show the current stack without modifying it:
 > show               # Show current stack state
 45
 ```
+
+## Comparison Operators
+
+Comparison operators push a boolean result (`true`/`false`) onto the stack:
+
+```bash
+gt '5 3 gt'          # 5 > 3
+# → true
+
+gt '3 5 lt'          # 3 < 5
+# → true
+
+gt '5 5 gte'         # 5 >= 5
+# → true
+
+gt '5 5 lte'         # 5 <= 5
+# → true
+
+gt '5 5 eq'          # 5 == 5
+# → true
+
+gt '5 3 neq'         # 5 != 3
+# → true
+```
+
+Shorthand symbols are also supported:
+
+```bash
+gt '5 3 >'           # Same as gt
+# → true
+
+gt '3 5 <'           # Same as lt
+# → true
+
+gt '5 5 >='          # Same as gte
+# → true
+
+gt '5 5 <='          # Same as lte
+# → true
+
+gt '5 5 =='          # Same as eq
+# → true
+
+gt '5 3 !='          # Same as neq
+# → true
+```
+
+Comparison operators are metric-aware: they work with numbers that have attached units.
 
 ## Boolean-to-Number Coercion
 
