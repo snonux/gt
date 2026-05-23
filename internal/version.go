@@ -14,7 +14,7 @@
 // # Version Format
 //
 // The version string follows semantic versioning (SemVer) format:
-//   - Major.Minor.Patch (e.g., "v0.3.0")
+//   - Major.Minor.Patch (e.g., "v0.4.2")
 //   - Pre-release versions may include suffixes like "-beta", "-rc1", etc.
 //   - Build metadata may be appended for development builds
 //
@@ -30,7 +30,7 @@
 //
 // # Version History
 //
-// Current: v0.4.1
+// Current: v0.4.2
 //
 // See the git repository for complete version history and release notes.
 package internal
@@ -39,15 +39,12 @@ package internal
 //
 // This constant is defined at build time and can be overridden during builds:
 //
-//	go build -ldflags="-X 'codeberg.org/snonux/gt/internal.Version=v0.3.0-20240324'"
+//	go build -ldflags="-X 'codeberg.org/snonux/gt/internal.Version=v0.4.2-20260524'"
 //
-// The version is used in:
-//   - Command-line output: "gt version" command
-//   - Help and about information
-//   - Error messages and diagnostics
+// The version is used for the "gt version" command-line subcommand.
 //
 // Example output:
 //
 //	$ gt version
-//	v0.3.0
+//	v0.4.2
 const Version = "v0.4.2"
