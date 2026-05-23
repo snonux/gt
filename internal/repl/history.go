@@ -14,11 +14,13 @@ import (
 // It provides methods to load, save, and manage command history with a maximum entry limit.
 type HistoryManager struct {
 	historyFile string
+	baseDir     string // override for testing; empty means use os.UserHomeDir()
 	maxEntries  int
 }
 
 // NewHistoryManager creates a new history manager with the given file name.
 // The history manager will store up to maxEntries (default: 1000) in the history file.
+// The file is stored in the user's home directory.
 //
 // historyFile: the filename to use for history (without path)
 // Returns a new HistoryManager instance
@@ -29,16 +31,31 @@ func NewHistoryManager(historyFile string) *HistoryManager {
 	}
 }
 
-// Path returns the absolute path to the history file.
-// The history file is stored in the user's home directory.
+// WithBaseDir sets a custom base directory for the history file path.
+// When baseDir is empty, Path() uses os.UserHomeDir().
+// This is primarily useful for testing.
 //
-// Returns the full path to the history file, or empty string if the home directory cannot be determined
+// baseDir: the directory to use instead of the home directory
+// Returns the same HistoryManager for chaining
+func (h *HistoryManager) WithBaseDir(baseDir string) *HistoryManager {
+	h.baseDir = baseDir
+	return h
+}
+
+// Path returns the absolute path to the history file.
+// The history file is stored in the user's home directory, or in baseDir if set.
+//
+// Returns the full path to the history file, or empty string if the directory cannot be determined
 func (h *HistoryManager) Path() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
+	base := h.baseDir
+	if base == "" {
+		var err error
+		base, err = os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
 	}
-	return filepath.Join(home, h.historyFile)
+	return filepath.Join(base, h.historyFile)
 }
 
 // Load reads history from the history file.
