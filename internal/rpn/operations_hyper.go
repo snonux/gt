@@ -11,9 +11,9 @@ import (
 
 // Hyper operators - operate on all values on the stack
 
-// HyperAdd pops all values from stack, adds them left-associative (with boolean-to-number coercion), and pushes result.
+// HyperAdd pops all values from stack, adds them left-associative, and pushes result.
 // Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
-// computation, and pushes the result with the first operand's metric.
+// computation, and pushes the result with the first non-Cool metric (or Cool if all are Cool).
 func (o *Operations) HyperAdd(stack *Stack) error {
 	values, err := popAll(stack, "[+]")
 	if err != nil {
@@ -89,7 +89,7 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 
 // HyperSubtract pops all values from stack, subtracts them left-associative, and pushes result.
 // Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
-// computation, and pushes the result with the first operand's metric.
+// computation, and pushes the result with the first non-Cool metric (or Cool if all are Cool).
 func (o *Operations) HyperSubtract(stack *Stack) error {
 	values, err := popAll(stack, "[-]")
 	if err != nil {
@@ -201,7 +201,7 @@ func (o *Operations) HyperPower(stack *Stack) error {
 
 // HyperModulo pops all values from stack, computes modulo left-associative, and pushes result.
 // Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
-// computation, and pushes the result with the first operand's metric.
+// computation, and pushes the result with the first non-Cool metric (or Cool if all are Cool).
 func (o *Operations) HyperModulo(stack *Stack) error {
 	values, err := popAll(stack, "[%]")
 	if err != nil {
