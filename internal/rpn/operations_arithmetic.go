@@ -107,7 +107,7 @@ func (o *Operations) Multiply(stack *Stack) error {
 
 // Divide pops two values from stack, divides (a / b), and pushes result.
 func (o *Operations) Divide(stack *Stack) error {
-	b, err := popStack(stack, "/")
+	a, b, err := popTwo(stack, "/")
 	if err != nil {
 		return err
 	}
@@ -118,11 +118,6 @@ func (o *Operations) Divide(stack *Stack) error {
 	}
 	if bF == 0 {
 		return buildError("/", fmt.Errorf("division by zero"))
-	}
-
-	a, err := popStack(stack, "/")
-	if err != nil {
-		return err
 	}
 
 	aM, err := resolveMetric(o.metricRegistry, a)
