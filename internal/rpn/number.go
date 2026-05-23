@@ -79,13 +79,13 @@ func NewNumberWithMetric(value float64, mode CalculationMode, metric *Metric) Nu
 }
 
 // GetCoolMetric returns the universal default metric.
-// Returns a cached pointer after first call — no lock needed.
+// Ensures the metric registry is initialized first, then returns the
+// cached Cool metric pointer. Safe for concurrent use.
 func GetCoolMetric() *Metric {
-	if cachedCoolMetric != nil {
-		return cachedCoolMetric
-	}
-	m, _ := GetMetricRegistry().Find("Cool")
-	return m
+	// Ensure registry (and cachedCoolMetric) are initialized.
+	// registryOnce.Do() in GetMetricRegistry() sets cachedCoolMetric.
+	GetMetricRegistry()
+	return cachedCoolMetric
 }
 
 // Float is a Number implementation using float64.
