@@ -27,12 +27,11 @@ func NewSignalHandler() *SignalHandler {
 	}
 }
 
-// Start starts the signal handler goroutine with the given callback.
-// When SIGINT is received, the callback function is executed in the goroutine.
-// The function blocks until Stop is called.
+// Start launches a goroutine that waits for SIGINT and then runs the callback.
+// Start returns immediately; the goroutine blocks until a signal is received or
+// Stop is called (which prevents further signals from being delivered).
 //
 // callback: the function to execute when SIGINT is received
-// Returns: no return value; executes callback in a separate goroutine
 func (s *SignalHandler) Start(callback func()) {
 	go func() {
 		<-s.sigChan
