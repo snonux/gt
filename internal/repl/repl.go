@@ -26,7 +26,7 @@ type RPNState struct {
 }
 
 // NewRPNState creates a new RPNState with the given variable store and RPN engine.
-// It also configures the variable store file path in the user's config directory.
+// It also sets the variable store file path in the user's state directory (~/.local/state/gt/).
 func NewRPNState(vars rpn.VariableStore, rpnCalc *rpn.RPN) *RPNState {
 	varStoreFile := getVarStoreFilePath()
 	return &RPNState{
@@ -66,7 +66,7 @@ func getVarStoreFilePath() string {
 	return filepath.Join(home, ".local", "state", "gt", "vars")
 }
 
-// REPL manages the interactive command-line interface for the percentage calculator.
+// REPL manages the interactive command-line interface for the calculator.
 // It provides an interactive prompt with history, tab-completion, signal handling,
 // and command processing through a chain of responsibility pattern.
 //
@@ -158,11 +158,9 @@ func (p *ReadlinePrompt) Close() error {
 
 // NewREPL creates a new REPL instance with default components.
 // If executor is nil, it uses defaultExecutor which processes input through commandChain.
-// If completer is nil, it uses defaultCompleter which provides built-in command suggestions.
-// If logWriter is non-nil, all REPL output is duplicated to the log writer.
-//
-// The executor function is called for each non-empty input line.
-// The completer function provides tab-completion suggestions for the prompt.
+// The completer parameter is accepted for API compatibility but is not currently used;
+// tab completion is handled by NewAutoCompleter internally.
+// If logWriter is non-nil, it is stored on the REPL instance for use by handlers.
 func NewREPL(executor func(string), completer func() []string, logWriter io.WriteCloser) *REPL {
 	// Initialize RPN state via dependency injection
 	vars := rpn.NewVariables()
@@ -252,7 +250,6 @@ func (r *REPL) Run() error {
 //   - Skips empty input
 //   - Routes to commandChain for processing
 //   - Displays output and errors appropriately
-//   - Adds handled commands to history
 func defaultExecutor(r *REPL, input string) {
 	// Add panic recovery for better resilience
 	defer func() {
@@ -289,7 +286,6 @@ func defaultExecutor(r *REPL, input string) {
 
 // defaultCompleter is the default completer function used when no custom completer is provided.
 // It provides tab-completion suggestions for built-in REPL commands.
-// Suggestions are case-insensitive and include descriptions.
 //
 // Returns a slice of strings for matching built-in commands
 func defaultCompleter(r *REPL) []string {
@@ -334,7 +330,7 @@ func RunREPL() error {
 }
 
 // RunREPLWithLog starts the interactive REPL with logging to the specified file.
-// The log file receives input commands and output (each prefixed with '> ' for input).
+// The logWriter is passed to the REPL instance; handlers may use it for session logging.
 //
 // logFile: path to a file to append log output
 // Returns an error if the REPL cannot start (e.g., stdin is not a TTY)
