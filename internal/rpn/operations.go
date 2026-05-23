@@ -24,6 +24,7 @@ var _ Operator = (*Operations)(nil)
 
 // NewOperations creates a new Operations instance with the given variable store.
 // If no registry is provided, defaults to the global MetricRegistry.
+// If no constants provider is provided, creates a new one.
 func NewOperations(vars VariableStore, reg ...*MetricRegistry) *Operations {
 	consts := NewConstants()
 	r := GetMetricRegistry()
@@ -37,6 +38,12 @@ func NewOperations(vars VariableStore, reg ...*MetricRegistry) *Operations {
 		prefixMode:     SI,        // default
 		metricRegistry: r,
 	}
+}
+
+// SetConstants sets the constants provider for the Operations instance.
+// This allows sharing a single ConstantsProvider between RPN and Operations.
+func (o *Operations) SetConstants(c ConstantsProvider) {
+	o.consts = c
 }
 
 // SetMode sets the calculation mode for the Operations instance.

@@ -33,6 +33,7 @@ func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 	}
 	ops := NewOperations(vars, r)
 	ops.SetMode(FloatMode) // Set default mode
+	ops.SetConstants(consts) // Share the same ConstantsProvider
 	return &RPN{
 		vars:           vars,
 		consts:         consts,
