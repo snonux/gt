@@ -3,7 +3,10 @@
 
 package rpn
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // Stack represents an RPN stack of values.
 type Stack struct {
@@ -50,9 +53,7 @@ func (s *Stack) Len() int {
 
 // Values returns a copy of all stack values (top-to-bottom order).
 func (s *Stack) Values() []StackValue {
-	vals := make([]StackValue, len(s.values))
-	copy(vals, s.values)
-	return vals
+	return slices.Clone(s.values)
 }
 
 // Clear removes all values from the stack.
