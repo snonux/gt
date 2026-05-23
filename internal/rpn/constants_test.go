@@ -439,3 +439,156 @@ func TestConstants_ParseInRPN(t *testing.T) {
 }
 
 // TestConstants_Count tests that constants count is correct
+func TestConstants_Count(t *testing.T) {
+	c := NewConstants()
+	initialCount := c.Count()
+
+	// Add a user-defined constant
+	c.SetConstant("user1", 42.0)
+	if c.Count() != initialCount+1 {
+		t.Errorf("Count = %d, want %d after adding one constant", c.Count(), initialCount+1)
+	}
+}
+
+// TestConstants_SetConstantOverridesBuiltIn tests that SetConstant can override a built-in
+func TestConstants_SetConstantOverridesBuiltIn(t *testing.T) {
+	c := NewConstants()
+
+	// Override pi
+	err := c.SetConstant("pi", 3.0)
+	if err != nil {
+		t.Fatalf("SetConstant returned error: %v", err)
+	}
+
+	val, exists := c.GetConstant("pi")
+	if !exists || val != 3.0 {
+		t.Errorf("pi = %v (exists=%v), want 3.0", val, exists)
+	}
+}
+
+// TestConstants_ReloadBuiltInConstantsRestoresOverridden tests that ReloadBuiltInConstants restores overridden built-ins
+func TestConstants_ReloadBuiltInConstantsRestoresOverridden(t *testing.T) {
+	c := NewConstants()
+
+	// Override pi
+	c.SetConstant("pi", 3.0)
+
+	// Reload
+	c.ReloadBuiltInConstants()
+
+	val, exists := c.GetConstant("pi")
+	if !exists || val != math.Pi {
+		t.Errorf("pi after ReloadBuiltInConstants = %v (exists=%v), want %v", val, exists, math.Pi)
+	}
+}
+
+// TestConstants_ClearConstantsPreservesBuiltIns tests ClearConstants directly on Constants struct
+func TestConstants_ClearConstantsPreservesBuiltIns(t *testing.T) {
+	c := NewConstants()
+
+	// Add user constants
+	c.SetConstant("user1", 1.0)
+	c.SetConstant("user2", 2.0)
+	c.SetConstant("user3", 3.0)
+
+	// Clear user-defined constants
+	c.ClearConstants()
+
+	// Built-in constants should still exist
+	if !c.HasConstant("pi") {
+		t.Error("pi should exist after ClearConstants")
+	}
+	if !c.HasConstant("e") {
+		t.Error("e should exist after ClearConstants")
+	}
+
+	// User constants should be gone
+	if c.HasConstant("user1") {
+		t.Error("user1 should be gone after ClearConstants")
+	}
+	if c.HasConstant("user2") {
+		t.Error("user2 should be gone after ClearConstants")
+	}
+}
+
+// TestConstants_MoreInRPN tests additional constants in RPN expressions
+func TestConstants_MoreInRPN(t *testing.T) {
+	tests := []struct {
+		name       string
+		expression string
+		wantPrefix string
+	}{
+		{"ln2", "ln2", "0.693147"},
+		{"ln10", "ln10", "2.30258"},
+		{"tau 2 /", "tau 2 /", "3.14159"}, // tau/2 = pi
+		{"sqrt3", "sqrt3", "1.73205"},
+		{"sqrt5", "sqrt5", "2.23606"},
+		{"phi", "phi", "1.61803"},
+		{"1/π", "1/π", "0.3183"},
+		{"inv_pi", "inv_pi", "0.3183"},
+		{"euler", "euler", "2.71828"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vars := NewVariables()
+			rpnCalc := NewRPN(vars)
+
+			result, err := rpnCalc.ParseAndEvaluate(tt.expression)
+			if err != nil {
+				t.Errorf("RPN(%q) error = %v", tt.expression, err)
+				return
+			}
+			if !strings.HasPrefix(result, tt.wantPrefix) && !strings.Contains(result, tt.wantPrefix) {
+				t.Errorf("RPN(%q) = %q, expected to contain %q", tt.expression, result, tt.wantPrefix)
+			}
+		})
+	}
+}
+
+// TestConstants_ListConstantsIncludesUserDefined tests that user-defined constants appear in list
+func TestConstants_ListConstantsIncludesUserDefined(t *testing.T) {
+	c := NewConstants()
+	c.SetConstant("my_const", 99.9)
+
+	infos := c.ListConstants()
+	found := false
+	for _, info := range infos {
+		if info.Name == "my_const" && info.Value == 99.9 {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("ListConstants should include user-defined constants")
+	}
+}
+
+// TestConstants_NegativeInfInRPN tests negative infinity constant in RPN
+func TestConstants_NegativeInfInRPN(t *testing.T) {
+	vars := NewVariables()
+	rpnCalc := NewRPN(vars)
+
+	result, err := rpnCalc.ParseAndEvaluate("-inf")
+	if err != nil {
+		t.Fatalf("RPN(\"-inf\") error = %v", err)
+	}
+	if result != "-Inf" {
+		t.Errorf("RPN(\"-inf\") = %q, want \"-Inf\"", result)
+	}
+}
+
+// TestConstants_InfExpression tests infinity in RPN expressions
+func TestConstants_InfExpression(t *testing.T) {
+	vars := NewVariables()
+	rpnCalc := NewRPN(vars)
+
+	// inf 1 + should still be inf
+	result, err := rpnCalc.ParseAndEvaluate("inf 1 +")
+	if err != nil {
+		t.Fatalf("RPN(\"inf 1 +\") error = %v", err)
+	}
+	if result != "+Inf" {
+		t.Errorf("RPN(\"inf 1 +\") = %q, want \"+Inf\"", result)
+	}
+}
