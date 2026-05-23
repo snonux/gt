@@ -117,7 +117,7 @@ Press Ctrl+D or type 'quit'/'exit' to exit.
 	case "quit", "exit":
 		return "quit / exit - Exit the REPL\nUsage: quit or exit"
 	default:
-		return fmt.Sprintf("No help available for: %s\nAvailable commands: help, clear, quit, exit, rpn, calc", subCmd)
+		return fmt.Sprintf("No help available for: %s\nAvailable commands: help, clear, quit, exit, rpn, calc, rat, stack", subCmd)
 	}
 }
 
@@ -140,10 +140,10 @@ func cmdQuit() error {
 	return nil
 }
 
-// cmdStack displays the current RPN stack state.
-// It shows the stack depth and each value with its index.
+// cmdStack provides a hint for viewing the RPN stack.
+// It does not have access to RPN state; users should use 'rpn show' instead.
 //
-// Returns the formatted stack output as a string
+// Returns a hint string directing users to the 'rpn show' command
 func cmdStack() string {
 	return "Use 'rpn show' to view the current stack state"
 }
