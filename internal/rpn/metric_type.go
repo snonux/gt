@@ -25,9 +25,9 @@ const (
 	Distance
 	// Custom is for user-defined units.
 	Custom
-	// _sentinel marks the upper bound for range-based Category iteration.
+	// _sentinel marks the upper bound for bounded Category iteration.
 	// Adding a new Category: insert before _sentinel, and it will be
-	// automatically picked up by parseCategory() and other range-based lookups.
+	// automatically picked up by parseCategory().
 	_sentinel
 )
 
