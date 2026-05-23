@@ -399,3 +399,75 @@ func (s *Symbol) IsSymbol() bool {
 func (s *Symbol) IsBool() bool    { return false }
 func (s *Symbol) IsString() bool  { return false }
 func (s *Symbol) Metric() *Metric { return GetCoolMetric() }
+
+// Value represents a variant type that can hold either a number (float64) or a boolean.
+//
+// When used in arithmetic operations, boolean values are automatically coerced:
+//   - true -> 1
+//   - false -> 0
+//
+// This allows boolean results from comparison operations to be used directly in
+// arithmetic expressions (e.g., "5 3 == 1 +" where "5 3 ==" produces false=0,
+// and "0 + 1" produces 1).
+type Value struct {
+	isBool  bool
+	boolVal bool
+	numVal  float64
+}
+
+// NewNumberValue creates a new Value containing a float64 number.
+func NewNumberValue(n float64) Value {
+	return Value{isBool: false, numVal: n}
+}
+
+// NewBoolValue creates a new Value containing a boolean.
+func NewBoolValue(b bool) Value {
+	return Value{isBool: true, boolVal: b}
+}
+
+// IsBool returns true if the value is a boolean.
+func (v Value) IsBool() bool {
+	return v.isBool
+}
+
+// IsNumber returns true if the value is a number.
+func (v Value) IsNumber() bool {
+	return !v.isBool
+}
+
+// Bool returns the boolean value, or false if the value is not a boolean.
+func (v Value) Bool() bool {
+	return v.boolVal
+}
+
+// Float64 returns the float64 value.
+// If the value is a boolean, true returns 1 and false returns 0.
+// If the value is a number, it returns the numeric value directly.
+func (v Value) Float64() float64 {
+	if v.isBool {
+		if v.boolVal {
+			return 1
+		}
+		return 0
+	}
+	return v.numVal
+}
+
+// Number returns the float64 value (deprecated, use Float64 instead).
+// If the value is a boolean, this returns 0 (the numeric value is not used for booleans).
+func (v Value) Number() float64 {
+	return v.numVal
+}
+
+// String returns the string representation of the value.
+// For booleans, it returns "true" or "false".
+// For numbers, it returns the formatted float64 value.
+func (v Value) String() string {
+	if v.isBool {
+		if v.boolVal {
+			return "true"
+		}
+		return "false"
+	}
+	return fmt.Sprintf("%.10g", v.numVal)
+}
