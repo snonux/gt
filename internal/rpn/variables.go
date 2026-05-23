@@ -53,7 +53,7 @@ type VariablePersistence interface {
 	// Save writes the variable store to a file in JSON format.
 	Save(path string) error
 	// Load reads the variable store from a file in JSON format.
-	// Existing variables are overwritten; new variables are added.
+	// All existing variables are replaced with the loaded values.
 	Load(path string) error
 }
 
@@ -221,7 +221,7 @@ func (v *Variables) HasVariable(name string) bool {
 
 // Save writes the variable store to a file in JSON format.
 // The file path should be an absolute path.
-// This method is thread-safe for concurrent writes.
+// This method acquires a read lock and does not block concurrent readers.
 func (v *Variables) Save(path string) error {
 	v.mu.RLock()
 	defer v.mu.RUnlock()
@@ -241,8 +241,8 @@ func (v *Variables) Save(path string) error {
 }
 
 // Load reads the variable store from a file in JSON format.
-// Existing variables are overwritten; new variables are added.
-// This method is thread-safe for concurrent reads.
+// All existing variables are replaced with the loaded values.
+// This method is thread-safe.
 func (v *Variables) Load(path string) error {
 	infos, err := loadVariables(path)
 	if err != nil {
