@@ -43,12 +43,11 @@
 //   - rpn/: Handles RPN expression parsing and evaluation
 //   - repl/: Provides interactive Read-Eval-Print Loop mode
 //
-// See the cmd/gt/internal package for version information.
+// See the internal package for version information.
 package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -69,22 +68,6 @@ func main() {
 	if output != "" {
 		fmt.Println(output)
 	}
-}
-
-// LogWriter wraps io.Writer for use with io.MultiWriter in REPL mode.
-// It provides a log writer that can be passed to the REPL.
-type LogWriter struct {
-	writer io.WriteCloser
-}
-
-// Write writes data to the log file.
-func (lw *LogWriter) Write(p []byte) (n int, err error) {
-	return lw.writer.Write(p)
-}
-
-// Close closes the log file.
-func (lw *LogWriter) Close() error {
-	return lw.writer.Close()
 }
 
 // runCommand processes command-line arguments and executes the appropriate action.
@@ -170,6 +153,7 @@ func runCommand(args []string) (string, error) {
 }
 
 // readStdin reads all input from stdin and returns it as a string.
+// Uses /dev/stdin for full reads; falls back to a single 4096-byte buffer if unavailable.
 func readStdin() (string, error) {
 	data, err := os.ReadFile("/dev/stdin")
 	if err != nil {
