@@ -51,7 +51,7 @@ func (s *Stack) Len() int {
 	return len(s.values)
 }
 
-// Values returns a copy of all stack values (top-to-bottom order).
+// Values returns a copy of all stack values (bottom-to-top order).
 func (s *Stack) Values() []StackValue {
 	return slices.Clone(s.values)
 }
