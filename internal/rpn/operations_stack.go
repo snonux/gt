@@ -51,9 +51,11 @@ func (o *Operations) Pop(stack *Stack) error {
 	return nil
 }
 
-// Show returns the current stack as a formatted string using the Number interface.
-// Numbers with non-Cool metrics display with the metric suffix (e.g., "100Mbps").
-// Cool numbers display as plain numbers. Booleans show as "true"/"false".
+// Show returns the current stack as a formatted string.
+// Each value uses its StackValue.String() method for display.
+// Numeric values with non-Universal metrics append the metric suffix (e.g., "100Mbps").
+// Values with the Universal metric (Cool) display without a suffix.
+// Booleans display as "true"/"false". Symbols display with a leading ":" prefix.
 func (o *Operations) Show(stack *Stack) (string, error) {
 	if stack.Len() == 0 {
 		return "Stack is empty", nil
