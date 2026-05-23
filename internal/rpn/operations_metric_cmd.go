@@ -66,8 +66,14 @@ func (o *Operations) MetricCompatible(stack *Stack) (string, error) {
 	vals := stack.Values()
 	top := vals[len(vals)-1]
 	second := vals[len(vals)-2]
-	mA := resolveMetric(o.metricRegistry, second)
-	mB := resolveMetric(o.metricRegistry, top)
+	mA, err := resolveMetric(o.metricRegistry, second)
+	if err != nil {
+		return "", buildError("metric compatible", err)
+	}
+	mB, err := resolveMetric(o.metricRegistry, top)
+	if err != nil {
+		return "", buildError("metric compatible", err)
+	}
 	compatible := categoriesCompatible(mA, mB)
 	result := fmt.Sprintf("%s (%s) and %s (%s): %v",
 		mA.Name, mA.Category, mB.Name, mB.Category, compatible)

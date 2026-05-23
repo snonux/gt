@@ -22,14 +22,21 @@ func (o *Operations) binaryMetricOp(
 	op string,
 	compatCheck func(*Metric, *Metric) error,
 	compute func(float64, float64) float64,
-	resultMetricFn func(*MetricRegistry, *Metric, *Metric) *Metric,
+	resultMetricFn func(*MetricRegistry, *Metric, *Metric) (*Metric, error),
 ) error {
 	a, b, err := popTwo(stack, op)
 	if err != nil {
 		return err
 	}
 
-	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
+	aM, err := resolveMetric(o.metricRegistry, a)
+	if err != nil {
+		return buildError(op, err)
+	}
+	bM, err := resolveMetric(o.metricRegistry, b)
+	if err != nil {
+		return buildError(op, err)
+	}
 	if compatCheck != nil {
 		if err := compatCheck(aM, bM); err != nil {
 			return err
@@ -37,7 +44,10 @@ func (o *Operations) binaryMetricOp(
 	}
 
 	pm := o.GetPrefixMode()
-	resultMetric := resultMetricFn(o.metricRegistry, aM, bM)
+	resultMetric, err := resultMetricFn(o.metricRegistry, aM, bM)
+	if err != nil {
+		return buildError(op, err)
+	}
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
 		return buildError("arithmetic", err)
@@ -46,7 +56,10 @@ func (o *Operations) binaryMetricOp(
 	if err != nil {
 		return buildError("arithmetic", err)
 	}
-	resultVal := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
+	if err != nil {
+		return buildError(op, err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -112,10 +125,20 @@ func (o *Operations) Divide(stack *Stack) error {
 		return err
 	}
 
-	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
+	aM, err := resolveMetric(o.metricRegistry, a)
+	if err != nil {
+		return buildError("/", err)
+	}
+	bM, err := resolveMetric(o.metricRegistry, b)
+	if err != nil {
+		return buildError("/", err)
+	}
 
 	pm := o.GetPrefixMode()
-	resultMetric := resultMetricForDiv(o.metricRegistry, aM, bM)
+	resultMetric, err := resultMetricForDiv(o.metricRegistry, aM, bM)
+	if err != nil {
+		return buildError("/", err)
+	}
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
 		return buildError("division", err)
@@ -124,7 +147,10 @@ func (o *Operations) Divide(stack *Stack) error {
 	if err != nil {
 		return buildError("division", err)
 	}
-	resultVal := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
+	if err != nil {
+		return buildError("/", err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -182,13 +208,23 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
-	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
+	aM, err := resolveMetric(o.metricRegistry, a)
+	if err != nil {
+		return buildError("%", err)
+	}
+	bM, err := resolveMetric(o.metricRegistry, b)
+	if err != nil {
+		return buildError("%", err)
+	}
 	if !categoriesCompatible(aM, bM) {
 		return metricError("%", aM, bM)
 	}
 
 	pm := o.GetPrefixMode()
-	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
+	resultMetric, err := compatibleMetric(o.metricRegistry, aM, bM)
+	if err != nil {
+		return buildError("%", err)
+	}
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
 		return buildError("modulo", err)
@@ -197,7 +233,10 @@ func (o *Operations) Modulo(stack *Stack) error {
 	if err != nil {
 		return buildError("modulo", err)
 	}
-	resultVal := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
+	if err != nil {
+		return buildError("%", err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil

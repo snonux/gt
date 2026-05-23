@@ -6,12 +6,12 @@ package rpn
 import "fmt"
 
 // resolveMetric returns the metric for a StackValue, defaulting to Cool if nil.
-func resolveMetric(reg *MetricRegistry, n StackValue) *Metric {
+func resolveMetric(reg *MetricRegistry, n StackValue) (*Metric, error) {
 	m := n.Metric()
 	if m == nil {
 		return coolMetric(reg)
 	}
-	return m
+	return m, nil
 }
 
 // validateCategories checks that all metrics belong to the same category.
@@ -56,8 +56,8 @@ func categoriesCompatible(a, b *Metric) bool {
 }
 
 // compatibleMetric returns the resulting metric for + and - operations.
-func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
-	return resultMetricForAdd([]*Metric{a, b})
+func compatibleMetric(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
+	return resultMetricForAdd([]*Metric{a, b}), nil
 }
 
 // convertToBase converts a StackValue's value to its metric's base unit.
@@ -69,7 +69,10 @@ func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMet
 	if !ok {
 		return 0, fmt.Errorf("convertToBase: value %q is not numeric", n)
 	}
-	m := resolveMetric(reg, n)
+	m, err := resolveMetric(reg, n)
+	if err != nil {
+		return 0, fmt.Errorf("convertToBase: %w", err)
+	}
 	val, err := nv.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("convertToBase: %w", err)
@@ -83,23 +86,27 @@ func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMet
 }
 
 // convertFromBase converts a base-unit value back to the given metric.
-func convertFromBase(reg *MetricRegistry, baseVal float64, m *Metric, mode PrefixMode) float64 {
+func convertFromBase(reg *MetricRegistry, baseVal float64, m *Metric, mode PrefixMode) (float64, error) {
 	if m == nil {
-		m = coolMetric(reg)
+		var err error
+		m, err = coolMetric(reg)
+		if err != nil {
+			return 0, err
+		}
 	}
-	return baseVal / m.Factor(mode)
+	return baseVal / m.Factor(mode), nil
 }
 
 // resultMetricForMul computes the resulting metric for multiplication.
-func resultMetricForMul(reg *MetricRegistry, a, b *Metric) *Metric {
+func resultMetricForMul(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 	if a == nil || a.Category == Universal {
 		if b == nil {
 			return coolMetric(reg)
 		}
-		return b
+		return b, nil
 	}
 	if b == nil || b.Category == Universal {
-		return a
+		return a, nil
 	}
 
 	// Cross-category inference
@@ -118,7 +125,7 @@ func resultMetricForMul(reg *MetricRegistry, a, b *Metric) *Metric {
 }
 
 // resultMetricForDiv computes the resulting metric for division.
-func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) *Metric {
+func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 	if a == nil && b == nil {
 		return coolMetric(reg)
 	}
@@ -126,10 +133,10 @@ func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) *Metric {
 		if a == nil {
 			return coolMetric(reg)
 		}
-		return a
+		return a, nil
 	}
 	if a == nil || a.Category == Universal {
-		return b
+		return b, nil
 	}
 
 	// Cross-category inference
@@ -158,21 +165,21 @@ func metricError(op string, a, b *Metric) error {
 }
 
 // coolMetric returns the Cool metric from the registry.
-func coolMetric(reg *MetricRegistry) *Metric {
+func coolMetric(reg *MetricRegistry) (*Metric, error) {
 	m, ok := reg.Find("Cool")
 	if !ok {
-		panic("metric registry missing Cool metric")
+		return nil, fmt.Errorf("metric registry missing Cool metric")
 	}
-	return m
+	return m, nil
 }
 
 // baseMetric looks up a base metric from the registry.
-func baseMetric(reg *MetricRegistry, name string) *Metric {
+func baseMetric(reg *MetricRegistry, name string) (*Metric, error) {
 	m, ok := reg.Find(name)
 	if !ok {
-		panic(fmt.Sprintf("metric registry missing base unit %q", name))
+		return nil, fmt.Errorf("metric registry missing base unit %q", name)
 	}
-	return m
+	return m, nil
 }
 
 // Convert converts a value from its current metric to a target metric.
@@ -192,7 +199,10 @@ func (o *Operations) Convert(stack *Stack) error {
 	}
 	// 3. Get metrics
 	targetMetric := target.Metric()
-	valueMetric := resolveMetric(o.metricRegistry, value)
+	valueMetric, err := resolveMetric(o.metricRegistry, value)
+	if err != nil {
+		return buildError("convert", err)
+	}
 	// 4. Validate same category (or Cool absorbing)
 	if !categoriesCompatible(valueMetric, targetMetric) {
 		return metricError("convert", valueMetric, targetMetric)
@@ -203,7 +213,10 @@ func (o *Operations) Convert(stack *Stack) error {
 	if err != nil {
 		return buildError("convert", err)
 	}
-	resultVal := convertFromBase(o.metricRegistry, baseVal, targetMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, baseVal, targetMetric, pm)
+	if err != nil {
+		return buildError("convert", err)
+	}
 	// 6. Push result with target metric
 	stack.Push(NewNumber(resultVal, o.GetMode(), targetMetric))
 	return nil

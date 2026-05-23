@@ -23,7 +23,11 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 	// Resolve metrics for all values
 	metrics := make([]*Metric, len(values))
 	for i, v := range values {
-		metrics[i] = resolveMetric(o.metricRegistry, v)
+		m, err := resolveMetric(o.metricRegistry, v)
+		if err != nil {
+			return buildError("[+]", err)
+		}
+		metrics[i] = m
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
@@ -45,7 +49,10 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 		sum += base
 	}
 
-	resultVal := convertFromBase(o.metricRegistry, sum, resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, sum, resultMetric, pm)
+	if err != nil {
+		return buildError("[+]", err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -72,7 +79,10 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 		}
 	}
 
-	cool := coolMetric(o.metricRegistry)
+	cool, err := coolMetric(o.metricRegistry)
+	if err != nil {
+		return buildError("[*]", err)
+	}
 	stack.Push(NewNumber(product, o.GetMode(), cool))
 	return nil
 }
@@ -89,7 +99,11 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 	// Resolve metrics for all values
 	metrics := make([]*Metric, len(values))
 	for i, v := range values {
-		metrics[i] = resolveMetric(o.metricRegistry, v)
+		m, err := resolveMetric(o.metricRegistry, v)
+		if err != nil {
+			return buildError("[-]", err)
+		}
+		metrics[i] = m
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
@@ -115,7 +129,10 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 		result -= base
 	}
 
-	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+	if err != nil {
+		return buildError("[-]", err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -145,7 +162,10 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 		result /= val
 	}
 
-	cool := coolMetric(o.metricRegistry)
+	cool, err := coolMetric(o.metricRegistry)
+	if err != nil {
+		return buildError("[/]", err)
+	}
 	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
@@ -171,7 +191,10 @@ func (o *Operations) HyperPower(stack *Stack) error {
 		result = math.Pow(result, val)
 	}
 
-	cool := coolMetric(o.metricRegistry)
+	cool, err := coolMetric(o.metricRegistry)
+	if err != nil {
+		return buildError("[^]", err)
+	}
 	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
@@ -188,7 +211,11 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 	// Resolve metrics for all values
 	metrics := make([]*Metric, len(values))
 	for i, v := range values {
-		metrics[i] = resolveMetric(o.metricRegistry, v)
+		m, err := resolveMetric(o.metricRegistry, v)
+		if err != nil {
+			return buildError("[%]", err)
+		}
+		metrics[i] = m
 	}
 
 	// Validate all are compatible (all same category, or Cool absorbs)
@@ -217,7 +244,10 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		result = math.Mod(result, base)
 	}
 
-	resultVal := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+	resultVal, err := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+	if err != nil {
+		return buildError("[%]", err)
+	}
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -243,7 +273,10 @@ func (o *Operations) hyperLog(stack *Stack, opName string, logFn func(float64) f
 		result += logFn(val)
 	}
 
-	cool := coolMetric(o.metricRegistry)
+	cool, err := coolMetric(o.metricRegistry)
+	if err != nil {
+		return buildError(opName, err)
+	}
 	stack.Push(NewNumber(result, o.GetMode(), cool))
 	return nil
 }
