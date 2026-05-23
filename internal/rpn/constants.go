@@ -4,6 +4,7 @@
 package rpn
 
 import (
+	"maps"
 	"math"
 	"sort"
 	"sync"
@@ -158,8 +159,30 @@ func (c *Constants) ReloadBuiltInConstants() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	clear(c.constants)
 	c.loadBuiltInConstants()
+
+	builtIns := map[string]struct{}{
+		"pi": {}, "π": {},
+		"e": {}, "euler": {},
+		"phi": {}, "φ": {},
+		"sqrt2": {}, "√2": {},
+		"sqrt3": {}, "√3": {},
+		"sqrt5": {}, "√5": {},
+		"ln2": {}, "log2": {},
+		"ln10": {}, "log10": {},
+		"log_e": {}, "log_e10": {},
+		"tau": {}, "τ": {},
+		"1/π": {}, "inv_pi": {},
+		"1/e": {}, "inv_e": {},
+		"inf": {}, "infinity": {},
+		"-inf": {}, "-infinity": {},
+		"nan": {},
+	}
+
+	maps.DeleteFunc(c.constants, func(k string, _ float64) bool {
+		_, ok := builtIns[k]
+		return !ok
+	})
 }
 
 // Count returns the number of defined constants.
