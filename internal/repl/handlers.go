@@ -38,7 +38,7 @@ func (h *BaseHandler) SetNext(next CommandHandler) {
 }
 
 // Next forwards the request to the next handler in the chain.
-// If there is no next handler, it returns (false, nil) indicating the request
+// If there is no next handler, it returns ("", false, nil) indicating the request
 // was not handled.
 //
 // repl: the REPL instance
@@ -139,6 +139,7 @@ type RPNHandler struct {
 //   - Bare RPN expressions (e.g., "3 4 +")
 //   - Single RPN operators on the current stack
 //   - Single numbers (push onto stack)
+//   - Symbol syntax (e.g., ":x") that pushes a symbol onto the stack
 //
 // If the input doesn't match any RPN pattern, it forwards to the next handler.
 //
