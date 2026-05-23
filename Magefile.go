@@ -19,13 +19,13 @@ const binaryName = "gt"
 // Default is the default target when no target is specified.
 var Default = Build
 
-// Build builds the perc binary.
+// Build builds the gt binary.
 func Build() error {
 	fmt.Println("Building gt...")
 	return sh.RunV("go", "build", "-o", binaryName, "./cmd/gt")
 }
 
-// Run runs the perc binary.
+// Run runs the gt binary.
 func Run() error {
 	return sh.RunV("go", "run", "./cmd/gt")
 }
@@ -47,7 +47,7 @@ func RPN() error {
 	return TestRPN()
 }
 
-// Install installs the perc binary to GOPATH/bin.
+// Install installs the gt binary to GOBIN (or GOPATH/bin if GOBIN is not set).
 func Install() error {
 	fmt.Println("Installing gt...")
 	return sh.RunV("go", "install", "./cmd/gt")
@@ -71,7 +71,7 @@ func Repl() error {
 	return sh.RunV("go", "run", "./cmd/gt", "--repl")
 }
 
-// Uninstall removes the perc binary from GOPATH/bin.
+// Uninstall removes the gt binary from GOBIN (or GOPATH/bin if GOBIN is not set).
 func Uninstall() error {
 	fmt.Println("Uninstalling gt...")
 	// Use the same logic as go install to determine the binary location
