@@ -8,89 +8,88 @@ import (
 	"math"
 )
 
-// arithmetic operators
-
-// Add pops two values from stack, adds them, and pushes result.
-func (o *Operations) Add(stack *Stack) error {
-	a, b, err := popTwo(stack, "+")
+// binaryMetricOp executes a metric-aware binary operation.
+// It pops two operands, validates metric compatibility, converts to base units,
+// applies the computation, converts back, and pushes the result.
+//
+// Parameters:
+//   - op: operator name for error messages
+//   - compatCheck: metric compatibility validator (nil to skip, e.g., for Multiply)
+//   - compute: the arithmetic function to apply on base-unit values
+//   - resultMetricFn: function to determine the result metric from input metrics
+func (o *Operations) binaryMetricOp(
+	stack *Stack,
+	op string,
+	compatCheck func(*Metric, *Metric) error,
+	compute func(float64, float64) float64,
+	resultMetricFn func(*MetricRegistry, *Metric, *Metric) *Metric,
+) error {
+	a, b, err := popTwo(stack, op)
 	if err != nil {
 		return err
 	}
 
 	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
-	if !categoriesCompatible(aM, bM) {
-		return metricError("+", aM, bM)
+	if compatCheck != nil {
+		if err := compatCheck(aM, bM); err != nil {
+			return err
+		}
 	}
 
-		pm := o.GetPrefixMode()
-		resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-		// Convert both to base units, add, convert back to result metric
-		aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
-		if err != nil {
-			return buildError("addition", err)
-		}
-		bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
-		if err != nil {
-			return buildError("addition", err)
-		}
-		resultVal := convertFromBase(o.metricRegistry, aBase+bBase, resultMetric, pm)
+	pm := o.GetPrefixMode()
+	resultMetric := resultMetricFn(o.metricRegistry, aM, bM)
+	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
+	if err != nil {
+		return buildError("arithmetic", err)
+	}
+	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
+	if err != nil {
+		return buildError("arithmetic", err)
+	}
+	resultVal := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
 
 	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
 	return nil
+}
+
+// Add pops two values from stack, adds them, and pushes result.
+func (o *Operations) Add(stack *Stack) error {
+	return o.binaryMetricOp(
+		stack, "+",
+		func(aM, bM *Metric) error {
+			if !categoriesCompatible(aM, bM) {
+				return metricError("+", aM, bM)
+			}
+			return nil
+		},
+		func(a, b float64) float64 { return a + b },
+		compatibleMetric,
+	)
 }
 
 // Subtract pops two values from stack, subtracts (a - b), and pushes result.
 func (o *Operations) Subtract(stack *Stack) error {
-	a, b, err := popTwo(stack, "-")
-	if err != nil {
-		return err
-	}
-
-	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
-	if !categoriesCompatible(aM, bM) {
-		return metricError("-", aM, bM)
-	}
-
-	pm := o.GetPrefixMode()
-	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
-	if err != nil {
-		return buildError("subtraction", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
-	if err != nil {
-		return buildError("subtraction", err)
-	}
-	resultVal := convertFromBase(o.metricRegistry, aBase-bBase, resultMetric, pm)
-
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.binaryMetricOp(
+		stack, "-",
+		func(aM, bM *Metric) error {
+			if !categoriesCompatible(aM, bM) {
+				return metricError("-", aM, bM)
+			}
+			return nil
+		},
+		func(a, b float64) float64 { return a - b },
+		compatibleMetric,
+	)
 }
 
 // Multiply pops two values from stack, multiplies them, and pushes result.
 func (o *Operations) Multiply(stack *Stack) error {
-	a, b, err := popTwo(stack, "*")
-	if err != nil {
-		return err
-	}
-
-	aM, bM := resolveMetric(o.metricRegistry, a), resolveMetric(o.metricRegistry, b)
-
-	pm := o.GetPrefixMode()
-	resultMetric := resultMetricForMul(o.metricRegistry, aM, bM)
-	// Convert both to base units, multiply, convert back to result metric
-	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
-	if err != nil {
-		return buildError("multiplication", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
-	if err != nil {
-		return buildError("multiplication", err)
-	}
-	resultVal := convertFromBase(o.metricRegistry, aBase*bBase, resultMetric, pm)
-
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.binaryMetricOp(
+		stack, "*",
+		nil, // no compatibility check for multiplication
+		func(a, b float64) float64 { return a * b },
+		resultMetricForMul,
+	)
 }
 
 // Divide pops two values from stack, divides (a / b), and pushes result.
