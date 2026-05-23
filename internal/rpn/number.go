@@ -306,11 +306,13 @@ func (r *Rat) SetMetric(m *Metric) NumericValue {
 
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
 func (r *Rat) Compare(other NumericValue) (int, error) {
-	otherRat, ok := other.(*Rat)
-	if !ok {
-		return 0, fmt.Errorf("cannot compare: operand is not a rational number")
+	otherF, err := other.Float64()
+	if err != nil {
+		return 0, fmt.Errorf("cannot compare: %w", err)
 	}
-	return r.n.Cmp(otherRat.n), nil
+	otherRat := &big.Rat{}
+	otherRat.SetFloat64(otherF)
+	return r.n.Cmp(otherRat), nil
 }
 
 // ToRat converts a StackValue to *big.Rat.
