@@ -19,7 +19,6 @@ type RPN struct {
 	assignHandler  *assignmentHandler
 	maxStack       int
 	currentStack   *Stack
-	mode           CalculationMode
 	metricRegistry *MetricRegistry
 }
 
@@ -42,7 +41,6 @@ func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 		assignHandler:  newAssignmentHandler(),
 		maxStack:       1000, // Reasonable limit for RPN expressions
 		currentStack:   NewStack(),
-		mode:           FloatMode, // Default mode
 		metricRegistry: r,
 	}
 }
@@ -58,7 +56,7 @@ func (r *RPN) GetConstants() ConstantsProvider {
 func (r *RPN) GetMode() CalculationMode {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.mode
+	return r.ops.GetMode()
 }
 
 // SetMode sets the calculation mode.
@@ -66,7 +64,6 @@ func (r *RPN) GetMode() CalculationMode {
 func (r *RPN) SetMode(mode CalculationMode) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.mode = mode
 	r.ops.SetMode(mode)
 }
 

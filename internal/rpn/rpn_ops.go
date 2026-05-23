@@ -20,7 +20,7 @@ func Tokenize(input string) []string {
 // This is useful for commands that need to show the stack without consuming it.
 func (r *RPN) ResultStack(tokens []string) (string, error) {
 	r.mu.RLock()
-	mode := r.mode
+	mode := r.ops.GetMode()
 	r.mu.RUnlock()
 
 	stack := NewStack()

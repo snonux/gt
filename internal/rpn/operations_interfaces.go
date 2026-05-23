@@ -86,6 +86,8 @@ type Operator interface {
 	PowerIntOperator
 	// SetMode sets the calculation mode (e.g., FloatMode, RationalMode).
 	SetMode(CalculationMode)
+	// GetMode returns the current calculation mode.
+	GetMode() CalculationMode
 	// SetPrefixMode sets the prefix mode for data size calculations
 	SetPrefixMode(PrefixMode)
 	// GetPrefixMode returns the current prefix mode

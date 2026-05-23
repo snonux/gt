@@ -388,12 +388,12 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 
 	// Check if it's a variable reference first (before operators)
 	if val, exists := r.vars.GetVariable(token); exists {
-		stack.Push(NewNumber(val, r.mode))
+		stack.Push(NewNumber(val, r.ops.GetMode()))
 		return "", nil
 	}
 	// Check if it's a constant reference (before operators)
 	if val, exists := r.consts.GetConstant(token); exists {
-		stack.Push(NewNumber(val, r.mode))
+		stack.Push(NewNumber(val, r.ops.GetMode()))
 		return "", nil
 	}
 
@@ -486,7 +486,7 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 		if stack.Len() >= r.maxStack {
 			return false, fmt.Errorf("stack overflow")
 		}
-		stack.Push(NewNumber(num, r.mode))
+		stack.Push(NewNumber(num, r.ops.GetMode()))
 		return true, nil
 	}
 
@@ -495,7 +495,7 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 		if stack.Len() >= r.maxStack {
 			return false, fmt.Errorf("stack overflow")
 		}
-		stack.Push(NewNumberWithMetric(num, r.mode, metric))
+		stack.Push(NewNumberWithMetric(num, r.ops.GetMode(), metric))
 		return true, nil
 	}
 
@@ -507,7 +507,7 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 			if stack.Len() >= r.maxStack {
 				return false, fmt.Errorf("stack overflow")
 			}
-			stack.Push(NewNumberWithMetric(1, r.mode, metric))
+			stack.Push(NewNumberWithMetric(1, r.ops.GetMode(), metric))
 			return true, nil
 		}
 		return false, fmt.Errorf("unknown metric %q in %q", metricName, token)
