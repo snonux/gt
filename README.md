@@ -369,6 +369,40 @@ gt '100 7 3 [%]'      # 100 % 7 % 3 = 2
 # → 2
 ```
 
+**Metric behavior:** HyperAdd (`[+]`), HyperSubtract (`[-]`), and HyperModulo (`[%]`) are metric-aware — they convert all operands to compatible units before computing. HyperMultiply (`[*]`), HyperDivide (`[/]`), and HyperPower (`[^]`) always return `Cool` (unitless).
+
+HyperLog operators compute the sum of logarithms across all stack values:
+
+```bash
+gt '2 4 8 [lg]'       # log2(2) + log2(4) + log2(8) = 1 + 2 + 3 = 6
+# → 6
+
+gt '10 100 [log]'     # log10(10) + log10(100) = 1 + 2 = 3
+# → 3
+
+gt '2.718281828 7.389 [ln]'  # ln(e) + ln(e²) ≈ 1 + 2 = 3
+# → 3
+```
+
+HyperLog operators always return `Cool` (unitless).
+
+## Log Operators
+
+Single-value logarithm operators:
+
+```bash
+gt '8 lg'             # log₂(8) = 3
+# → 3
+
+gt '1000 log'         # log₁₀(1000) = 3
+# → 3
+
+gt '2.718281828 ln'   # ln(e) ≈ 1
+# → 1
+```
+
+Log operators return `Cool` (unitless).
+
 ## Metrics
 
 Every number on the stack carries a unit of measurement. The default unit is `Cool` (unitless). Numbers with metrics can be converted, combined, and compared with automatic unit handling.
