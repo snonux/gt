@@ -72,10 +72,10 @@ type PowerIntOperator interface {
 // This allows RPN to depend on an abstraction instead of the concrete Operations type.
 //
 // Design note: Operator intentionally mixes behavioral methods (arithmetic, stack,
-// boolean ops) with configuration methods (SetMode, SetPrefixMode, GetPrefixMode)
-// and metric command handlers. Per ISP this could be split, but RPN is the sole
-// client and splitting would add indirection without practical benefit. The
-// concrete *Operations type satisfies this interface exclusively.
+// boolean ops) with configuration methods (SetMode, SetPrefixMode, GetPrefixMode),
+// metric command handlers, and custom metric commands. Per ISP this could be split,
+// but RPN is the sole client and splitting would add indirection without practical
+// benefit. The concrete *Operations type satisfies this interface exclusively.
 type Operator interface {
 	ArithmeticOperator
 	BooleanOperator
@@ -84,7 +84,7 @@ type Operator interface {
 	VariableOperator
 	ConstantOperator
 	PowerIntOperator
-	// SetMode sets the calculation mode for number formatting
+	// SetMode sets the calculation mode (e.g., FloatMode, RationalMode).
 	SetMode(CalculationMode)
 	// SetPrefixMode sets the prefix mode for data size calculations
 	SetPrefixMode(PrefixMode)
