@@ -218,6 +218,6 @@ func (o *Operations) Convert(stack *Stack) error {
 		return buildError("convert", err)
 	}
 	// 6. Push result with target metric
-	stack.Push(NewNumber(resultVal, o.GetMode(), targetMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), targetMetric))
 	return nil
 }

@@ -61,7 +61,7 @@ func (o *Operations) binaryMetricOp(
 		return buildError(op, err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -152,7 +152,7 @@ func (o *Operations) Divide(stack *Stack) error {
 		return buildError("/", err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -182,7 +182,7 @@ func (o *Operations) Power(stack *Stack) error {
 		return buildError("power", err)
 	}
 
-	stack.Push(NewNumber(math.Pow(aF, bF), o.GetMode(), GetCoolMetric()))
+	stack.Push(NewNumberWithMetric(math.Pow(aF, bF), o.GetMode(), GetCoolMetric()))
 	return nil
 }
 
@@ -231,7 +231,7 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return buildError("%", err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -265,11 +265,11 @@ func (o *Operations) FastPower(stack *Stack) error {
 
 	// Result is unitless (Cool metric)
 	if exp == 0 {
-		stack.Push(NewNumber(1, o.GetMode(), GetCoolMetric()))
+		stack.Push(NewNumberWithMetric(1, o.GetMode(), GetCoolMetric()))
 		return nil
 	}
 	resultVal := binaryExponentiationFloat(aF, exp)
-	stack.Push(NewNumber(resultVal, o.GetMode(), GetCoolMetric()))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), GetCoolMetric()))
 	return nil
 }
 

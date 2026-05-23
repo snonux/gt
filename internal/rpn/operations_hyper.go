@@ -54,7 +54,7 @@ func (o *Operations) HyperAdd(stack *Stack) error {
 		return buildError("[+]", err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 	if err != nil {
 		return buildError("[*]", err)
 	}
-	stack.Push(NewNumber(product, o.GetMode(), cool))
+	stack.Push(NewNumberWithMetric(product, o.GetMode(), cool))
 	return nil
 }
 
@@ -134,7 +134,7 @@ func (o *Operations) HyperSubtract(stack *Stack) error {
 		return buildError("[-]", err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -166,7 +166,7 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 	if err != nil {
 		return buildError("[/]", err)
 	}
-	stack.Push(NewNumber(result, o.GetMode(), cool))
+	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
 	return nil
 }
 
@@ -195,7 +195,7 @@ func (o *Operations) HyperPower(stack *Stack) error {
 	if err != nil {
 		return buildError("[^]", err)
 	}
-	stack.Push(NewNumber(result, o.GetMode(), cool))
+	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
 	return nil
 }
 
@@ -249,7 +249,7 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		return buildError("[%]", err)
 	}
 
-	stack.Push(NewNumber(resultVal, o.GetMode(), resultMetric))
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
 }
 
@@ -277,7 +277,7 @@ func (o *Operations) hyperLog(stack *Stack, opName string, logFn func(float64) f
 	if err != nil {
 		return buildError(opName, err)
 	}
-	stack.Push(NewNumber(result, o.GetMode(), cool))
+	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
 	return nil
 }
 

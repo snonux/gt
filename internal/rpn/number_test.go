@@ -432,7 +432,7 @@ func TestNewNumberWithExplicitMetric(t *testing.T) {
 	reg := GetMetricRegistry()
 	mbps, _ := reg.Find("Mbps")
 
-	n := NewNumber(100, FloatMode, mbps)
+	n := NewNumberWithMetric(100, FloatMode, mbps)
 	val, _ := n.Float64()
 	if val != 100 {
 		t.Errorf("Float64() = %v, want 100", val)

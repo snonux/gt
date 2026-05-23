@@ -55,18 +55,27 @@ var _ NumericValue = (*Rat)(nil)
 var _ StackValue = (*StringNum)(nil)
 var _ StackValue = (*Symbol)(nil)
 
-// NewNumber creates a Number from a float64 value with the given metric.
-// The actual type depends on the current calculation mode.
-// If metric is nil or omitted, defaults to Cool.
-func NewNumber(value float64, mode CalculationMode, metric ...*Metric) Number {
-	m := GetCoolMetric()
-	if len(metric) > 0 && metric[0] != nil {
-		m = metric[0]
+// NewNumber creates a Number from a float64 value with the given mode.
+// The actual type depends on the current calculation mode (Float or Rat).
+// The metric defaults to Cool (unitless).
+func NewNumber(value float64, mode CalculationMode) Number {
+	if mode == RationalMode {
+		return NewRat(value)
+	}
+	return NewFloat(value)
+}
+
+// NewNumberWithMetric creates a Number from a float64 value with an explicit metric.
+// The actual type depends on the current calculation mode (Float or Rat).
+// If metric is nil, defaults to Cool.
+func NewNumberWithMetric(value float64, mode CalculationMode, metric *Metric) Number {
+	if metric == nil {
+		metric = GetCoolMetric()
 	}
 	if mode == RationalMode {
-		return NewRatWithMetric(value, m)
+		return NewRatWithMetric(value, metric)
 	}
-	return NewFloatWithMetric(value, m)
+	return NewFloatWithMetric(value, metric)
 }
 
 // GetCoolMetric returns the universal default metric.

@@ -331,7 +331,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
-			stack.Push(NewNumber(num, r.mode, metric))
+			stack.Push(NewNumberWithMetric(num, r.mode, metric))
 			continue
 		}
 
@@ -343,7 +343,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 				if stack.Len() >= r.maxStack {
 					return "", fmt.Errorf("stack overflow")
 				}
-				stack.Push(NewNumber(1, r.mode, metric))
+				stack.Push(NewNumberWithMetric(1, r.mode, metric))
 				continue
 			}
 			return "", fmt.Errorf("unknown metric %q in %q", metricName, token)

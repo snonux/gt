@@ -586,7 +586,7 @@ func TestNumberDefaultMetricIsCool(t *testing.T) {
 	// NewNumber defaults to Cool
 	n := NewNumber(42, FloatMode)
 	if n.Metric() != cool {
-		t.Errorf("NewNumber().Metric() = %v, want Cool", n.Metric())
+		t.Errorf("NewNumberWithMetric().Metric() = %v, want Cool", n.Metric())
 	}
 }
 
@@ -614,9 +614,9 @@ func TestNewNumberWithMetric(t *testing.T) {
 	reg := GetMetricRegistry()
 	hr, _ := reg.Find("hr")
 
-	n := NewNumber(2, FloatMode, hr)
+	n := NewNumberWithMetric(2, FloatMode, hr)
 	if n.Metric() != hr {
-		t.Errorf("NewNumber(metric).Metric() = %v, want hr", n.Metric())
+		t.Errorf("NewNumberWithMetric(metric).Metric() = %v, want hr", n.Metric())
 	}
 }
 
