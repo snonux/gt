@@ -266,9 +266,9 @@ func registerBuiltInMetrics(r *MetricRegistry) {
 		IsRate:   false,
 	})
 	// nm = nautical mile (1852 m), not nanometer.
-	// Nanometer support (nm = 1e-9 m) is not included to avoid ambiguity.
-	// If nanometers are needed, they can be added as "nm" in a separate
-	// metric registration or use scientific notation (1e-9m) directly.
+	// Nanometer support is intentionally excluded to avoid ambiguity
+	// with the nautical mile abbreviation. Use scientific notation
+	// (1e-9m) directly if nanometer precision is needed.
 	r.Register(&Metric{
 		Name:     "nm",
 		Category: Distance,
