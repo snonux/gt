@@ -51,7 +51,8 @@ func (c *Calculation) Format() string {
 }
 
 // ParsingStrategy represents a parsing function that attempts to parse input.
-// Returns a Calculation if handled, or error if not.
+// Returns (calc, true, nil) on success, (nil, true, err) if the pattern matched
+// but value parsing failed, or (nil, false, nil) if the input did not match.
 type ParsingStrategy func(input string) (*Calculation, bool, error)
 
 // strategyRegistry maintains a registry of parsing strategies.
@@ -108,7 +109,7 @@ func Parse(input string) (string, error) {
 
 // ParseCalculation parses a percentage calculation input string and returns the Calculation object.
 // It handles formats like "20% of 150", "30 is what % of 150", and "30 is 20% of what".
-// This provides callers with more flexibility to access raw values and formatting options.
+// This provides callers with access to the raw values and calculation type.
 func ParseCalculation(input string) (*Calculation, error) {
 	input = strings.ToLower(strings.TrimSpace(input))
 	input = strings.ReplaceAll(input, "what is ", "")
