@@ -4,10 +4,11 @@
 package rpn
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -146,8 +147,8 @@ func (v *Variables) ListVariables() []VariableInfo {
 	}
 
 	// Sort by name for consistent output
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Name < infos[j].Name
+	slices.SortFunc(infos, func(a, b VariableInfo) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	return infos
@@ -171,8 +172,8 @@ func (v *Variables) formatVariablesUnsafe() string {
 	}
 
 	// Sort by name for consistent output
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Name < infos[j].Name
+	slices.SortFunc(infos, func(a, b VariableInfo) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	if len(infos) == 0 {
@@ -232,8 +233,8 @@ func (v *Variables) Save(path string) error {
 	}
 
 	// Sort by name for consistent output
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Name < infos[j].Name
+	slices.SortFunc(infos, func(a, b VariableInfo) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	return saveVariables(path, infos)

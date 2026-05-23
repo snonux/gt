@@ -4,9 +4,10 @@
 package rpn
 
 import (
+	"cmp"
 	"maps"
 	"math"
-	"sort"
+	"slices"
 	"sync"
 )
 
@@ -135,8 +136,8 @@ func (c *Constants) ListConstants() []ConstantInfo {
 	}
 
 	// Sort by name for consistent output
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Name < infos[j].Name
+	slices.SortFunc(infos, func(a, b ConstantInfo) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	return infos
