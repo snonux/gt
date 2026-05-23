@@ -176,15 +176,21 @@ type VariableWriter interface {
 	ClearVariables()
 }
 
-// VariableStore combines VariableReader and VariableWriter for full variable storage access.
-type VariableStore interface {
-	VariableReader
-	VariableWriter
+// VariablePersistence defines the interface for persisting variable storage to disk.
+type VariablePersistence interface {
 	// Save writes the variable store to a file in JSON format.
 	Save(path string) error
 	// Load reads the variable store from a file in JSON format.
 	// Existing variables are overwritten; new variables are added.
 	Load(path string) error
+}
+
+// VariableStore combines VariableReader, VariableWriter, and VariablePersistence
+// for full variable storage access.
+type VariableStore interface {
+	VariableReader
+	VariableWriter
+	VariablePersistence
 }
 
 // NewVariables creates and initializes a new Variables instance.
