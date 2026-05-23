@@ -23,8 +23,8 @@ type Operations struct {
 var _ Operator = (*Operations)(nil)
 
 // NewOperations creates a new Operations instance with the given variable store.
+// Creates a new ConstantsProvider internally; use SetConstants to replace it.
 // If no registry is provided, defaults to the global MetricRegistry.
-// If no constants provider is provided, creates a new one.
 func NewOperations(vars VariableStore, reg ...*MetricRegistry) *Operations {
 	consts := NewConstants()
 	r := GetMetricRegistry()
