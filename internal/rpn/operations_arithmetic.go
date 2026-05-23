@@ -233,12 +233,7 @@ func (o *Operations) Modulo(stack *Stack) error {
 // FastPower pops two values from stack, raises first to integer power of second (a ** b), and pushes result.
 // Uses binary exponentiation for efficiency with large integer exponents.
 func (o *Operations) FastPower(stack *Stack) error {
-	b, err := popStack(stack, "**")
-	if err != nil {
-		return err
-	}
-
-	a, err := popStack(stack, "**")
+	a, b, err := popTwo(stack, "**")
 	if err != nil {
 		return err
 	}

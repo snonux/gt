@@ -302,9 +302,6 @@ func TestParseAndEvaluateUnknownToken(t *testing.T) {
 }
 
 func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
-	v := NewVariables()
-	r := NewRPN(v)
-
 	tests := []struct {
 		name  string
 		input string
@@ -316,6 +313,8 @@ func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			v := NewVariables()
+			r := NewRPN(v)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("%q should return error for insufficient operands", tt.input)

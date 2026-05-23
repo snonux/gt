@@ -19,7 +19,12 @@ func popStack(stack *Stack, op string) (StackValue, error) {
 }
 
 // popTwo pops two values from the stack for binary operations.
+// Uses ensureStackLength to prevent stack corruption on second Pop failure.
 func popTwo(stack *Stack, op string) (StackValue, StackValue, error) {
+	if err := ensureStackLength(stack, 2, op); err != nil {
+		return nil, nil, err
+	}
+
 	b, err := stack.Pop()
 	if err != nil {
 		return nil, nil, fmt.Errorf("insufficient operands for %s: %w", op, err)
@@ -27,6 +32,9 @@ func popTwo(stack *Stack, op string) (StackValue, StackValue, error) {
 
 	a, err := stack.Pop()
 	if err != nil {
+		// Should not happen given ensureStackLength check above.
+		// If it does (concurrent modification), restore b and return error.
+		stack.Push(b)
 		return nil, nil, fmt.Errorf("insufficient operands for %s: %w", op, err)
 	}
 
