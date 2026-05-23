@@ -54,7 +54,21 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
 	registry.registerStandardOperator("d", func(stack *Stack) error {
-		return fmt.Errorf("'d' command not supported as standalone token")
+		val, err := popStack(stack, "d")
+		if err != nil {
+			return err
+		}
+		// Extract variable name from the value
+		var name string
+		switch v := val.(type) {
+		case *Symbol:
+			name = v.Name()
+		case *StringNum:
+			name = v.String()
+		default:
+			return fmt.Errorf("delete expects a variable name, got %T", val)
+		}
+		return op.DeleteVariable(name)
 	})
 
 	// Commands that return immediately

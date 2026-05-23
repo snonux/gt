@@ -54,6 +54,7 @@ type VariableOperator interface {
 	ClearVariables()
 	AssignLeft(stack *Stack) error
 	AssignRight(stack *Stack) error
+	DeleteVariable(name string) error
 }
 
 // ConstantOperator defines the interface for constant operations.

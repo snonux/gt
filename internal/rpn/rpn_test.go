@@ -522,9 +522,9 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 			expectedError: "invalid assignment syntax",
 		},
 		{
-			name:          "'d' command not supported",
+			name:          "'d' command without operand",
 			input:         "d",
-			expectedError: "'d' command not supported as standalone token",
+			expectedError: "insufficient operands for d",
 		},
 		{
 			name:          "empty result after evaluation",
