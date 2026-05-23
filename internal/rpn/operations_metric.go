@@ -61,8 +61,14 @@ func compatibleMetric(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 }
 
 // convertToBase converts a StackValue's value to its metric's base unit.
-// When the value's metric is Cool (Universal) and resultMetric is non-Cool,
-// the Cool value is treated in resultMetric's space (not base units).
+//
+// Cool absorbing (important): When the value's metric is Cool (Universal)
+// and resultMetric is non-Cool, the Cool value is treated as units of the
+// result metric. For example, '5 100Mbps +' converts the Cool 5 as 5Mbps,
+// producing 105Mbps. This allows seamless mixing of unitless scalars with
+// metric values. The Cool value is multiplied by resultMetric.Factor(),
+// NOT by 1 (base units).
+//
 // Returns the converted float64 value in base units.
 func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMetric *Metric) (float64, error) {
 	nv, ok := n.(NumericValue)
