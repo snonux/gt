@@ -26,8 +26,7 @@ func (o *Operations) ListConstants() (string, error) {
 	return sb.String(), nil
 }
 
-// ClearConstants removes all constants from storage.
-// Note: This clears only user-defined constants; built-in constants are preserved.
+// ClearConstants removes all user-defined constants and resets built-in constants to their default values.
 // Usage: `clearconstants`
 func (o *Operations) ClearConstants() {
 	o.consts.ReloadBuiltInConstants()
