@@ -3,6 +3,5 @@
 
 package rpn
 
-// RPN represents the RPN parser and evaluator with state management.
-// This file contains only the RPN struct definition and constructor.
-// All other functionality is in separate files for better separation of concerns.
+// Package rpn implements an RPN (Reverse Polish Notation) parser and evaluator
+// with state management, supporting variables, constants, metrics, and hyperoperators.
