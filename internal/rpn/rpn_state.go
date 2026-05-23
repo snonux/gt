@@ -96,7 +96,7 @@ func (r *RPN) SetCurrentStack(values []StackValue) {
 
 // Stack returns the current stack as a slice of StackValues.
 // This is a convenience wrapper around GetCurrentStack().
-// Returns nil if the stack is empty or nil.
+// Returns an empty slice if the stack has no values.
 func (r *RPN) Stack() []StackValue {
 	return r.GetCurrentStack()
 }
