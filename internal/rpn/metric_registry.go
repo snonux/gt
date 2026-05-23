@@ -53,6 +53,11 @@ func (r *MetricRegistry) Register(m *Metric) {
 }
 
 // Find looks up a metric by name (case-sensitive).
+// The returned *Metric pointer is safe to hold across concurrent Unregister
+// calls: Metric objects are never mutated after registration (Register panics
+// on duplicates, and Unregister only deletes entries from the map without
+// modifying the objects), so the pointer always refers to a valid, immutable
+// value even after the metric is unregistered from the registry.
 func (r *MetricRegistry) Find(name string) (*Metric, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -62,6 +67,8 @@ func (r *MetricRegistry) Find(name string) (*Metric, bool) {
 
 // FindCaseInsensitive looks up a metric by name ignoring case.
 // Returns the canonical name match.
+// The returned *Metric pointer is safe to hold across concurrent operations
+// (see MetricRegistry.Find for details).
 func (r *MetricRegistry) FindCaseInsensitive(name string) (*Metric, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -105,6 +112,8 @@ func (r *MetricRegistry) MarkExactMatch(names ...string) {
 
 // FindWithAliases looks up a metric by name, resolving aliases.
 // Checks exact match first, then aliases, then case-insensitive (unless exact-match).
+// The returned *Metric pointer is safe to hold across concurrent operations
+// (see MetricRegistry.Find for details).
 func (r *MetricRegistry) FindWithAliases(name string) (*Metric, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -137,7 +146,9 @@ func (r *MetricRegistry) FindWithAliases(name string) (*Metric, bool) {
 	return nil, false
 }
 
-// List returns all registered metrics.
+// List returns all registered metrics as a slice of pointers.
+// The returned pointers are safe to hold across concurrent Unregister calls
+// (see MetricRegistry.Find for details).
 func (r *MetricRegistry) List() []*Metric {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -149,6 +160,8 @@ func (r *MetricRegistry) List() []*Metric {
 }
 
 // ListByCategory returns all metrics in the given category.
+// The returned pointers are safe to hold across concurrent Unregister calls
+// (see MetricRegistry.Find for details).
 func (r *MetricRegistry) ListByCategory(cat Category) []*Metric {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
