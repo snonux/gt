@@ -72,7 +72,8 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 }
 
 // EvalOperator evaluates a single operator on the current stack state.
-// This allows incremental RPN operations like: "1 2 +" then "+".
+// This allows incremental RPN operations, e.g., after ParseAndEvaluate("1 2 3 +") leaves
+// the stack with [1, 5], calling EvalOperator("+") produces "6".
 func (r *RPN) EvalOperator(op string) (string, error) {
 	if r.currentStack == nil {
 		r.currentStack = NewStack()
@@ -97,7 +98,7 @@ func (r *RPN) EvalOperator(op string) (string, error) {
 }
 
 // executeOperator handles operator execution (standard or hyper) and returns (result string, handled bool, error error).
-// This is a helper to avoid code duplication between handleOperator and EvalOperator.
+// This is a shared helper used by handleOperator, ResultStack, and EvalOperator.
 func (r *RPN) executeOperator(stack *Stack, token string) (string, bool, error) {
 	// Check for hyperoperators first
 	if r.opRegistry.IsHyperOperator(token) {
