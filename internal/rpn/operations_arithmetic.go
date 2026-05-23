@@ -193,13 +193,6 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return err
 	}
 
-	if sym, ok := a.(*Symbol); ok {
-		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
-	}
-	if sym, ok := b.(*Symbol); ok {
-		return fmt.Errorf("symbol %s cannot be used with modulo operator", sym.Name())
-	}
-
 	bF, err := toFloat64(b, "%")
 	if err != nil {
 		return err
