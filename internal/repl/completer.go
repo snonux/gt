@@ -11,7 +11,7 @@ import (
 // It returns suggestions for commands that match the current word being typed.
 // The matching is case-insensitive.
 //
-// This function is used by readline for tab completion.
+// The function is used in tests; readline tab completion uses AutoCompleteAdapter instead.
 //
 // text: the current word being typed
 // Returns a slice of strings for matching built-in commands
@@ -29,12 +29,13 @@ func completer(text string) []string {
 	return suggestions
 }
 
-// AutoCompleteAdapter adapts our completer function to the readline AutoCompleter interface
+// AutoCompleteAdapter implements the readline AutoCompleter interface,
+// providing tab-completion suggestions for built-in commands.
 type AutoCompleteAdapter struct {
 	commands []string
 }
 
-// NewAutoCompleter creates a readline auto-completer that uses the completer function.
+// NewAutoCompleter creates a new AutoCompleteAdapter with the current list of built-in commands.
 func NewAutoCompleter() *AutoCompleteAdapter {
 	return &AutoCompleteAdapter{
 		commands: Commands(),
