@@ -248,154 +248,36 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 			return "", fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
 		}
 
-		// Check if it's a boolean literal
-		if token == "true" {
-			stack.Push(NewFloatFromBool(true))
+		// Push literal values (numbers, booleans, metric values, @metric prefix)
+		if pushed, err := r.pushLiteral(stack, token); err != nil {
+			return "", err
+		} else if pushed {
 			continue
-		}
-		if token == "false" {
-			stack.Push(NewFloatFromBool(false))
-			continue
-		}
-
-		// Check if it's a number
-		if num, err := strconv.ParseFloat(token, 64); err == nil {
-			if stack.Len() >= r.maxStack {
-				return "", fmt.Errorf("stack overflow")
-			}
-			stack.Push(NewNumber(num, r.mode))
-			continue
-		}
-
-		// Check if it's a number with a metric suffix (e.g., 100Mbps, 5.5GB, 2hr)
-		if num, metric, ok := parseNumberWithMetric(token, r.metricRegistry); ok {
-			if stack.Len() >= r.maxStack {
-				return "", fmt.Errorf("stack overflow")
-			}
-			stack.Push(NewNumberWithMetric(num, r.mode, metric))
-			continue
-		}
-
-		// Check for @ prefix: standalone metric (e.g., @GB, @Mbps)
-		// Pushes a Number with value 1 and the looked-up metric
-		if len(token) > 1 && token[0] == '@' {
-			metricName := token[1:]
-			if metric, ok := r.metricRegistry.FindWithAliases(metricName); ok {
-				if stack.Len() >= r.maxStack {
-					return "", fmt.Errorf("stack overflow")
-				}
-				stack.Push(NewNumberWithMetric(1, r.mode, metric))
-				continue
-			}
-			return "", fmt.Errorf("unknown metric %q in %q", metricName, token)
 		}
 
 		// Handle multi-word metric command: metric <subcommand>
-		if token == "metric" && i+1 < len(tokens) {
-			subCmd := tokens[i+1]
-			switch subCmd {
-			case "show":
-				result, err := r.ops.MetricShow(stack)
-				if err != nil {
-					return "", fmt.Errorf("rpn: metric show: %w", err)
-				}
-				return result, nil
-			case "list":
-				result, err := r.ops.MetricList(stack)
-				if err != nil {
-					return "", fmt.Errorf("rpn: metric list: %w", err)
-				}
-				return result, nil
-			case "binary":
-				if i+2 < len(tokens) && tokens[i+2] == "set" {
-					r.ops.SetPrefixMode(IEC)
-					return "prefix mode: IEC", nil
-				}
-				return "", fmt.Errorf("rpn: metric binary: use 'metric binary set'")
-			case "decimal":
-				if i+2 < len(tokens) && tokens[i+2] == "set" {
-					r.ops.SetPrefixMode(SI)
-					return "prefix mode: SI", nil
-				}
-				return "", fmt.Errorf("rpn: metric decimal: use 'metric decimal set'")
-			case "compatible":
-				result, err := r.ops.MetricCompatible(stack)
-				if err != nil {
-					return "", fmt.Errorf("rpn: metric compatible: %w", err)
-				}
-				return result, nil
-			default:
-				// Try as a category name
-				result, err := r.ops.MetricCategory(stack, subCmd)
-				if err != nil {
-					return "", fmt.Errorf("rpn: metric %s: %w", subCmd, err)
-				}
-				return result, nil
-			}
+		if result, handled, err := r.handleMetricCommand(stack, tokens, i); err != nil {
+			return "", err
+		} else if handled {
+			return result, nil
 		}
 
 		// Handle multi-word custom command: custom <subcommand>
-		if token == "custom" && i+1 < len(tokens) {
-			subCmd := tokens[i+1]
-			switch subCmd {
-			case "show":
-				result, err := r.ops.MetricShow(stack)
-				if err != nil {
-					return "", fmt.Errorf("rpn: custom show: %w", err)
-				}
-				return result, nil
-			case "list":
-				result, err := r.ops.CustomList(stack)
-				if err != nil {
-					return "", fmt.Errorf("rpn: custom list: %w", err)
-				}
-				return result, nil
-			case "define":
-				if i+4 < len(tokens) {
-					name := tokens[i+2]
-					factorStr := tokens[i+3]
-					category := tokens[i+4]
-					factor, err := strconv.ParseFloat(factorStr, 64)
-					if err != nil {
-						return "", fmt.Errorf("rpn: custom define: invalid factor %q", factorStr)
-					}
-					err = r.ops.CustomDefine(name, factor, category)
-					if err != nil {
-						return "", fmt.Errorf("rpn: custom define: %w", err)
-					}
-					return fmt.Sprintf("defined custom metric %q (factor: %g, category: %s)", name, factor, category), nil
-				}
-				return "", fmt.Errorf("rpn: custom define: usage: custom define <name> <factor> <category>")
-			case "undefine":
-				if i+2 < len(tokens) {
-					name := tokens[i+2]
-					err := r.ops.CustomUndefine(name)
-					if err != nil {
-						return "", fmt.Errorf("rpn: custom undefine: %w", err)
-					}
-					return fmt.Sprintf("removed custom metric %q", name), nil
-				}
-				return "", fmt.Errorf("rpn: custom undefine: usage: custom undefine <name>")
-			default:
-				return "", fmt.Errorf("rpn: unknown custom subcommand %q. Use: show, list, define, undefine", subCmd)
-			}
+		if result, handled, err := r.handleCustomCommand(stack, tokens, i); err != nil {
+			return "", err
+		} else if handled {
+			return result, nil
 		}
 
 		// Check if this is a variable name for assignment (:= or =:)
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name
-		shouldPushName := false
-
 		if i+1 < len(tokens) {
 			nextToken := tokens[i+1]
 			if nextToken == ":=" || nextToken == "=:" {
-				// Check if this is a stack assignment (e.g., "x =:" or "x :=")
 				// Stack assignment: exactly 2 tokens, first is variable name, second is operator
 				if len(tokens) == 2 && i == 0 {
-					// This is a stack assignment. Pop the value from stack and assign to variable.
-					// Don't push the name as StringNum because the operator expects stack: [value, name]
-					// but for stack assignment, the value is already on stack and we just have the name token.
-					// Instead, we handle it inline: pop value, assign to name (from token).
+					// Handle inline: pop value, assign to variable name
 					val, err := stack.Pop()
 					if err != nil {
 						return "", fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
@@ -407,24 +289,13 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 					if err := r.vars.SetVariable(token, valF); err != nil {
 						return "", fmt.Errorf("failed to set variable %q: %w", token, err)
 					}
-					// Skip the operator token (next one) since we handled it inline
-					// We've consumed both tokens, so we're done
-					// Return confirmation message showing the assignment
 					return fmt.Sprintf("%s = %.10g", token, valF), nil
-				} else if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
-					// This token is a variable name (not a number)
-					shouldPushName = true
 				}
 			}
 		}
 
-		// Special case: first token in := expression (e.g., "x 5 :=")
-		// Only push as name if the first token is not a number (it's a variable name)
-		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == ":=" {
-			if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
-				shouldPushName = true
-			}
-		}
+		// Check if this token should be pushed as a variable name (StringNum)
+		shouldPushName := r.shouldPushName(stack, tokens, i)
 
 		if shouldPushName {
 			// This token is a variable name, push as StringNum
@@ -595,4 +466,180 @@ func extractVariableName(token string) string {
 		return token[1:]
 	}
 	return token
+}
+
+// pushLiteral attempts to push a literal value (boolean, number, metric number, @metric) onto the stack.
+// Returns (true, nil) if a literal was pushed, (false, nil) if not a literal, or (false, err) on error.
+func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
+	// Check if it's a boolean literal
+	if token == "true" {
+		stack.Push(NewFloatFromBool(true))
+		return true, nil
+	}
+	if token == "false" {
+		stack.Push(NewFloatFromBool(false))
+		return true, nil
+	}
+
+	// Check if it's a number
+	if num, err := strconv.ParseFloat(token, 64); err == nil {
+		if stack.Len() >= r.maxStack {
+			return false, fmt.Errorf("stack overflow")
+		}
+		stack.Push(NewNumber(num, r.mode))
+		return true, nil
+	}
+
+	// Check if it's a number with a metric suffix (e.g., 100Mbps, 5.5GB, 2hr)
+	if num, metric, ok := parseNumberWithMetric(token, r.metricRegistry); ok {
+		if stack.Len() >= r.maxStack {
+			return false, fmt.Errorf("stack overflow")
+		}
+		stack.Push(NewNumberWithMetric(num, r.mode, metric))
+		return true, nil
+	}
+
+	// Check for @ prefix: standalone metric (e.g., @GB, @Mbps)
+	// Pushes a Number with value 1 and the looked-up metric
+	if len(token) > 1 && token[0] == '@' {
+		metricName := token[1:]
+		if metric, ok := r.metricRegistry.FindWithAliases(metricName); ok {
+			if stack.Len() >= r.maxStack {
+				return false, fmt.Errorf("stack overflow")
+			}
+			stack.Push(NewNumberWithMetric(1, r.mode, metric))
+			return true, nil
+		}
+		return false, fmt.Errorf("unknown metric %q in %q", metricName, token)
+	}
+
+	return false, nil
+}
+
+// handleMetricCommand dispatches 'metric <subcmd>' commands.
+// Returns (result, handled, error). If handled is true, result may be non-empty.
+func (r *RPN) handleMetricCommand(stack *Stack, tokens []string, i int) (string, bool, error) {
+	if token := tokens[i]; token != "metric" || i+1 >= len(tokens) {
+		return "", false, nil
+	}
+
+	subCmd := tokens[i+1]
+	switch subCmd {
+	case "show":
+		result, err := r.ops.MetricShow(stack)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: metric show: %w", err)
+		}
+		return result, true, nil
+	case "list":
+		result, err := r.ops.MetricList(stack)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: metric list: %w", err)
+		}
+		return result, true, nil
+	case "binary":
+		if i+2 < len(tokens) && tokens[i+2] == "set" {
+			r.ops.SetPrefixMode(IEC)
+			return "prefix mode: IEC", true, nil
+		}
+		return "", true, fmt.Errorf("rpn: metric binary: use 'metric binary set'")
+	case "decimal":
+		if i+2 < len(tokens) && tokens[i+2] == "set" {
+			r.ops.SetPrefixMode(SI)
+			return "prefix mode: SI", true, nil
+		}
+		return "", true, fmt.Errorf("rpn: metric decimal: use 'metric decimal set'")
+	case "compatible":
+		result, err := r.ops.MetricCompatible(stack)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: metric compatible: %w", err)
+		}
+		return result, true, nil
+	default:
+		// Try as a category name
+		result, err := r.ops.MetricCategory(stack, subCmd)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: metric %s: %w", subCmd, err)
+		}
+		return result, true, nil
+	}
+}
+
+// handleCustomCommand dispatches 'custom <subcmd>' commands.
+// Returns (result, handled, error). If handled is true, result may be non-empty.
+func (r *RPN) handleCustomCommand(stack *Stack, tokens []string, i int) (string, bool, error) {
+	if token := tokens[i]; token != "custom" || i+1 >= len(tokens) {
+		return "", false, nil
+	}
+
+	subCmd := tokens[i+1]
+	switch subCmd {
+	case "show":
+		result, err := r.ops.MetricShow(stack)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: custom show: %w", err)
+		}
+		return result, true, nil
+	case "list":
+		result, err := r.ops.CustomList(stack)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: custom list: %w", err)
+		}
+		return result, true, nil
+	case "define":
+		if i+4 < len(tokens) {
+			name := tokens[i+2]
+			factorStr := tokens[i+3]
+			category := tokens[i+4]
+			factor, err := strconv.ParseFloat(factorStr, 64)
+			if err != nil {
+				return "", true, fmt.Errorf("rpn: custom define: invalid factor %q", factorStr)
+			}
+			err = r.ops.CustomDefine(name, factor, category)
+			if err != nil {
+				return "", true, fmt.Errorf("rpn: custom define: %w", err)
+			}
+			return fmt.Sprintf("defined custom metric %q (factor: %g, category: %s)", name, factor, category), true, nil
+		}
+		return "", true, fmt.Errorf("rpn: custom define: usage: custom define <name> <factor> <category>")
+	case "undefine":
+		if i+2 < len(tokens) {
+			name := tokens[i+2]
+			err := r.ops.CustomUndefine(name)
+			if err != nil {
+				return "", true, fmt.Errorf("rpn: custom undefine: %w", err)
+			}
+			return fmt.Sprintf("removed custom metric %q", name), true, nil
+		}
+		return "", true, fmt.Errorf("rpn: custom undefine: usage: custom undefine <name>")
+	default:
+		return "", true, fmt.Errorf("rpn: unknown custom subcommand %q. Use: show, list, define, undefine", subCmd)
+	}
+}
+
+// shouldPushName determines whether a token should be pushed as a variable name (StringNum)
+// rather than evaluated as a value. Returns true if the token is part of an := or =: assignment.
+func (r *RPN) shouldPushName(stack *Stack, tokens []string, i int) bool {
+	token := tokens[i]
+
+	// Check if next token is := or =:
+	if i+1 < len(tokens) {
+		nextToken := tokens[i+1]
+		if nextToken == ":=" || nextToken == "=:" {
+			// Stack assignment: exactly 2 tokens, handled inline (return true won't be reached)
+			// Non-stack assignment: check if token is a variable name
+			if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
+				return true
+			}
+		}
+	}
+
+	// Special case: first token in := expression (e.g., "x 5 :=")
+	if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == ":=" {
+		if _, err := strconv.ParseFloat(token, 64); err != nil && isValidIdentifier(token) {
+			return true
+		}
+	}
+
+	return false
 }
