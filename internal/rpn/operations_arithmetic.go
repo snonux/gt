@@ -50,11 +50,11 @@ func (o *Operations) binaryMetricOp(
 	}
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
-		return buildError("arithmetic", err)
+		return buildError(op, err)
 	}
 	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
 	if err != nil {
-		return buildError("arithmetic", err)
+		return buildError(op, err)
 	}
 	resultVal, err := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
 	if err != nil {
