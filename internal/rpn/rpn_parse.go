@@ -119,8 +119,8 @@ func handleAssignLeft(input string, r *RPN) (string, bool, error) {
 	return handleAssignmentOp(input, r, "=:")
 }
 
-// standardAssignHandler handles the standard = operator.
-// Format: name value = expression (value on bottom, expression after =)
+// handleStandardAssign handles the standard = operator.
+// Format: name value = expression (name on bottom, value on top, expression after =)
 // Or: name = value (single assignment)
 func handleStandardAssign(input string, r *RPN) (string, bool, error) {
 	// Check for standard assignment format (name = value or name value = expression)
