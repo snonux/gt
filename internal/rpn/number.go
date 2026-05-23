@@ -314,7 +314,14 @@ func (r *Rat) SetMetric(m *Metric) NumericValue {
 }
 
 // Compare returns -1, 0, or 1 if this rational is less than, equal to, or greater than another.
+// For Rat-to-Rat comparison, uses direct big.Rat.Cmp() for exact precision.
+// For Rat-to-Float comparison, converts via float64 (acceptable precision loss).
 func (r *Rat) Compare(other NumericValue) (int, error) {
+	// Rat-to-Rat: direct comparison with full precision
+	if otherRat, ok := other.(*Rat); ok {
+		return r.n.Cmp(otherRat.n), nil
+	}
+	// Rat-to-Float or other: convert via float64 (acceptable precision loss)
 	otherF, err := other.Float64()
 	if err != nil {
 		return 0, fmt.Errorf("cannot compare: %w", err)
