@@ -143,8 +143,8 @@ func (c *Constants) ListConstants() []ConstantInfo {
 	return infos
 }
 
-// ClearConstants removes all constants from storage.
-// Note: This clears only user-defined constants; built-in constants are preserved.
+// ClearConstants removes all constants and reloads the built-in defaults.
+// Note: This resets all constants, including any user-defined ones.
 func (c *Constants) ClearConstants() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -153,9 +153,8 @@ func (c *Constants) ClearConstants() {
 	c.loadBuiltInConstants()
 }
 
-// ReloadBuiltInConstants restores all built-in constants.
-// This is called internally when ClearConstants is used to ensure
-// built-in constants are preserved.
+// ReloadBuiltInConstants restores all built-in constants to their default values.
+// It also removes any user-defined constants, effectively resetting the store.
 func (c *Constants) ReloadBuiltInConstants() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
