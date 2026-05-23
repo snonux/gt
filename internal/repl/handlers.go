@@ -172,14 +172,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 		fields := strings.Fields(input)
 		if len(fields) == 1 {
 			op := strings.ToLower(fields[0])
-			// Check if it's a known operator (standard or hyper)
-			isStandardOp := op == "+" || op == "-" || op == "*" || op == "/" || op == "^" || op == "%" ||
-				op == "dup" || op == "swap" || op == "pop" || op == "show" || op == "clear" || op == "vars" ||
-				op == "lg" || op == "log" || op == "ln"
-			isHyperOp := op == "[+]" || op == "[-]" || op == "[*]" || op == "[/]" || op == "[^]" || op == "[%]" ||
-				op == "[lg]" || op == "[log]" || op == "[ln]"
-
-			if isStandardOp || isHyperOp {
+			if repl.rpnState.rpnCalc.IsStandardOperator(op) || repl.rpnState.rpnCalc.IsHyperOperator(op) {
 				result, err := repl.rpnState.rpnCalc.EvalOperator(op)
 				if err != nil {
 					return "", true, err

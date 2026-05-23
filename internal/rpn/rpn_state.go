@@ -110,3 +110,15 @@ func (r *RPN) GetPrefixMode() PrefixMode {
 	defer r.mu.RUnlock()
 	return r.ops.GetPrefixMode()
 }
+
+// IsStandardOperator checks if a token is a registered standard operator.
+// Delegates to the operator registry.
+func (r *RPN) IsStandardOperator(token string) bool {
+	return r.opRegistry.IsStandardOperator(token)
+}
+
+// IsHyperOperator checks if a token is a registered hyper operator.
+// Delegates to the operator registry.
+func (r *RPN) IsHyperOperator(token string) bool {
+	return r.opRegistry.IsHyperOperator(token)
+}
