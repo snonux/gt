@@ -93,6 +93,33 @@ func parseCategory(name string) (Category, bool) {
 	return 0, false
 }
 
+// CustomShow returns detailed info for custom metrics.
+// If name is empty, shows all custom metrics; otherwise shows the named one.
+func (o *Operations) CustomShow(stack *Stack, name string) (string, error) {
+	reg := o.metricRegistry
+	if name != "" {
+		m, ok := reg.Find(name)
+		if !ok {
+			return "", fmt.Errorf("unknown custom metric %q", name)
+		}
+		if !m.IsCustom {
+			return "", fmt.Errorf("metric %q is not a custom metric", name)
+		}
+		factor := m.Factor(o.GetPrefixMode())
+		return fmt.Sprintf("%s, category: %s, base: %s, factor: %.10g", m.Name, m.Category, m.BaseUnit, factor), nil
+	}
+	metrics := reg.ListByCategory(Custom)
+	if len(metrics) == 0 {
+		return "no custom metrics defined", nil
+	}
+	var lines []string
+	for _, m := range metrics {
+		factor := m.Factor(o.GetPrefixMode())
+		lines = append(lines, fmt.Sprintf("  %s, category: %s, base: %s, factor: %.10g", m.Name, m.Category, m.BaseUnit, factor))
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
 // CustomList returns all custom metric names.
 func (o *Operations) CustomList(stack *Stack) (string, error) {
 	reg := o.metricRegistry

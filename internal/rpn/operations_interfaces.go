@@ -98,6 +98,7 @@ type Operator interface {
 	MetricCategory(stack *Stack, categoryName string) (string, error)
 	MetricCompatible(stack *Stack) (string, error)
 	// Custom metric commands
+	CustomShow(stack *Stack, name string) (string, error)
 	CustomList(stack *Stack) (string, error)
 	CustomDefine(name string, factor float64, category string) error
 	CustomUndefine(name string) error

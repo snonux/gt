@@ -575,7 +575,11 @@ func (r *RPN) handleCustomCommand(stack *Stack, tokens []string, i int) (string,
 	subCmd := tokens[i+1]
 	switch subCmd {
 	case "show":
-		result, err := r.ops.MetricShow(stack)
+		name := ""
+		if i+2 < len(tokens) {
+			name = tokens[i+2]
+		}
+		result, err := r.ops.CustomShow(stack, name)
 		if err != nil {
 			return "", true, fmt.Errorf("rpn: custom show: %w", err)
 		}
