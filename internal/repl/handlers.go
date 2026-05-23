@@ -193,7 +193,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 				return result, true, nil
 			}
 		}
-		
+
 		// Check if input is a symbol syntax (:x) - valid RPN that pushes a symbol
 		if len(fields) == 1 {
 			token := fields[0]

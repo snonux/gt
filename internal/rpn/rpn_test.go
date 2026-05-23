@@ -682,7 +682,6 @@ func TestRPNIncrementalOperations(t *testing.T) {
 	}
 }
 
-
 // TestIncrementalAssignmentRPN tests x =: with value on stack in ParseAndEvaluate
 func TestIncrementalAssignmentRPN(t *testing.T) {
 	v := NewVariables()
@@ -778,24 +777,24 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 func TestSymbolPush(t *testing.T) {
 	vars := NewVariables()
 	r := NewRPN(vars)
-	
+
 	// Test :x syntax
 	result, err := r.ParseAndEvaluate(":x")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate(':x') returned error: %v", err)
 	}
-	
+
 	// The result should be the symbol displayed
 	if result != ":x" {
 		t.Errorf("Expected ':x', got '%s'", result)
 	}
-	
+
 	// Verify the stack has a Symbol
 	stack := r.GetCurrentStack()
 	if len(stack) != 1 {
 		t.Fatalf("Expected 1 item on stack, got %d", len(stack))
 	}
-	
+
 	// Check that it's a Symbol
 	sym, ok := stack[0].(*Symbol)
 	if !ok {
@@ -810,13 +809,13 @@ func TestSymbolPush(t *testing.T) {
 func TestUnboundIdentifierAsSymbol(t *testing.T) {
 	vars := NewVariables()
 	r := NewRPN(vars)
-	
+
 	// Use bare identifier x (unbound)
 	result, err := r.ParseAndEvaluate("x")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('x') returned error: %v", err)
 	}
-	
+
 	// The result should be the symbol displayed
 	if result != ":x" {
 		t.Errorf("Expected ':x', got '%s'", result)
@@ -827,18 +826,18 @@ func TestUnboundIdentifierAsSymbol(t *testing.T) {
 func TestBoundIdentifierPushesValue(t *testing.T) {
 	vars := NewVariables()
 	r := NewRPN(vars)
-	
+
 	// First bind x to 5
 	if _, err := r.ParseAndEvaluate("x = 5"); err != nil {
 		t.Fatalf("ParseAndEvaluate('x = 5') returned error: %v", err)
 	}
-	
+
 	// Now use x (bound) - should push value
 	result, err := r.ParseAndEvaluate("x")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('x') after binding returned error: %v", err)
 	}
-	
+
 	// The result should be 5
 	if result != "5" {
 		t.Errorf("Expected '5', got '%s'", result)
@@ -850,12 +849,12 @@ func TestSymbolWithAssignment(t *testing.T) {
 	// Test :x 10 := (symbol then value with right assignment)
 	vars := NewVariables()
 	r := NewRPN(vars)
-	
+
 	_, err := r.ParseAndEvaluate(":x 10 :=")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate(':x 10 :=') returned error: %v", err)
 	}
-	
+
 	// Verify x was set to 10
 	val, exists := vars.GetVariable("x")
 	if !exists {
@@ -864,16 +863,16 @@ func TestSymbolWithAssignment(t *testing.T) {
 	if val != 10 {
 		t.Errorf("Variable x = %v, want 10", val)
 	}
-	
+
 	// Test 10 :x =: (value then symbol with left assignment)
 	vars2 := NewVariables()
 	r2 := NewRPN(vars2)
-	
+
 	_, err = r2.ParseAndEvaluate("10 :x =:")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('10 :x =:') returned error: %v", err)
 	}
-	
+
 	val, exists = vars2.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after assignment")
@@ -887,19 +886,19 @@ func TestSymbolWithAssignment(t *testing.T) {
 func TestStackBasedAssignmentWithSymbol(t *testing.T) {
 	vars := NewVariables()
 	r := NewRPN(vars)
-	
+
 	// Push 42 onto stack
 	_, err := r.ParseAndEvaluate("42")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('42') returned error: %v", err)
 	}
-	
+
 	// Now y =: - this should assign 42 to y
 	result, err := r.ParseAndEvaluate("y =:")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate('y =:') returned error: %v", err)
 	}
-	
+
 	// Verify y was set to 42
 	val, exists := vars.GetVariable("y")
 	if !exists {
@@ -908,7 +907,7 @@ func TestStackBasedAssignmentWithSymbol(t *testing.T) {
 	if val != 42 {
 		t.Errorf("Variable y = %v, want 42", val)
 	}
-	
+
 	// The result should show the assignment confirmation
 	if result != "y = 42" {
 		t.Errorf("Expected 'y = 42', got '%s'", result)

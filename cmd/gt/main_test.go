@@ -178,32 +178,32 @@ func TestRunCommandNoArgs(t *testing.T) {
 // TestRunCommandAssignmentSyntaxes tests all variable assignment syntaxes
 func TestRunCommandAssignmentSyntaxes(t *testing.T) {
 	tests := []struct {
-		name         string
-		input        string
-		expectedVar  string
-		expectedVal  float64
-		expectedOut  string
+		name        string
+		input       string
+		expectedVar string
+		expectedVal float64
+		expectedOut string
 	}{
 		{
-			name:         "x 5 = x x + (standard assignment)",
-			input:        "x 5 = x x +",
-			expectedVar:  "x",
-			expectedVal:  5,
-			expectedOut:  "10",
+			name:        "x 5 = x x + (standard assignment)",
+			input:       "x 5 = x x +",
+			expectedVar: "x",
+			expectedVal: 5,
+			expectedOut: "10",
 		},
 		{
-			name:         "x 5 =: x x + (left assignment)",
-			input:        "5 x =: x x +",
-			expectedVar:  "x",
-			expectedVal:  5,
-			expectedOut:  "10",
+			name:        "x 5 =: x x + (left assignment)",
+			input:       "5 x =: x x +",
+			expectedVar: "x",
+			expectedVal: 5,
+			expectedOut: "10",
 		},
 		{
-			name:         "x 5 := x x + (right assignment)",
-			input:        "x 5 := x x +",
-			expectedVar:  "x",
-			expectedVal:  5,
-			expectedOut:  "10",
+			name:        "x 5 := x x + (right assignment)",
+			input:       "x 5 := x x +",
+			expectedVar: "x",
+			expectedVal: 5,
+			expectedOut: "10",
 		},
 	}
 

@@ -13,7 +13,7 @@ import (
 // buildBinary builds the gt binary to a temporary location.
 func buildBinary(t *testing.T) string {
 	t.Helper()
-	
+
 	// Get the project root directory
 	projectRoot := os.Getenv("GITHUB_WORKSPACE")
 	if projectRoot == "" {
@@ -25,19 +25,19 @@ func buildBinary(t *testing.T) string {
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("build failed: %v", err)
 	}
-	
+
 	t.Cleanup(func() {
 		// Explicitly ignore error return from os.Remove during cleanup
 		_ = os.Remove("/tmp/gt-test")
 	})
-	
+
 	return "/tmp/gt-test"
 }
 
 // TestCLIVersion tests that the version command works correctly.
 func TestCLIVersion(t *testing.T) {
 	binaryPath := buildBinary(t)
-	
+
 	cmd := exec.Command(binaryPath, "version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -53,7 +53,7 @@ func TestCLIVersion(t *testing.T) {
 // TestCLIVersionOnly tests that the version command works correctly.
 func TestCLIVersionOnly(t *testing.T) {
 	binaryPath := buildBinary(t)
-	
+
 	cmd := exec.Command(binaryPath, "version")
 	output, err := cmd.CombinedOutput()
 	if err != nil {

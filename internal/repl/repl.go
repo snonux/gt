@@ -94,8 +94,8 @@ type REPL struct {
 //   - Tab completion
 //   - Multi-line input
 type ReadlinePrompt struct {
-	instance  *readline.Instance
-	executor  func(string)
+	instance *readline.Instance
+	executor func(string)
 }
 
 // NewReadlinePrompt creates a new readline-based prompt instance.

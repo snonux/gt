@@ -1264,7 +1264,6 @@ func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
 	}
 }
 
-
 func TestAssignLeft(t *testing.T) {
 	v := NewVariables()
 	o := NewOperations(v)
@@ -1273,8 +1272,8 @@ func TestAssignLeft(t *testing.T) {
 	// For "5 x =:":
 	// AssignLeft pops name first, then value
 	// Push value first (will be popped second), then name (will be popped first)
-	s.Push(NewNumber(5, FloatMode))  // value (will be popped second)
-	s.Push(NewStringNum("x"))  // name (will be popped first)
+	s.Push(NewNumber(5, FloatMode)) // value (will be popped second)
+	s.Push(NewStringNum("x"))       // name (will be popped first)
 
 	err := o.AssignLeft(s)
 	if err != nil {
@@ -1304,8 +1303,8 @@ func TestAssignRight(t *testing.T) {
 	// For "x 5 :=":
 	// AssignRight pops value first, then name
 	// Push name first (will be popped second), then value (will be popped first)
-	s.Push(NewStringNum("x"))  // name (will be popped second)
-	s.Push(NewNumber(5, FloatMode))  // value (will be popped first)
+	s.Push(NewStringNum("x"))       // name (will be popped second)
+	s.Push(NewNumber(5, FloatMode)) // value (will be popped first)
 
 	err := o.AssignRight(s)
 	if err != nil {

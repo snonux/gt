@@ -98,9 +98,9 @@ func TestMetricRegistryFindCaseInsensitive(t *testing.T) {
 func TestMetricRegistryDuplicatePanics(t *testing.T) {
 	reg := NewMetricRegistry()
 	reg.Register(&Metric{
-		Name:   "dup",
+		Name:     "dup",
 		Category: Custom,
-		Factor: func(PrefixMode) float64 { return 1 },
+		Factor:   func(PrefixMode) float64 { return 1 },
 	})
 	defer func() {
 		if r := recover(); r == nil {
@@ -108,9 +108,9 @@ func TestMetricRegistryDuplicatePanics(t *testing.T) {
 		}
 	}()
 	reg.Register(&Metric{
-		Name:   "dup",
+		Name:     "dup",
 		Category: Custom,
-		Factor: func(PrefixMode) float64 { return 2 },
+		Factor:   func(PrefixMode) float64 { return 2 },
 	})
 }
 
@@ -161,9 +161,9 @@ func TestBuiltInMetricFactors(t *testing.T) {
 	tolerance := 0.0001
 
 	tests := []struct {
-		name    string
-		mode    PrefixMode
-		expect  float64
+		name   string
+		mode   PrefixMode
+		expect float64
 	}{
 		// Universal
 		{"Cool", SI, 1},
@@ -177,13 +177,13 @@ func TestBuiltInMetricFactors(t *testing.T) {
 		// DataSize (base: bits)
 		{"bits", SI, 1},
 		{"bytes", SI, 8},
-		{"KB", SI, 8000},    // 8 * 1000
+		{"KB", SI, 8000}, // 8 * 1000
 		{"MB", SI, 8e6},
 		{"GB", SI, 8e9},
 		{"TB", SI, 8e12},
 		{"PB", SI, 8e15},
 		// IEC (base: bits)
-		{"KiB", SI, 8192},       // 8 * 1024
+		{"KiB", SI, 8192}, // 8 * 1024
 		{"MiB", SI, 8 * 1048576},
 		{"GiB", SI, 8 * 1073741824},
 		{"TiB", SI, 8 * float64(uint64(1)<<40)},
@@ -466,7 +466,7 @@ func TestMetricRegistryAliases(t *testing.T) {
 	reg := GetMetricRegistry()
 
 	tests := []struct {
-		alias    string
+		alias     string
 		canonical string
 	}{
 		{"bit/s", "bps"},
@@ -509,9 +509,9 @@ func TestMetricRegistryAliases(t *testing.T) {
 func TestFindWithAliasesPriority(t *testing.T) {
 	reg := NewMetricRegistry()
 	reg.Register(&Metric{
-		Name:   "Foo",
+		Name:     "Foo",
 		Category: Custom,
-		Factor: func(PrefixMode) float64 { return 1 },
+		Factor:   func(PrefixMode) float64 { return 1 },
 	})
 	reg.RegisterAlias("foo", "Foo")
 
@@ -803,7 +803,7 @@ func TestAtPrefixMetricParsing(t *testing.T) {
 		{"@GB", "GB", true},
 		{"@Mbps", "Mbps", true},
 		{"@hr", "hr", true},
-		{"@sec", "s", true},  // alias
+		{"@sec", "s", true},   // alias
 		{"@foot", "ft", true}, // alias
 		{"@nope", "", false},
 		{"@", "", false},
@@ -915,12 +915,12 @@ func TestMetricOperationsUnit(t *testing.T) {
 	tolerance := 0.001
 
 	cases := []struct {
-		name     string
-		setup    func(s *Stack)
-		op       func(*Operations, *Stack) error
-		wantVal  float64
-		wantMet  string
-		wantErr  bool
+		name    string
+		setup   func(s *Stack)
+		op      func(*Operations, *Stack) error
+		wantVal float64
+		wantMet string
+		wantErr bool
 	}{
 		{
 			name: "same-category addition 1000bps+1Kbps",

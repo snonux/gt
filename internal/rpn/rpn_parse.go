@@ -293,7 +293,7 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Use the current stack for evaluation to preserve state
 	// This allows incremental operations in REPL mode
 	if r.currentStack == nil {
@@ -444,7 +444,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		// For := (right assignment): name value := - first token is always a variable name
 		// For =: (left assignment): value name =: - token before =: is a variable name
 		shouldPushName := false
-		
+
 		if i+1 < len(tokens) {
 			nextToken := tokens[i+1]
 			if nextToken == ":=" || nextToken == "=:" {
@@ -476,7 +476,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 				}
 			}
 		}
-		
+
 		// Special case: first token in := expression (e.g., "x 5 :=")
 		// Only push as name if the first token is not a number (it's a variable name)
 		if i == 0 && len(tokens) >= 3 && tokens[len(tokens)-1] == ":=" {
@@ -484,13 +484,13 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 				shouldPushName = true
 			}
 		}
-		
+
 		if shouldPushName {
 			// This token is a variable name, push as StringNum
 			stack.Push(NewStringNum(token))
 			continue
 		}
-		
+
 		// Special case: if token is a defined variable and appears before an assignment operator
 		// (within the next few tokens), push the variable NAME (StringNum) instead of VALUE
 		// to allow reassignment.
@@ -585,7 +585,6 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		return "", nil
 	}
 
-
 	// Handle standard operators (common logic extracted for DRY)
 	// This must be done BEFORE pushing Symbol for unknown identifiers,
 	// so that operators are properly handled
@@ -628,13 +627,13 @@ func isValidIdentifier(token string) bool {
 	if len(token) == 0 {
 		return false
 	}
-	
+
 	// Check first character - must be letter or underscore
 	first := token[0]
 	if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_') {
 		return false
 	}
-	
+
 	// Check remaining characters - must be alphanumeric or underscore
 	for i := 1; i < len(token); i++ {
 		c := token[i]
@@ -642,7 +641,7 @@ func isValidIdentifier(token string) bool {
 			return false
 		}
 	}
-	
+
 	// Only allow single-character identifiers for symbol support
 	// This prevents words like "what", "is", "of" from becoming symbols
 	return len(token) == 1

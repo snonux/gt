@@ -265,5 +265,3 @@ func (o *Operations) HyperLog10(stack *Stack) error {
 func (o *Operations) HyperLn(stack *Stack) error {
 	return o.hyperLog(stack, "[ln]", math.Log, "ln undefined for non-positive numbers")
 }
-
-

@@ -450,15 +450,15 @@ func TestExecutorWithRatModeToggle(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// First toggle
 	defaultExecutor(rpl, "rat toggle")
 	mode1 := rpnCalc.GetMode()
-	
+
 	// Second toggle
 	defaultExecutor(rpl, "rat toggle")
 	mode2 := rpnCalc.GetMode()
-	
+
 	// Modes should be different after toggle
 	if mode1 == mode2 {
 		t.Errorf("Modes should be different after toggle: %v -> %v", mode1, mode2)
@@ -495,7 +495,7 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// Test := operator
 	defaultExecutor(rpl, "5 x :=")
 	val, exists := vars.GetVariable("x")
@@ -505,7 +505,7 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 	if val != 5 {
 		t.Errorf("Variable x = %v, want 5", val)
 	}
-	
+
 	// Test =: operator
 	defaultExecutor(rpl, "y 3 =:")
 	val, exists = vars.GetVariable("y")
@@ -528,7 +528,7 @@ func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// Test that assignment works after a calculation
 	defaultExecutor(rpl, "1 2 + z =:")
 	val, exists := vars.GetVariable("z")
@@ -551,13 +551,13 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// Test that assignment works after a calculation
 	defaultExecutor(rpl, "1 2 +")
-	
+
 	// Now use z =: to assign the top of stack (3) to variable z
 	defaultExecutor(rpl, "z =:")
-	
+
 	val, exists := vars.GetVariable("z")
 	if !exists {
 		t.Errorf("Variable z should exist after z =:")
@@ -578,10 +578,10 @@ func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// First execute 2 to put it on the stack
 	defaultExecutor(rpl, "2")
-	
+
 	// Then use x =: to assign the top of stack to variable x
 	defaultExecutor(rpl, "x =:")
 	val, exists := vars.GetVariable("x")
@@ -604,17 +604,17 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// This test replicates the exact user interaction:
 	// > 2
 	// > x =:
 	// The variable should be assigned the value 2
-	
+
 	defaultExecutor(rpl, "2")
-	
+
 	// Verify stack has 2
 	// (can't directly check stack without exposing it, but next command will fail if stack is empty)
-	
+
 	defaultExecutor(rpl, "x =:")
 	val, exists := vars.GetVariable("x")
 	if !exists {
@@ -636,18 +636,18 @@ func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// Clear any previous state
 	defaultExecutor(rpl, "rpn clear")
-	
+
 	// Put 2 on stack
 	defaultExecutor(rpl, "2")
 	_, _ = rpnCalc.ResultStack([]string{})
-	
+
 	// Assign to x =:
 	result, err := rpnCalc.ParseAndEvaluate("x =:")
 	t.Logf("ParseAndEvaluate('x =:') returned result=%q, err=%v", result, err)
-	
+
 	val, exists := vars.GetVariable("x")
 	if !exists {
 		t.Errorf("Variable x should exist after x =:")
@@ -668,16 +668,16 @@ func TestExecutorWithExactUserScenarioDirect(t *testing.T) {
 		commandChain:  NewCommandChain(),
 		rpnState:      &RPNState{vars: vars, rpnCalc: rpnCalc},
 	}
-	
+
 	// Clear any previous state
 	defaultExecutor(rpl, "rpn clear")
-	
+
 	// Simulate typing "2" in REPL
 	defaultExecutor(rpl, "2")
-	
+
 	// Simulate typing "x =:" in REPL
 	defaultExecutor(rpl, "x =:")
-	
+
 	// Verify variable was set
 	val, exists := vars.GetVariable("x")
 	if !exists {
@@ -697,19 +697,19 @@ func TestExecutorWithUnknownCommand(t *testing.T) {
 func TestDefaultExecutorCodePaths(t *testing.T) {
 	// Test all code paths in defaultExecutor
 	repl := createTestREPL()
-	
+
 	// Path 1: Empty input
 	defaultExecutor(repl, "")
-	
+
 	// Path 2: Built-in command with error (clear should not error but let's verify)
 	defaultExecutor(repl, "clear")
-	
+
 	// Path 3: Built-in command with output (help returns help text)
 	defaultExecutor(repl, "help")
-	
+
 	// Path 4: Unknown command (error handler returns handled=false, err!=nil)
 	defaultExecutor(repl, "completelyunknowncommand123")
-	
+
 	// Path 5: Whitespace only (trimmed to empty, returns early)
 	defaultExecutor(repl, "   ")
 }

@@ -6,14 +6,14 @@
 // gt is a versatile calculator that supports both percentage calculations and
 // Reverse Polish Notation (RPN) expressions. It can be used in two modes:
 //
-// 1. Command-line mode: Pass calculations as arguments
-//    gt 20% of 150         # Calculate 20% of 150
-//    gt 3 4 +              # RPN expression: 3 + 4
+//  1. Command-line mode: Pass calculations as arguments
+//     gt 20% of 150         # Calculate 20% of 150
+//     gt 3 4 +              # RPN expression: 3 + 4
 //
-// 2. Interactive REPL mode: Run without arguments to start an interactive session
-//    gt                    # Start interactive REPL
+//  2. Interactive REPL mode: Run without arguments to start an interactive session
+//     gt                    # Start interactive REPL
 //
-// Percentage Calculations
+// # Percentage Calculations
 //
 // The calculator supports various percentage formats:
 //   - Basic percentage: "20% of 150" → 30
@@ -21,7 +21,7 @@
 //   - Reverse percentage: "30 is what % of 150" → 20%
 //   - Find base: "30 is 20% of what" → 150
 //
-// RPN (Reverse Polish Notation) Support
+// # RPN (Reverse Polish Notation) Support
 //
 // RPN expressions use postfix notation where operators follow operands:
 //   - Basic operations: "3 4 +" (3 + 4), "5 2 -" (5 - 2)
@@ -30,12 +30,12 @@
 //   - Variable assignment: "x 5 = x x +" (assign x=5, then x + x)
 //   - Stack operations: "dup swap pop show"
 //
-// Error Handling
+// # Error Handling
 //
 // Errors from calculations or parsing are printed to stdout with exit code 1.
 // Invalid RPN expressions and malformed percentage queries both return errors.
 //
-// Architecture
+// # Architecture
 //
 // The package uses a layered architecture:
 //   - main.go: Entry point and command routing
@@ -98,7 +98,7 @@ func runCommand(args []string) (string, error) {
 	// Check for --log flag
 	var logFile string
 	var remainingArgs []string
-	
+
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--log" && i+1 < len(args) {
 			logFile = args[i+1]
@@ -107,10 +107,10 @@ func runCommand(args []string) (string, error) {
 			remainingArgs = append(remainingArgs, args[i])
 		}
 	}
-	
+
 	// Update args to exclude --log flag
 	args = remainingArgs
-	
+
 	if len(args) < 2 {
 		// No args provided - check if stdin is a TTY for REPL mode
 		if isatty.IsTerminal(os.Stdin.Fd()) {

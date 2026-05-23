@@ -14,12 +14,12 @@ func TestHyperMetricAwareOperations(t *testing.T) {
 	reg := GetMetricRegistry()
 
 	tests := []struct {
-		name     string
-		expr     string
-		wantNum  float64
-		wantMet  string // empty skips metric check
-		tol      float64
-		wantErr  bool
+		name    string
+		expr    string
+		wantNum float64
+		wantMet string // empty skips metric check
+		tol     float64
+		wantErr bool
 	}{
 		// Addition
 		{
@@ -154,7 +154,7 @@ func TestHyperCoolResultOperations(t *testing.T) {
 			wantNum: 3, tol: 0.001,
 		},
 		{
-			name:    "log2 with metrics", expr: "100Mbps 1000Mbps [lg]",
+			name: "log2 with metrics", expr: "100Mbps 1000Mbps [lg]",
 			wantNum: math.Log2(100) + math.Log2(1000), tol: 0.01,
 		},
 	}
