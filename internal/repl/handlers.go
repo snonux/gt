@@ -104,22 +104,21 @@ func handleRatCommand(repl *REPL, input string) (string, bool, error) {
 	}
 
 	modeArg := strings.ToLower(args[1])
-	rpnState := repl.rpnState
-	calculator := rpnState.calculator
+	rpnCalc := repl.rpnState.rpnCalc
 
 	switch modeArg {
 	case "on":
-		calculator.SetMode(rpn.RationalMode)
+		rpnCalc.SetMode(rpn.RationalMode)
 		return "Rational mode enabled", true, nil
 	case "off":
-		calculator.SetMode(rpn.FloatMode)
+		rpnCalc.SetMode(rpn.FloatMode)
 		return "Rational mode disabled (using float64)", true, nil
 	case "toggle":
-		if calculator.GetMode() == rpn.FloatMode {
-			calculator.SetMode(rpn.RationalMode)
+		if rpnCalc.GetMode() == rpn.FloatMode {
+			rpnCalc.SetMode(rpn.RationalMode)
 			return "Rational mode enabled", true, nil
 		} else {
-			calculator.SetMode(rpn.FloatMode)
+			rpnCalc.SetMode(rpn.FloatMode)
 			return "Rational mode disabled (using float64)", true, nil
 		}
 	default:
@@ -152,7 +151,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if strings.HasPrefix(lowerInput, "rpn ") || strings.HasPrefix(lowerInput, "calc ") {
 		// Extract the expression after rpn/calc
 		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
-		result, err := repl.rpnState.calculator.ParseAndEvaluate(rest)
+		result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(rest)
 		if err != nil {
 			return "", true, err
 		}
@@ -160,11 +159,10 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	}
 
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	if state := repl.rpnState; state != nil {
-		calculator := state.calculator
+	if repl.rpnState != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
-			result, err := calculator.ParseAndEvaluate(input)
+			result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(input)
 			if err == nil {
 				return result, true, nil
 			}
@@ -182,7 +180,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 				op == "[lg]" || op == "[log]" || op == "[ln]"
 
 			if isStandardOp || isHyperOp {
-				result, err := calculator.EvalOperator(op)
+				result, err := repl.rpnState.rpnCalc.EvalOperator(op)
 				if err != nil {
 					return "", true, err
 				}
@@ -195,7 +193,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 			if _, err := strconv.ParseFloat(fields[0], 64); err == nil {
 				// Push the number onto the RPN stack using ParseAndEvaluate
 				// This maintains the RPN state across multiple inputs in REPL mode
-				result, err := calculator.ParseAndEvaluate(fields[0])
+				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(fields[0])
 				if err != nil {
 					return "", true, err
 				}
@@ -208,7 +206,7 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 			token := fields[0]
 			if len(token) > 0 && token[0] == ':' {
 				// This is a symbol syntax like :x
-				result, err := calculator.ParseAndEvaluate(token)
+				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(token)
 				if err != nil {
 					return "", true, err
 				}

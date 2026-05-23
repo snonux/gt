@@ -16,26 +16,22 @@ import (
 )
 
 // RPNState holds the state for RPN (Reverse Polish Notation) operations in the REPL.
-// It maintains a variable store and calculator instance.
+// It maintains a variable store and RPN engine.
 //
 // Note: This struct should never be copied - use pointer receivers only.
 type RPNState struct {
 	vars         rpn.VariableStore
-	calculator   Calculator
+	rpnCalc      *rpn.RPN
 	varStoreFile string // Path to persistent variable store file
 }
 
-// NewRPNState creates a new RPNState with the given variable store and calculator.
+// NewRPNState creates a new RPNState with the given variable store and RPN engine.
 // It also configures the variable store file path in the user's config directory.
-//
-// vars: the VariableStore instance to use
-// calculator: the Calculator instance for RPN operations
-// Returns a new RPNState instance with configured variable store file path
-func NewRPNState(vars rpn.VariableStore, calculator Calculator) *RPNState {
+func NewRPNState(vars rpn.VariableStore, rpnCalc *rpn.RPN) *RPNState {
 	varStoreFile := getVarStoreFilePath()
 	return &RPNState{
 		vars:         vars,
-		calculator:   calculator,
+		rpnCalc:      rpnCalc,
 		varStoreFile: varStoreFile,
 	}
 }
@@ -176,8 +172,7 @@ func NewREPL(executor func(string), completer func() []string, logWriter io.Writ
 	}
 
 	rpnCalc := rpn.NewRPN(vars)
-	calculator := NewRPNCalculator(rpnCalc)
-	rpnState := NewRPNState(vars, calculator)
+	rpnState := NewRPNState(vars, rpnCalc)
 
 	repl := &REPL{
 		ttyChecker:    &TTYChecker{},
