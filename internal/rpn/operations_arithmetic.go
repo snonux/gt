@@ -291,63 +291,37 @@ func binaryExponentiationFloat(base float64, exp int) float64 {
 
 // Log2 pops one value from stack, computes log base 2 (log₂(a)), and pushes result.
 func (o *Operations) Log2(stack *Stack) error {
-	a, err := popStack(stack, "lg")
-	if err != nil {
-		return err
-	}
-
-	val, err := toFloat64(a, "log2")
-	if err != nil {
-		return err
-	}
-	if val <= 0 {
-		return buildError("lg", fmt.Errorf("log2 undefined for non-positive numbers"))
-	}
-
-	// Compute log2 using the number interface
-	mode := o.GetMode()
-	stack.Push(NewNumber(math.Log2(val), mode))
-	return nil
+	return o.logOp(stack, "lg", math.Log2)
 }
 
 // Log10 pops one value from stack, computes log base 10 (log₁₀(a)), and pushes result.
 func (o *Operations) Log10(stack *Stack) error {
-	a, err := popStack(stack, "log")
-	if err != nil {
-		return err
-	}
-
-	val, err := toFloat64(a, "log10")
-	if err != nil {
-		return err
-	}
-	if val <= 0 {
-		return buildError("log", fmt.Errorf("log10 undefined for non-positive numbers"))
-	}
-
-	// Compute log10 using the number interface
-	mode := o.GetMode()
-	stack.Push(NewNumber(math.Log10(val), mode))
-	return nil
+	return o.logOp(stack, "log", math.Log10)
 }
 
 // Ln pops one value from stack, computes natural log (ln(a)), and pushes result.
 func (o *Operations) Ln(stack *Stack) error {
-	a, err := popStack(stack, "ln")
+	return o.logOp(stack, "ln", math.Log)
+}
+
+// logOp computes a logarithmic operation on the stack top value.
+// logFn is the actual log function (math.Log2, math.Log10, math.Log).
+// opName is used for error messages and popStack context.
+func (o *Operations) logOp(stack *Stack, opName string, logFn func(float64) float64) error {
+	a, err := popStack(stack, opName)
 	if err != nil {
 		return err
 	}
 
-	val, err := toFloat64(a, "ln")
+	val, err := toFloat64(a, opName)
 	if err != nil {
 		return err
 	}
 	if val <= 0 {
-		return buildError("ln", fmt.Errorf("ln undefined for non-positive numbers"))
+		return buildError(opName, fmt.Errorf("%s undefined for non-positive numbers", opName))
 	}
 
-	// Compute ln using the number interface
 	mode := o.GetMode()
-	stack.Push(NewNumber(math.Log(val), mode))
+	stack.Push(NewNumber(logFn(val), mode))
 	return nil
 }
