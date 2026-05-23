@@ -147,20 +147,8 @@ func (c *Constants) ClearConstants() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Remove only user-defined constants (not built-in ones)
-	builtIns := map[string]bool{
-		"pi": true, "π": true,
-		"e": true, "euler": true,
-		"phi": true, "φ": true,
-		"sqrt2": true, "√2": true,
-		"inf": true, "infinity": true,
-		"nan": true,
-	}
-	for k := range c.constants {
-		if !builtIns[k] {
-			delete(c.constants, k)
-		}
-	}
+	clear(c.constants)
+	c.loadBuiltInConstants()
 }
 
 // ReloadBuiltInConstants restores all built-in constants.
@@ -170,21 +158,7 @@ func (c *Constants) ReloadBuiltInConstants() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// First remove only user-defined constants
-	builtIns := map[string]bool{
-		"pi": true, "π": true,
-		"e": true, "euler": true,
-		"phi": true, "φ": true,
-		"sqrt2": true, "√2": true,
-		"inf": true, "infinity": true,
-		"nan": true,
-	}
-	for k := range c.constants {
-		if !builtIns[k] {
-			delete(c.constants, k)
-		}
-	}
-	// Then reload built-in constants
+	clear(c.constants)
 	c.loadBuiltInConstants()
 }
 

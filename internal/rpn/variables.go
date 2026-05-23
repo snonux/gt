@@ -159,9 +159,7 @@ func (v *Variables) ClearVariables() {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	for k := range v.variables {
-		delete(v.variables, k)
-	}
+	clear(v.variables)
 }
 
 // formatVariablesUnsafe returns a list of variable info without acquiring a lock.
