@@ -6,11 +6,12 @@ package integrationtests
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// buildBinary builds the gt binary to a temporary location.
+// buildBinary builds the gt binary to a temporary location unique to each test.
 func buildBinary(t *testing.T) string {
 	t.Helper()
 
@@ -20,18 +21,17 @@ func buildBinary(t *testing.T) string {
 		projectRoot = "/home/paul/git/gt"
 	}
 
-	buildCmd := exec.Command("go", "build", "-o", "/tmp/gt-test", "./cmd/gt")
+	// Use t.TempDir() so each test gets its own binary path; Go cleans up automatically.
+	tmpDir := t.TempDir()
+	binaryPath := filepath.Join(tmpDir, "gt-test")
+
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/gt")
 	buildCmd.Dir = projectRoot
 	if err := buildCmd.Run(); err != nil {
 		t.Fatalf("build failed: %v", err)
 	}
 
-	t.Cleanup(func() {
-		// Explicitly ignore error return from os.Remove during cleanup
-		_ = os.Remove("/tmp/gt-test")
-	})
-
-	return "/tmp/gt-test"
+	return binaryPath
 }
 
 // TestCLIVersion tests that the version command works correctly.

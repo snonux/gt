@@ -713,3 +713,64 @@ func TestDefaultExecutorCodePaths(t *testing.T) {
 	// Path 5: Whitespace only (trimmed to empty, returns early)
 	defaultExecutor(repl, "   ")
 }
+
+func TestDefaultCompleter(t *testing.T) {
+	repl := createTestREPL()
+	got := defaultCompleter(repl)
+	expected := Commands()
+	if len(got) != len(expected) {
+		t.Fatalf("defaultCompleter() returned %d items, want %d", len(got), len(expected))
+	}
+	for i, cmd := range expected {
+		if got[i] != cmd {
+			t.Errorf("defaultCompleter()[%d] = %q, want %q", i, got[i], cmd)
+		}
+	}
+}
+
+func TestDefaultGetCommandDescription(t *testing.T) {
+	repl := createTestREPL()
+	desc := repl.defaultGetCommandDescription("help")
+	if desc != "Show help information" {
+		t.Errorf("defaultGetCommandDescription(\"help\") = %q, want %q", desc, "Show help information")
+	}
+}
+
+func TestNewREPLNilArgs(t *testing.T) {
+	// NewREPL with nil args should create a valid REPL struct
+	repl := NewREPL(nil, nil, nil)
+	if repl == nil {
+		t.Fatal("NewREPL(nil, nil, nil) returned nil")
+	}
+	if repl.ttyChecker == nil {
+		t.Error("REPL.ttyChecker should not be nil")
+	}
+	if repl.historyMgr == nil {
+		t.Error("REPL.historyMgr should not be nil")
+	}
+	if repl.signalHandler == nil {
+		t.Error("REPL.signalHandler should not be nil")
+	}
+	if repl.rpnState == nil {
+		t.Error("REPL.rpnState should not be nil")
+	}
+}
+
+func TestREPLDefaultGetCommandDescription(t *testing.T) {
+	repl := createTestREPL()
+	tests := []struct {
+		cmd  string
+		want string
+	}{
+		{"help", "Show help information"},
+		{"unknown", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.cmd, func(t *testing.T) {
+			if got := repl.defaultGetCommandDescription(tt.cmd); got != tt.want {
+				t.Errorf("defaultGetCommandDescription(%q) = %q, want %q", tt.cmd, got, tt.want)
+			}
+		})
+	}
+}

@@ -112,3 +112,11 @@ func TestExecuteCommandEmpty(t *testing.T) {
 		t.Fatalf("ExecuteCommand('') returned error: %v", err)
 	}
 }
+
+func TestCmdStack(t *testing.T) {
+	output := cmdStack()
+	expected := "Use 'rpn show' to view the current stack state"
+	if output != expected {
+		t.Errorf("cmdStack() = %q, want %q", output, expected)
+	}
+}

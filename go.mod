@@ -1,18 +1,11 @@
 module codeberg.org/snonux/gt
 
-go 1.25.0
+go 1.26.0
 
 require (
-	github.com/c-bata/go-prompt v0.2.6
+	github.com/chzyer/readline v1.5.1
 	github.com/magefile/mage v1.15.0
 	github.com/mattn/go-isatty v0.0.20
 )
 
-require (
-	github.com/chzyer/readline v1.5.1 // indirect
-	github.com/mattn/go-colorable v0.1.7 // indirect
-	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/mattn/go-tty v0.0.3 // indirect
-	github.com/pkg/term v1.2.0-beta.2 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-)
+require golang.org/x/sys v0.42.0 // indirect
