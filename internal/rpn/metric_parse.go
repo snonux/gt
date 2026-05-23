@@ -44,7 +44,8 @@ func parseNumberWithMetric(token string, reg *MetricRegistry) (float64, *Metric,
 		}
 	}
 
-	// Must have consumed at least one digit character
+	// Must have consumed at least one character in the numeric portion;
+	// actual digit validation is deferred to ParseFloat.
 	if i == start {
 		return 0, nil, false
 	}
@@ -58,7 +59,7 @@ func parseNumberWithMetric(token string, reg *MetricRegistry) (float64, *Metric,
 	metricName := token[i:]
 
 	// Early pre-check: skip unlikely metric suffixes to avoid
-	// unnecessary registry lookups for tokens like "10x", "42abc".
+	// unnecessary registry lookups for tokens like "10x".
 	// All built-in metric names are >= 2 chars, except for three
 	// single-char metrics: s (seconds), m (meters), g (grams).
 	// Require suffix length >= 2, or be one of those known singles.
