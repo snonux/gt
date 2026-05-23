@@ -198,14 +198,19 @@ type Operations struct {
 var _ Operator = (*Operations)(nil)
 
 // NewOperations creates a new Operations instance with the given variable store.
-func NewOperations(vars VariableStore) *Operations {
+// If no registry is provided, defaults to the global MetricRegistry.
+func NewOperations(vars VariableStore, reg ...*MetricRegistry) *Operations {
 	consts := NewConstants()
+	r := GetMetricRegistry()
+	if len(reg) > 0 && reg[0] != nil {
+		r = reg[0]
+	}
 	return &Operations{
 		vars:           vars,
 		consts:         consts,
 		mode:           FloatMode, // default
 		prefixMode:     SI,        // default
-		metricRegistry: GetMetricRegistry(),
+		metricRegistry: r,
 	}
 }
 
@@ -239,6 +244,11 @@ func (o *Operations) SetPrefixMode(mode PrefixMode) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	o.prefixMode = mode
+}
+
+// MetricRegistry returns the metric registry used by this Operations instance.
+func (o *Operations) MetricRegistry() *MetricRegistry {
+	return o.metricRegistry
 }
 
 // OperatorHandler represents a function that handles an operator.

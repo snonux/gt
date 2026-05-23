@@ -327,7 +327,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		}
 
 		// Check if it's a number with a metric suffix (e.g., 100Mbps, 5.5GB, 2hr)
-		if num, metric, ok := parseNumberWithMetric(token); ok {
+		if num, metric, ok := parseNumberWithMetric(token, r.metricRegistry); ok {
 			if stack.Len() >= r.maxStack {
 				return "", fmt.Errorf("stack overflow")
 			}
@@ -339,7 +339,7 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		// Pushes a Number with value 1 and the looked-up metric
 		if len(token) > 1 && token[0] == '@' {
 			metricName := token[1:]
-			if metric, ok := GetMetricRegistry().FindWithAliases(metricName); ok {
+			if metric, ok := r.metricRegistry.FindWithAliases(metricName); ok {
 				if stack.Len() >= r.maxStack {
 					return "", fmt.Errorf("stack overflow")
 				}

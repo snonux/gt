@@ -729,7 +729,7 @@ func TestParseNumberWithMetric(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		num, metric, ok := parseNumberWithMetric(tt.token)
+		num, metric, ok := parseNumberWithMetric(tt.token, GetMetricRegistry())
 		if ok != tt.wantOK {
 			t.Errorf("parseNumberWithMetric(%q) ok = %v, want %v", tt.token, ok, tt.wantOK)
 			continue
@@ -773,7 +773,7 @@ func TestParseNumberWithMetricAliases(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_, metric, ok := parseNumberWithMetric(tt.token)
+		_, metric, ok := parseNumberWithMetric(tt.token, GetMetricRegistry())
 		if !ok {
 			t.Fatalf("parseNumberWithMetric(%q) = false, want true", tt.token)
 		}
@@ -786,7 +786,7 @@ func TestParseNumberWithMetricAliases(t *testing.T) {
 
 func TestParseNumberWithMetricExactMatch(t *testing.T) {
 	// Bps (capital B) should NOT resolve to bps
-	_, _, ok := parseNumberWithMetric("100Bps")
+	_, _, ok := parseNumberWithMetric("100Bps", GetMetricRegistry())
 	if ok {
 		t.Error("parseNumberWithMetric(100Bps) should fail (B = bytes)")
 	}

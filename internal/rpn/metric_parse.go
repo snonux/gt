@@ -7,10 +7,10 @@ import "strconv"
 
 // parseNumberWithMetric attempts to split a token into a number and a metric suffix.
 // E.g., "100Mbps" -> (100, Mbps), "5.5GB" -> (5.5, GB), "2hr" -> (2, hr).
-// The metric suffix is looked up in the global registry (exact, alias, then case-insensitive).
+// The metric suffix is looked up in the given registry (exact, alias, then case-insensitive).
 // Returns (num, metric, true) if successful, or (0, nil, false) if the token
 // does not contain a number+metric combination.
-func parseNumberWithMetric(token string) (float64, *Metric, bool) {
+func parseNumberWithMetric(token string, reg *MetricRegistry) (float64, *Metric, bool) {
 	if len(token) == 0 {
 		return 0, nil, false
 	}
@@ -73,7 +73,7 @@ func parseNumberWithMetric(token string) (float64, *Metric, bool) {
 		return 0, nil, false
 	}
 
-	metric, ok := GetMetricRegistry().FindWithAliases(metricName)
+	metric, ok := reg.FindWithAliases(metricName)
 	if !ok {
 		return 0, nil, false
 	}

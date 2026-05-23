@@ -6,6 +6,7 @@ package repl
 import (
 	"os"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -96,9 +97,9 @@ func TestSignalHandlerStartCallbackRunsInGoroutine(t *testing.T) {
 func TestSignalHandlerSingleShot(t *testing.T) {
 	h := NewSignalHandler()
 
-	var callbackCount int
+	var callbackCount atomic.Int32
 	h.Start(func() {
-		callbackCount++
+		callbackCount.Add(1)
 	})
 
 	// First signal should trigger callback
@@ -112,7 +113,7 @@ func TestSignalHandlerSingleShot(t *testing.T) {
 	// Stop() unregisters the signal channel.
 	h.Stop()
 
-	if callbackCount != 1 {
-		t.Errorf("expected callback count 1, got %d", callbackCount)
+	if callbackCount.Load() != 1 {
+		t.Errorf("expected callback count 1, got %d", callbackCount.Load())
 	}
 }

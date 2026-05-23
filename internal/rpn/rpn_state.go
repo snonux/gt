@@ -11,31 +11,38 @@ import (
 // It is thread-safe for concurrent read operations, but write operations
 // on the stack or mode should be synchronized externally or use the provided methods.
 type RPN struct {
-	mu            sync.RWMutex
-	vars          VariableStore
-	consts        ConstantsProvider
-	ops           Operator
-	opRegistry    *OperatorRegistry
-	assignHandler *assignmentHandler
-	maxStack      int
-	currentStack  *Stack
-	mode          CalculationMode
+	mu             sync.RWMutex
+	vars           VariableStore
+	consts         ConstantsProvider
+	ops            Operator
+	opRegistry     *OperatorRegistry
+	assignHandler  *assignmentHandler
+	maxStack       int
+	currentStack   *Stack
+	mode           CalculationMode
+	metricRegistry *MetricRegistry
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
-func NewRPN(vars VariableStore) *RPN {
+// If no registry is provided, defaults to the global MetricRegistry.
+func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 	consts := NewConstants()
-	ops := NewOperations(vars)
+	r := GetMetricRegistry()
+	if len(reg) > 0 && reg[0] != nil {
+		r = reg[0]
+	}
+	ops := NewOperations(vars, r)
 	ops.SetMode(FloatMode) // Set default mode
 	return &RPN{
-		vars:          vars,
-		consts:        consts,
-		ops:           ops,
-		opRegistry:    NewOperatorRegistry(ops),
-		assignHandler: newAssignmentHandler(),
-		maxStack:      1000, // Reasonable limit for RPN expressions
-		currentStack:  NewStack(),
-		mode:          FloatMode, // Default mode
+		vars:           vars,
+		consts:         consts,
+		ops:            ops,
+		opRegistry:     NewOperatorRegistry(ops),
+		assignHandler:  newAssignmentHandler(),
+		maxStack:       1000, // Reasonable limit for RPN expressions
+		currentStack:   NewStack(),
+		mode:           FloatMode, // Default mode
+		metricRegistry: r,
 	}
 }
 
@@ -46,7 +53,7 @@ func (r *RPN) GetConstants() ConstantsProvider {
 }
 
 // GetMode returns the current calculation mode.
-// This method is thread-safe for concurrent reads.
+// This method is thread-safe for reads.
 func (r *RPN) GetMode() CalculationMode {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -104,7 +111,7 @@ func (r *RPN) SetPrefixMode(mode PrefixMode) {
 
 // GetPrefixMode returns the current prefix mode.
 // Delegates to the Operations instance.
-// This method is thread-safe for concurrent reads.
+// This method is thread-safe for reads.
 func (r *RPN) GetPrefixMode() PrefixMode {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
