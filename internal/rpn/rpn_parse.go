@@ -62,120 +62,61 @@ func (h *assignmentHandler) handle(input string, r *RPN) (string, bool, error) {
 	return h.registry.parse(input, r)
 }
 
-// assignRightHandler handles the := operator (right assignment).
-// Format: value name := (value on bottom, name on top) - stack variant
-// Or: name value := (name on bottom, value on top) - direct variant
-func handleAssignRight(input string, r *RPN) (string, bool, error) {
-	if !strings.Contains(input, ":=") {
+// handleAssignmentOp is the shared implementation for := and =: operators.
+// Both share identical logic: check for operator, extract fields, try two
+// orderings (value name, then name value), parse, set variable, evaluate remainder.
+func handleAssignmentOp(input string, r *RPN, op string) (string, bool, error) {
+	if !strings.Contains(input, op) {
 		return "", false, nil
 	}
 
-	pos := strings.Index(input, ":=")
-	if pos < 0 {
-		return "", false, nil
-	}
-
+	pos := strings.Index(input, op)
 	before := strings.TrimSpace(input[:pos])
-	after := strings.TrimSpace(input[pos+2:])
+	after := strings.TrimSpace(input[pos+len(op):])
 
 	beforeFields := strings.Fields(before)
 	if len(beforeFields) != 2 {
 		return "", false, nil
 	}
 
-	// Try value name := format first (stack variant)
-	name := beforeFields[1]
-	valueStr := beforeFields[0]
-
-	val, err := strconv.ParseFloat(valueStr, 64)
-	if err == nil {
-		varName := extractVariableName(name)
-		if err := r.vars.SetVariable(varName, val); err != nil {
-			return "", false, err
-		}
-		if after == "" {
-			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-		}
-		result, err := r.evaluate(input, strings.Fields(after))
-		return result, true, err
+	// Try value name op format first (stack variant)
+	if result, ok, err := tryAssignment(beforeFields[1], beforeFields[0], r, input, after); ok || err != nil {
+		return result, ok, err
 	}
 
-	// Try name value := format (for backward compatibility)
-	name = beforeFields[0]
-	valueStr = beforeFields[1]
-
-	val, err = strconv.ParseFloat(valueStr, 64)
-	if err == nil {
-		varName := extractVariableName(name)
-		if err := r.vars.SetVariable(varName, val); err != nil {
-			return "", false, err
-		}
-		if after == "" {
-			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-		}
-		result, err := r.evaluate(input, strings.Fields(after))
-		return result, true, err
-	}
-
-	return "", false, nil
+	// Try name value op format (for backward compatibility)
+	return tryAssignment(beforeFields[0], beforeFields[1], r, input, after)
 }
 
-// assignLeftHandler handles the =: operator (left assignment).
-// Format: value name =: (value on bottom, name on top) - stack variant
-// Or: name value =: (name on bottom, value on top) - direct variant
-func handleAssignLeft(input string, r *RPN) (string, bool, error) {
-	if !strings.Contains(input, "=:") {
-		return "", false, nil
-	}
-
-	pos := strings.Index(input, "=:")
-	if pos < 0 {
-		return "", false, nil
-	}
-
-	before := strings.TrimSpace(input[:pos])
-	after := strings.TrimSpace(input[pos+2:])
-
-	beforeFields := strings.Fields(before)
-	if len(beforeFields) != 2 {
-		return "", false, nil
-	}
-
-	// Try value name =: format first (stack variant)
-	name := beforeFields[1]
-	valueStr := beforeFields[0]
-
+// tryAssignment attempts to parse valueStr as a float, set the variable,
+// and optionally evaluate remaining tokens.
+func tryAssignment(name, valueStr string, r *RPN, input, after string) (string, bool, error) {
 	val, err := strconv.ParseFloat(valueStr, 64)
-	if err == nil {
-		varName := extractVariableName(name)
-		if err := r.vars.SetVariable(varName, val); err != nil {
-			return "", false, err
-		}
-		if after == "" {
-			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-		}
-		result, err := r.evaluate(input, strings.Fields(after))
-		return result, true, err
+	if err != nil {
+		return "", false, nil
 	}
 
-	// Try name value =: format (for backward compatibility)
-	name = beforeFields[0]
-	valueStr = beforeFields[1]
-
-	val, err = strconv.ParseFloat(valueStr, 64)
-	if err == nil {
-		varName := extractVariableName(name)
-		if err := r.vars.SetVariable(varName, val); err != nil {
-			return "", false, err
-		}
-		if after == "" {
-			return fmt.Sprintf("%s = %.10g", varName, val), true, nil
-		}
-		result, err := r.evaluate(input, strings.Fields(after))
-		return result, true, err
+	varName := extractVariableName(name)
+	if err := r.vars.SetVariable(varName, val); err != nil {
+		return "", false, err
 	}
+	if after == "" {
+		return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+	}
+	result, err := r.evaluate(input, strings.Fields(after))
+	return result, true, err
+}
 
-	return "", false, nil
+// handleAssignRight handles the := operator (right assignment).
+// Format: value name := (stack variant) or name value := (direct variant)
+func handleAssignRight(input string, r *RPN) (string, bool, error) {
+	return handleAssignmentOp(input, r, ":=")
+}
+
+// handleAssignLeft handles the =: operator (left assignment).
+// Format: value name =: (stack variant) or name value =: (direct variant)
+func handleAssignLeft(input string, r *RPN) (string, bool, error) {
+	return handleAssignmentOp(input, r, "=:")
 }
 
 // standardAssignHandler handles the standard = operator.
