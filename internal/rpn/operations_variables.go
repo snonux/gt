@@ -8,7 +8,9 @@ import "fmt"
 // variables operations
 
 // AssignVariable assigns a value from stack to a variable.
-// Usage: `name value =`
+// This is a direct API method that takes the variable name as a parameter
+// and pops the value from the stack. It is not the handler for the `=` operator;
+// use AssignLeft (for `=` and `=:`) or AssignRight (for `:=`) instead.
 func (o *Operations) AssignVariable(stack *Stack, name string) error {
 	if name == "" {
 		return fmt.Errorf("variable name cannot be empty")
@@ -32,7 +34,8 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 }
 
 // UseVariable pushes a variable's value onto the stack.
-// Usage: `varname` (pushes stored value)
+// This is a direct API method that takes the variable name as a parameter.
+// It is not wired into the operator registry.
 func (o *Operations) UseVariable(stack *Stack, name string) error {
 	if name == "" {
 		return fmt.Errorf("variable name cannot be empty")
@@ -74,7 +77,7 @@ func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
 }
 
-// AssignLeft assigns a value to a variable (for =: operator).
+// AssignLeft assigns a value to a variable (for = and =: operators).
 // Stack order: value name =: (value on bottom, name on top).
 // This function pops name first (top of stack), then value.
 // Usage: `value name =:` (e.g., `5 x =:`)
