@@ -81,27 +81,16 @@ func (o *Operations) MetricCompatible(stack *Stack) (string, error) {
 }
 
 // parseCategory converts a category name string to a Category constant.
+// Iterates over all valid Category values using range, so adding a new
+// Category constant (between Universal and _sentinel) automatically makes
+// it available here without modifying this function (OCP compliance).
 func parseCategory(name string) (Category, bool) {
-	switch name {
-	case "Universal":
-		return Universal, true
-	case "DataRate":
-		return DataRate, true
-	case "DataSize":
-		return DataSize, true
-	case "Time":
-		return Time, true
-	case "Weight":
-		return Weight, true
-	case "Speed":
-		return Speed, true
-	case "Distance":
-		return Distance, true
-	case "Custom":
-		return Custom, true
-	default:
-		return 0, false
+	for cat := Category(0); cat <= _sentinel; cat++ {
+		if cat.String() == name {
+			return cat, true
+		}
 	}
+	return 0, false
 }
 
 // CustomList returns all custom metric names.
