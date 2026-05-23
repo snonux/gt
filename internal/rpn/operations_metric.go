@@ -141,8 +141,11 @@ func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 		}
 		return a, nil
 	}
+	// When dividend is Cool (unitless) and divisor has a metric,
+	// result should be Cool. E.g., 5 / 10km → 0.5 (Cool, not km).
+	// Cool-absorbing is designed for addition, not division.
 	if a == nil || a.Category == Universal {
-		return b, nil
+		return coolMetric(reg)
 	}
 
 	// Cross-category inference
