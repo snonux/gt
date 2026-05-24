@@ -3,7 +3,10 @@
 
 package rpn
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // stack manipulation operators
 
@@ -62,18 +65,19 @@ func (o *Operations) Show(stack *Stack) (string, error) {
 	}
 
 	vals := stack.Values()
-	var result string
+	var sb strings.Builder
 	for i, val := range vals {
 		if i > 0 {
-			result += " "
+			sb.WriteByte(' ')
 		}
 		// Append metric suffix for non-Cool metrics
 		m := val.Metric()
 		if m != nil && m.Category != Universal {
-			result += val.String() + m.Name
+			sb.WriteString(val.String())
+			sb.WriteString(m.Name)
 		} else {
-			result += val.String()
+			sb.WriteString(val.String())
 		}
 	}
-	return result, nil
+	return sb.String(), nil
 }
