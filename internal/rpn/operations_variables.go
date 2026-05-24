@@ -25,7 +25,7 @@ func (o *Operations) AssignVariable(stack *Stack, name string) error {
 		return err
 	}
 
-	// Convert Number to float64 for variable storage
+	// Convert NumericValue to float64 for variable storage
 	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
 		return err

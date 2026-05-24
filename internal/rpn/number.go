@@ -44,8 +44,11 @@ type NumericValue interface {
 	SetMetric(m *Metric) NumericValue
 }
 
-// Number is the legacy alias for NumericValue, kept for backward compatibility.
-type Number = NumericValue
+// NumericValue is the interface for numeric values (float64 or *big.Rat).
+// It extends StackValue with metric operations.
+//
+// Note: type Number was a legacy alias for NumericValue, removed to avoid
+// confusion between the alias and the concrete type.
 
 // Compile-time interface satisfaction checks.
 var _ StackValue = (*Float)(nil)
@@ -55,20 +58,20 @@ var _ NumericValue = (*Rat)(nil)
 var _ StackValue = (*StringNum)(nil)
 var _ StackValue = (*Symbol)(nil)
 
-// NewNumber creates a Number from a float64 value with the given mode.
+// NewNumber creates a NumericValue from a float64 value with the given mode.
 // The actual type depends on the current calculation mode (Float or Rat).
 // The metric defaults to Cool (unitless).
-func NewNumber(value float64, mode CalculationMode) Number {
+func NewNumber(value float64, mode CalculationMode) NumericValue {
 	if mode == RationalMode {
 		return NewRat(value)
 	}
 	return NewFloat(value)
 }
 
-// NewNumberWithMetric creates a Number from a float64 value with an explicit metric.
+// NewNumberWithMetric creates a NumericValue from a float64 value with an explicit metric.
 // The actual type depends on the current calculation mode (Float or Rat).
 // If metric is nil, defaults to Cool.
-func NewNumberWithMetric(value float64, mode CalculationMode, metric *Metric) Number {
+func NewNumberWithMetric(value float64, mode CalculationMode, metric *Metric) NumericValue {
 	if metric == nil {
 		metric = GetCoolMetric()
 	}

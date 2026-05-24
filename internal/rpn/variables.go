@@ -185,7 +185,7 @@ func (v *Variables) formatVariablesUnsafe() string {
 		if i > 0 {
 			sb.WriteString("\n")
 		}
-		// Use Number interface for consistent formatting
+		// Use NumericValue interface for consistent formatting
 		num := NewNumber(info.Value, FloatMode)
 		sb.WriteString(info.Name)
 		sb.WriteString(" = ")

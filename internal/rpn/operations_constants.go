@@ -19,7 +19,7 @@ func (o *Operations) ListConstants() (string, error) {
 		}
 		sb.WriteString(info.Name)
 		sb.WriteString(" = ")
-		// Use Number interface for consistent formatting
+		// Use NumericValue interface for consistent formatting
 		num := NewNumber(info.Value, FloatMode)
 		sb.WriteString(num.String())
 	}
