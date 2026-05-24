@@ -19,29 +19,23 @@ type RPN struct {
 	assignHandler  *assignmentHandler
 	maxStack       int
 	currentStack   *Stack
-	metricRegistry *MetricRegistry
 }
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
 // If no registry is provided, defaults to the global MetricRegistry.
 func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 	consts := NewConstants()
-	r := GetMetricRegistry()
-	if len(reg) > 0 && reg[0] != nil {
-		r = reg[0]
-	}
-	ops := NewOperations(vars, r)
+	ops := NewOperations(vars, reg...)
 	ops.SetMode(FloatMode) // Set default mode
 	ops.SetConstants(consts) // Share the same ConstantsProvider
 	return &RPN{
-		vars:           vars,
-		consts:         consts,
-		ops:            ops,
-		opRegistry:     NewOperatorRegistry(ops),
-		assignHandler:  newAssignmentHandler(),
-		maxStack:       1000, // Reasonable limit for RPN expressions
-		currentStack:   NewStack(),
-		metricRegistry: r,
+		vars:          vars,
+		consts:        consts,
+		ops:           ops,
+		opRegistry:    NewOperatorRegistry(ops),
+		assignHandler: newAssignmentHandler(),
+		maxStack:      1000, // Reasonable limit for RPN expressions
+		currentStack:  NewStack(),
 	}
 }
 

@@ -102,4 +102,6 @@ type Operator interface {
 	CustomList(stack *Stack) (string, error)
 	CustomDefine(name string, factor float64, category string) error
 	CustomUndefine(name string) error
+	// MetricRegistry returns the metric registry used by this Operations instance.
+	MetricRegistry() *MetricRegistry
 }
