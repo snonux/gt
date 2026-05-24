@@ -439,34 +439,17 @@ func (r *RPN) dispatchOperator(stack *Stack, token string) (string, error) {
 }
 
 // isValidIdentifier checks if a token looks like a valid variable identifier.
-// Valid identifiers contain only alphanumeric characters and underscores,
-// and start with a letter or underscore (not a digit or special character).
+// Valid identifiers are single alphanumeric characters or underscores.
 //
 // IMPORTANT: To prevent natural language words (like "what", "is", "of") from
 // being incorrectly treated as RPN symbols in mixed-mode expressions,
-// this function currently restricts valid identifiers to a length of 1.
+// this function restricts valid identifiers to a length of 1.
 func isValidIdentifier(token string) bool {
-	if len(token) == 0 {
+	if len(token) != 1 {
 		return false
 	}
-
-	// Check first character - must be letter or underscore
-	first := token[0]
-	if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z') || first == '_') {
-		return false
-	}
-
-	// Check remaining characters - must be alphanumeric or underscore
-	for i := 1; i < len(token); i++ {
-		c := token[i]
-		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
-			return false
-		}
-	}
-
-	// Only allow single-character identifiers for symbol support
-	// This prevents words like "what", "is", "of" from becoming symbols
-	return len(token) == 1
+	c := token[0]
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'
 }
 
 // extractVariableName extracts a variable name from a token, stripping the leading colon if present.
