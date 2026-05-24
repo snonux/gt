@@ -90,7 +90,7 @@ func parseCategory(name string) (Category, bool) {
 			return cat, true
 		}
 	}
-	return 0, false
+	return invalidCategory, false
 }
 
 // CustomShow returns detailed info for custom metrics.

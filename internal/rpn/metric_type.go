@@ -31,6 +31,11 @@ const (
 	_sentinel
 )
 
+// invalidCategory is a sentinel value returned by parseCategory for unknown names.
+// It must not equal any valid Category (which start at 0), so callers that
+// ignore the bool return cannot accidentally treat it as Universal.
+const invalidCategory Category = -1
+
 // String returns the human-readable name of the category.
 func (c Category) String() string {
 	switch c {
