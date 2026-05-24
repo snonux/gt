@@ -9,53 +9,80 @@ import (
 	"math"
 )
 
-// Hyper operators - operate on all values on the stack
+// nAryMetricOp handles metric-aware n-ary operations.
+// Resolves metrics, validates categories, converts to base units,
+// applies fn left-associatively, converts back, and pushes the result.
+func (o *Operations) nAryMetricOp(stack *Stack, opName string, fn func(float64, float64) float64) error {
+	values, err := popAll(stack, opName)
+	if err != nil {
+		return err
+	}
+	if len(values) == 0 {
+		return buildError(opName, fmt.Errorf("need at least one operand"))
+	}
+
+	metrics := make([]*Metric, len(values))
+	for i, v := range values {
+		m, err := resolveMetric(o.metricRegistry, v)
+		if err != nil {
+			return buildError(opName, err)
+		}
+		metrics[i] = m
+	}
+
+	if err := validateCategories(metrics, opName); err != nil {
+		return err
+	}
+
+	resultMetric := resultMetricForAdd(metrics)
+	pm := o.GetPrefixMode()
+
+	firstBase, err := convertToBase(o.metricRegistry, values[0], pm, resultMetric)
+	if err != nil {
+		return buildError(opName, fmt.Errorf("operand 0: %w", err))
+	}
+	result := firstBase
+	for i := 1; i < len(values); i++ {
+		base, err := convertToBase(o.metricRegistry, values[i], pm, resultMetric)
+		if err != nil {
+			return buildError(opName, fmt.Errorf("operand %d: %w", i, err))
+		}
+		result = fn(result, base)
+	}
+
+	resultVal, err := convertFromBase(o.metricRegistry, result, resultMetric, pm)
+	if err != nil {
+		return buildError(opName, err)
+	}
+
+	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
+	return nil
+}
+
+// nAryScalarOp applies a binary function to pre-converted float64 values
+// and pushes the result with Cool metric.
+func (o *Operations) nAryScalarOp(stack *Stack, opName string, floats []float64, fn func(float64, float64) float64) error {
+	if len(floats) == 0 {
+		return buildError(opName, fmt.Errorf("need at least one operand"))
+	}
+	result := floats[0]
+	for i := 1; i < len(floats); i++ {
+		result = fn(result, floats[i])
+	}
+
+	cool, err := coolMetric(o.metricRegistry)
+	if err != nil {
+		return buildError(opName, err)
+	}
+	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
+	return nil
+}
 
 // HyperAdd pops all values from stack, adds them left-associative, and pushes result.
 // Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
 // computation, and pushes the result with the first non-Cool metric (or Cool if all are Cool).
 func (o *Operations) HyperAdd(stack *Stack) error {
-	values, err := popAll(stack, "[+]")
-	if err != nil {
-		return err
-	}
-
-	// Resolve metrics for all values
-	metrics := make([]*Metric, len(values))
-	for i, v := range values {
-		m, err := resolveMetric(o.metricRegistry, v)
-		if err != nil {
-			return buildError("[+]", err)
-		}
-		metrics[i] = m
-	}
-
-	// Validate all are compatible (all same category, or Cool absorbs)
-	if err := validateCategories(metrics, "[+]"); err != nil {
-		return err
-	}
-
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForAdd(metrics)
-
-	// Convert all to base units, sum, convert back
-	pm := o.GetPrefixMode()
-	var sum float64
-	for i, v := range values {
-		base, err := convertToBase(o.metricRegistry, v, pm, resultMetric)
-		if err != nil {
-			return buildError("[+]", fmt.Errorf("operand %d: %w", i, err))
-		}
-		sum += base
-	}
-
-	resultVal, err := convertFromBase(o.metricRegistry, sum, resultMetric, pm)
-	if err != nil {
-		return buildError("[+]", err)
-	}
-
-	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.nAryMetricOp(stack, "[+]", func(a, b float64) float64 { return a + b })
 }
 
 // HyperMultiply pops all values from stack, multiplies them left-associative, and pushes result.
@@ -66,12 +93,17 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 		return err
 	}
 
-	var product float64 = 1
+	floats := make([]float64, len(values))
 	for i, v := range values {
 		val, err := toFloat64(v, "[*]")
 		if err != nil {
 			return buildError("[*]", fmt.Errorf("operand %d: %w", i, err))
 		}
+		floats[i] = val
+	}
+
+	var product float64 = 1
+	for i, val := range floats {
 		if i == 0 {
 			product = val
 		} else {
@@ -91,51 +123,7 @@ func (o *Operations) HyperMultiply(stack *Stack) error {
 // Metric-aware: validates all operands share the same category (Cool absorbs), converts to base units for the
 // computation, and pushes the result with the first non-Cool metric (or Cool if all are Cool).
 func (o *Operations) HyperSubtract(stack *Stack) error {
-	values, err := popAll(stack, "[-]")
-	if err != nil {
-		return err
-	}
-
-	// Resolve metrics for all values
-	metrics := make([]*Metric, len(values))
-	for i, v := range values {
-		m, err := resolveMetric(o.metricRegistry, v)
-		if err != nil {
-			return buildError("[-]", err)
-		}
-		metrics[i] = m
-	}
-
-	// Validate all are compatible (all same category, or Cool absorbs)
-	if err := validateCategories(metrics, "[-]"); err != nil {
-		return err
-	}
-
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
-	resultMetric := resultMetricForAdd(metrics)
-
-	// Convert all to base units, subtract, convert back
-	pm := o.GetPrefixMode()
-	firstBase, err := convertToBase(o.metricRegistry, values[0], pm, resultMetric)
-	if err != nil {
-		return buildError("[-]", fmt.Errorf("operand 0: %w", err))
-	}
-	result := firstBase
-	for i := 1; i < len(values); i++ {
-		base, err := convertToBase(o.metricRegistry, values[i], pm, resultMetric)
-		if err != nil {
-			return buildError("[-]", fmt.Errorf("operand %d: %w", i, err))
-		}
-		result -= base
-	}
-
-	resultVal, err := convertFromBase(o.metricRegistry, result, resultMetric, pm)
-	if err != nil {
-		return buildError("[-]", err)
-	}
-
-	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.nAryMetricOp(stack, "[-]", func(a, b float64) float64 { return a - b })
 }
 
 // HyperDivide pops all values from stack, divides them left-associative, and pushes result.
@@ -146,28 +134,19 @@ func (o *Operations) HyperDivide(stack *Stack) error {
 		return err
 	}
 
-	firstVal, err := toFloat64(values[0], "[/]")
-	if err != nil {
-		return buildError("[/]", fmt.Errorf("operand 0: %w", err))
-	}
-	result := firstVal
-	for i := 1; i < len(values); i++ {
-		val, err := toFloat64(values[i], "[/]")
+	floats := make([]float64, len(values))
+	for i, v := range values {
+		val, err := toFloat64(v, "[/]")
 		if err != nil {
 			return buildError("[/]", fmt.Errorf("operand %d: %w", i, err))
 		}
-		if val == 0 {
+		if i > 0 && val == 0 {
 			return buildError("[/]", fmt.Errorf("division by zero at operand %d", i))
 		}
-		result /= val
+		floats[i] = val
 	}
 
-	cool, err := coolMetric(o.metricRegistry)
-	if err != nil {
-		return buildError("[/]", err)
-	}
-	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
-	return nil
+	return o.nAryScalarOp(stack, "[/]", floats, func(a, b float64) float64 { return a / b })
 }
 
 // HyperPower pops all values from stack, raises to power left-associative, and pushes result.
@@ -178,25 +157,16 @@ func (o *Operations) HyperPower(stack *Stack) error {
 		return err
 	}
 
-	firstVal, err := toFloat64(values[0], "[^]")
-	if err != nil {
-		return buildError("[^]", fmt.Errorf("operand 0: %w", err))
-	}
-	result := firstVal
-	for i := 1; i < len(values); i++ {
-		val, err := toFloat64(values[i], "[^]")
+	floats := make([]float64, len(values))
+	for i, v := range values {
+		val, err := toFloat64(v, "[^]")
 		if err != nil {
 			return buildError("[^]", fmt.Errorf("operand %d: %w", i, err))
 		}
-		result = math.Pow(result, val)
+		floats[i] = val
 	}
 
-	cool, err := coolMetric(o.metricRegistry)
-	if err != nil {
-		return buildError("[^]", err)
-	}
-	stack.Push(NewNumberWithMetric(result, o.GetMode(), cool))
-	return nil
+	return o.nAryScalarOp(stack, "[^]", floats, math.Pow)
 }
 
 // HyperModulo pops all values from stack, computes modulo left-associative, and pushes result.
@@ -218,30 +188,28 @@ func (o *Operations) HyperModulo(stack *Stack) error {
 		metrics[i] = m
 	}
 
-	// Validate all are compatible (all same category, or Cool absorbs)
 	if err := validateCategories(metrics, "[%]"); err != nil {
 		return err
 	}
 
-	// Result metric: first non-Cool metric (Cool absorbs), or Cool
 	resultMetric := resultMetricForAdd(metrics)
-
-	// Convert all to base units, compute modulo, convert back
 	pm := o.GetPrefixMode()
-	firstBase, err := convertToBase(o.metricRegistry, values[0], pm, resultMetric)
-	if err != nil {
-		return buildError("[%]", fmt.Errorf("operand 0: %w", err))
-	}
-	result := firstBase
-	for i := 1; i < len(values); i++ {
-		base, err := convertToBase(o.metricRegistry, values[i], pm, resultMetric)
+
+	bases := make([]float64, len(values))
+	for i, v := range values {
+		base, err := convertToBase(o.metricRegistry, v, pm, resultMetric)
 		if err != nil {
 			return buildError("[%]", fmt.Errorf("operand %d: %w", i, err))
 		}
-		if base == 0 {
+		if i > 0 && base == 0 {
 			return buildError("[%]", fmt.Errorf("modulo by zero at operand %d", i))
 		}
-		result = math.Mod(result, base)
+		bases[i] = base
+	}
+
+	result := bases[0]
+	for i := 1; i < len(bases); i++ {
+		result = math.Mod(result, bases[i])
 	}
 
 	resultVal, err := convertFromBase(o.metricRegistry, result, resultMetric, pm)
