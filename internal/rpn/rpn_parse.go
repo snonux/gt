@@ -405,6 +405,19 @@ func extractVariableName(token string) string {
 	return token
 }
 
+// extractVarName extracts a variable name from a StackValue.
+// Handles Symbol and StringNum types, falls back to String().
+func extractVarName(val StackValue) string {
+	switch v := val.(type) {
+	case *Symbol:
+		return v.Name()
+	case *StringNum:
+		return v.String()
+	default:
+		return val.String()
+	}
+}
+
 // checkStackOverflow returns an error if the stack has reached the maximum size.
 func (r *RPN) checkStackOverflow(stack *Stack) error {
 	if stack.Len() >= r.maxStack {
