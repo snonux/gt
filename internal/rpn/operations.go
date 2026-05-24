@@ -19,8 +19,10 @@ type Operations struct {
 
 // Ensure Operations implements all operator sub-interfaces at compile time.
 var (
-	_ ArithmeticOperator = (*Operations)(nil)
-	_ BooleanOperator    = (*Operations)(nil)
+	_ ArithmeticOperator    = (*Operations)(nil)
+	_ LogarithmicOperator   = (*Operations)(nil)
+	_ MetricOperator        = (*Operations)(nil)
+	_ BooleanOperator       = (*Operations)(nil)
 	_ HyperOperator      = (*Operations)(nil)
 	_ StackOperator      = (*Operations)(nil)
 	_ VariableOperator   = (*Operations)(nil)

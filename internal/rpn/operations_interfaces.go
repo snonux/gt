@@ -11,9 +11,17 @@ type ArithmeticOperator interface {
 	Divide(stack *Stack) error
 	Power(stack *Stack) error
 	Modulo(stack *Stack) error
+}
+
+// LogarithmicOperator defines the interface for logarithmic operators.
+type LogarithmicOperator interface {
 	Log2(stack *Stack) error
 	Log10(stack *Stack) error
 	Ln(stack *Stack) error
+}
+
+// MetricOperator defines the interface for metric unit conversion.
+type MetricOperator interface {
 	Convert(stack *Stack) error
 }
 
@@ -69,8 +77,9 @@ type PowerIntOperator interface {
 }
 
 // Operator implementations are split across focused sub-interfaces
-// (ArithmeticOperator, BooleanOperator, HyperOperator, StackOperator,
-// VariableOperator, ConstantOperator, PowerIntOperator) for clarity.
+// (ArithmeticOperator, LogarithmicOperator, MetricOperator, BooleanOperator,
+// HyperOperator, StackOperator, VariableOperator, ConstantOperator,
+// PowerIntOperator) for clarity.
 // The combined Operator interface was removed — RPN is the sole client
 // and Operations is the sole implementor, so the interface added
 // indirection without practical benefit (ISP).
