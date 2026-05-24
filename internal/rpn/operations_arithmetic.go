@@ -4,6 +4,7 @@
 package rpn
 
 import (
+	"errors"
 	"fmt"
 	"math"
 )
@@ -319,7 +320,7 @@ func (o *Operations) logOp(stack *Stack, opName string, logFn func(float64) floa
 		return err
 	}
 	if val <= 0 {
-		return buildError(opName, fmt.Errorf("%s undefined for non-positive numbers", opName))
+		return buildError(opName, errors.New("undefined for non-positive numbers"))
 	}
 
 	mode := o.GetMode()
