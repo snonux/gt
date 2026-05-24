@@ -123,7 +123,6 @@ type OperationsProvider interface {
 	StackOperator
 	MetricCommander
 	CustomMetricManager
-	SetConstants(ConstantsProvider)
 }
 
 // Operator implementations are split across focused sub-interfaces
