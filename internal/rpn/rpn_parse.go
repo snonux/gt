@@ -504,9 +504,9 @@ func (r *RPN) handleMetricCommand(stack *Stack, tokens []string, i int) (string,
 		}
 		return result, true, nil
 	case "binary":
-		return r.handleMetricPrefix(tokens, i, IEC, "IEC")
+		return r.handleMetricPrefix(tokens, i, IEC, "IEC", "binary")
 	case "decimal":
-		return r.handleMetricPrefix(tokens, i, SI, "SI")
+		return r.handleMetricPrefix(tokens, i, SI, "SI", "decimal")
 	case "compatible":
 		result, err := r.ops.MetricCompatible(stack)
 		if err != nil {
@@ -602,12 +602,12 @@ func (r *RPN) handleInlineAssignment(stack *Stack, name, op string) (string, boo
 }
 
 // handleMetricPrefix handles metric binary/decimal prefix mode switching.
-func (r *RPN) handleMetricPrefix(tokens []string, i int, mode PrefixMode, label string) (string, bool, error) {
+func (r *RPN) handleMetricPrefix(tokens []string, i int, mode PrefixMode, modeLabel, subcmd string) (string, bool, error) {
 	if i+2 < len(tokens) && tokens[i+2] == "set" {
 		r.ops.SetPrefixMode(mode)
-		return fmt.Sprintf("prefix mode: %s", label), true, nil
+		return fmt.Sprintf("prefix mode: %s", modeLabel), true, nil
 	}
-	return "", true, fmt.Errorf("rpn: metric %s: use 'metric %s set'", label, label)
+	return "", true, fmt.Errorf("rpn: metric %s: use 'metric %s set'", subcmd, subcmd)
 }
 
 // handleCustomDefine handles the 'custom define <name> <factor> <category>' subcommand.
