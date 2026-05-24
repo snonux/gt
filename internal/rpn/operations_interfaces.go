@@ -116,6 +116,36 @@ type OperatorProvider interface {
 	HyperOperator
 }
 
+// Registration interfaces — focused composites for each operator group.
+// Adding a new operator category only requires creating a new registration
+// interface and helper, without editing OperatorProvider or existing helpers.
+type (
+	// ArithmeticOpProvider covers standard arithmetic, fast power, and log operators.
+	ArithmeticOpProvider interface {
+		ArithmeticOperator
+		PowerIntOperator
+		LogarithmicOperator
+	}
+	// ComparisonOpProvider covers boolean comparison operators.
+	ComparisonOpProvider interface {
+		BooleanOperator
+	}
+	// VariableOpProvider covers variable assignment and metric conversion.
+	VariableOpProvider interface {
+		AssignRight(*Stack) error
+		AssignLeft(*Stack) error
+		Convert(*Stack) error
+	}
+	// CommandOpProvider covers command operators that return immediate results.
+	CommandOpProvider interface {
+		Show(*Stack) (string, error)
+		ListVariables() (string, error)
+		ListConstants() (string, error)
+		ClearVariables()
+		ClearConstants()
+	}
+)
+
 // OperationsProvider combines all interfaces that RPN needs from Operations.
 // RPN depends on this interface (DIP) rather than the concrete *Operations type.
 type OperationsProvider interface {
