@@ -407,7 +407,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		// If it's an unknown token error and we're at the evaluate stage,
 		// it might be a bare identifier that should be a symbol
 		// Check if the caller is the main evaluate loop
-		if strings.Contains(err.Error(), "unknown token") {
+		if !r.opRegistry.IsStandardOperator(token) && !r.opRegistry.IsHyperOperator(token) {
 			// For bare identifiers, push a Symbol instead of returning error
 			// But only if it looks like a valid identifier (alphanumeric/underscore, starts with letter/_)
 			// Don't push symbols for tokens with special characters like %, ., etc.
