@@ -242,7 +242,7 @@ func (o *Operations) FastPower(stack *Stack) error {
 
 	bVal, err := toFloat64(b, "**")
 	if err != nil {
-		return buildError("**", fmt.Errorf("exponent must be a number: %w", err))
+		return buildError("**", errors.New("exponent must be a number"))
 	}
 
 	exp := int(bVal)
@@ -252,7 +252,7 @@ func (o *Operations) FastPower(stack *Stack) error {
 
 	aF, err := toFloat64(a, "**")
 	if err != nil {
-		return buildError("**", err)
+		return err
 	}
 
 	// Result is unitless (Cool metric)
