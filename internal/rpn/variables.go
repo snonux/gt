@@ -146,10 +146,7 @@ func (v *Variables) ListVariables() []VariableInfo {
 		infos = append(infos, VariableInfo{Name: name, Value: value})
 	}
 
-	// Sort by name for consistent output
-	slices.SortFunc(infos, func(a, b VariableInfo) int {
-		return cmp.Compare(a.Name, b.Name)
-	})
+	sortVariableInfos(infos)
 
 	return infos
 }
@@ -171,10 +168,7 @@ func (v *Variables) formatVariablesUnsafe() string {
 		infos = append(infos, VariableInfo{Name: name, Value: value})
 	}
 
-	// Sort by name for consistent output
-	slices.SortFunc(infos, func(a, b VariableInfo) int {
-		return cmp.Compare(a.Name, b.Name)
-	})
+	sortVariableInfos(infos)
 
 	if len(infos) == 0 {
 		return "No variables defined"
@@ -232,10 +226,7 @@ func (v *Variables) Save(path string) error {
 		infos = append(infos, VariableInfo{Name: name, Value: value})
 	}
 
-	// Sort by name for consistent output
-	slices.SortFunc(infos, func(a, b VariableInfo) int {
-		return cmp.Compare(a.Name, b.Name)
-	})
+	sortVariableInfos(infos)
 
 	return saveVariables(path, infos)
 }
@@ -261,6 +252,13 @@ func (v *Variables) Load(path string) error {
 	}
 
 	return nil
+}
+
+// sortVariableInfos sorts a slice of VariableInfo by name.
+func sortVariableInfos(infos []VariableInfo) {
+	slices.SortFunc(infos, func(a, b VariableInfo) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
 }
 
 // saveVariables saves variable info to a file in JSON format.
