@@ -4,6 +4,7 @@
 package rpn
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -324,5 +325,252 @@ func TestAssignmentAfterEqualEqual(t *testing.T) {
 	val, exists := vars.GetVariable("x")
 	if !exists || val != 5 {
 		t.Errorf("x = %v (exists=%v), want 5", val, exists)
+	}
+}
+
+// TestAssignRightOperator tests the := (right assignment) operator via ParseAndEvaluate.
+func TestAssignRightOperator(t *testing.T) {
+	tests := []struct {
+		name  string
+		expr  string
+		want  string
+	}{
+		{"basic right assignment", "x 5 :=", "x = 5"},
+		{"right assignment with decimal", "pi 3.14159 :=", "pi = 3.14159"},
+		{"right assignment with negative value", "neg -10 :=", "neg = -10"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewRPN(NewVariables())
+			result, err := r.ParseAndEvaluate(tt.expr)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
+			}
+			if result != tt.want {
+				t.Errorf("ParseAndEvaluate(%q) = %q, want %q", tt.expr, result, tt.want)
+			}
+		})
+	}
+}
+
+// TestAssignLeftOperator tests the =: (left assignment) operator via ParseAndEvaluate.
+func TestAssignLeftOperator(t *testing.T) {
+	tests := []struct {
+		name  string
+		expr  string
+		want  string
+	}{
+		{"basic left assignment", "10 y =:", "y = 10"},
+		{"left assignment with decimal", "2.71828 e =:", "e = 2.71828"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewRPN(NewVariables())
+			result, err := r.ParseAndEvaluate(tt.expr)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
+			}
+			if result != tt.want {
+				t.Errorf("ParseAndEvaluate(%q) = %q, want %q", tt.expr, result, tt.want)
+			}
+		})
+	}
+}
+
+// TestStandardAssignOperator tests the = (standard assignment) operator via ParseAndEvaluate.
+func TestStandardAssignOperator(t *testing.T) {
+	tests := []struct {
+		name  string
+		expr  string
+		want  string
+	}{
+		{"infix assignment", "x = 5", "x = 5"},
+		{"postfix assignment", "x 10 =", "x = 10"},
+		{"assignment with expression continuation", "x 10 = x 5 +", "15"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewRPN(NewVariables())
+			result, err := r.ParseAndEvaluate(tt.expr)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
+			}
+			if result != tt.want {
+				t.Errorf("ParseAndEvaluate(%q) = %q, want %q", tt.expr, result, tt.want)
+			}
+		})
+	}
+}
+
+// TestVariableInExpression tests using variables in subsequent expressions.
+func TestVariableInExpression(t *testing.T) {
+	tests := []struct {
+		name  string
+		setup string
+		expr  string
+		want  string
+	}{
+		{"single variable reuse", "x 5 :=", "x x +", "10"},
+		{"multi-variable expression", "a 10 := b 3 :=", "a b +", "13"},
+		{"variable in complex expression", "x 5 :=", "x 2 + 3 *", "21"},
+		{"variable reassignment", "x 5 :=", "x 10 := x", "10"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := NewRPN(NewVariables())
+			_, err := r.ParseAndEvaluate(tt.setup)
+			if err != nil {
+				t.Fatalf("Setup failed for %q: %v", tt.setup, err)
+			}
+			result, err := r.ParseAndEvaluate(tt.expr)
+			if err != nil {
+				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
+			}
+			if result != tt.want {
+				t.Errorf("ParseAndEvaluate(%q) = %q, want %q", tt.expr, result, tt.want)
+			}
+		})
+	}
+}
+
+// TestChainedAssignments tests chaining multiple assignments in one expression.
+func TestChainedAssignments(t *testing.T) {
+	r := NewRPN(NewVariables())
+	result, err := r.ParseAndEvaluate("a 10 := b 3 := c 2 :=")
+	if err != nil {
+		t.Fatalf("Chained assignment failed: %v", err)
+	}
+	// Chained assignments return empty result (side effects)
+	if result != "" {
+		t.Errorf("Chained assignment result = %q, want empty", result)
+	}
+
+	// Verify variables were set
+	if val, exists := r.vars.GetVariable("a"); !exists || val != 10 {
+		t.Errorf("Variable a should be 10, got %v (exists=%v)", val, exists)
+	}
+	if val, exists := r.vars.GetVariable("b"); !exists || val != 3 {
+		t.Errorf("Variable b should be 3, got %v (exists=%v)", val, exists)
+	}
+	if val, exists := r.vars.GetVariable("c"); !exists || val != 2 {
+		t.Errorf("Variable c should be 2, got %v (exists=%v)", val, exists)
+	}
+
+	// Use variables in expression
+	result, err = r.ParseAndEvaluate("a b + c *")
+	if err != nil {
+		t.Fatalf("Expression with variables failed: %v", err)
+	}
+	if result != "26" {
+		t.Errorf("a b + c * = %q, want %q", result, "26")
+	}
+}
+
+// TestVarsCommand tests the vars command.
+func TestVarsCommand(t *testing.T) {
+	r := NewRPN(NewVariables())
+
+	// Empty vars
+	result, err := r.ParseAndEvaluate("vars")
+	if err != nil {
+		t.Fatalf("vars failed: %v", err)
+	}
+	if !strings.Contains(result, "No variables defined") {
+		t.Errorf("Empty vars should say 'No variables defined', got: %q", result)
+	}
+
+	// With variables
+	r.ParseAndEvaluate("z 3 :=")
+	r.ParseAndEvaluate("a 1 :=")
+	r.ParseAndEvaluate("m 2 :=")
+
+	result, err = r.ParseAndEvaluate("vars")
+	if err != nil {
+		t.Fatalf("vars with data failed: %v", err)
+	}
+
+	// Should contain all variable names
+	if !strings.Contains(result, "a") || !strings.Contains(result, "m") || !strings.Contains(result, "z") {
+		t.Errorf("vars should contain a, m, z; got: %q", result)
+	}
+}
+
+// TestClearCommand tests the clear command.
+func TestClearCommand(t *testing.T) {
+	r := NewRPN(NewVariables())
+	r.ParseAndEvaluate("x 5 :=")
+	r.ParseAndEvaluate("y 10 :=")
+
+	result, err := r.ParseAndEvaluate("clear")
+	if err != nil {
+		t.Fatalf("clear failed: %v", err)
+	}
+	if !strings.Contains(result, "All variables cleared") {
+		t.Errorf("clear result = %q, want to contain 'All variables cleared'", result)
+	}
+
+	// Verify variables are gone
+	if r.vars.Count() != 0 {
+		t.Errorf("After clear, count = %d, want 0", r.vars.Count())
+	}
+}
+
+// TestDeleteVariableOperator tests the d (delete) operator.
+func TestDeleteVariableOperator(t *testing.T) {
+	r := NewRPN(NewVariables())
+
+	// Create variable
+	r.ParseAndEvaluate("x 5 :=")
+	_, exists := r.vars.GetVariable("x")
+	if !exists {
+		t.Fatal("Variable x should exist before delete")
+	}
+
+	// Delete with symbol syntax — d is a side-effect operator that leaves
+	// the stack empty, so ParseAndEvaluate returns "empty result". The delete
+	// still succeeds; we verify by checking the variable store directly.
+	_, _ = r.ParseAndEvaluate(":x d")
+
+	// Verify it's gone
+	_, exists = r.vars.GetVariable("x")
+	if exists {
+		t.Error("Variable x should not exist after delete")
+	}
+}
+
+// TestDeleteNonExistentVariableOperator tests deleting a variable that doesn't exist.
+func TestDeleteNonExistentVariableOperator(t *testing.T) {
+	r := NewRPN(NewVariables())
+	_, err := r.ParseAndEvaluate(":nonexistent d")
+	if err == nil {
+		t.Error("Deleting non-existent variable should return error")
+	}
+}
+
+// TestVariablePersistenceAcrossExpressions tests that variables persist across
+// multiple ParseAndEvaluate calls on the same RPN instance.
+func TestVariablePersistenceAcrossExpressions(t *testing.T) {
+	r := NewRPN(NewVariables())
+
+	r.ParseAndEvaluate("a 10 :=")
+	r.ParseAndEvaluate("b 3 :=")
+
+	// Variables should persist
+	result, err := r.ParseAndEvaluate("a b +")
+	if err != nil {
+		t.Fatalf("Expression failed: %v", err)
+	}
+	if result != "13" {
+		t.Errorf("a b + = %q, want %q", result, "13")
+	}
+
+	// Verify vars shows both
+	result, _ = r.ParseAndEvaluate("vars")
+	if !strings.Contains(result, "a") || !strings.Contains(result, "b") {
+		t.Errorf("vars should contain a and b, got: %q", result)
 	}
 }
