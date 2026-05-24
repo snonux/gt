@@ -223,115 +223,133 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 	}
 	stack := r.currentStack
 
+	result, handled, err := r.evaluateTokens(stack, tokens)
+	if err != nil {
+		return "", err
+	}
+	if handled {
+		return result, nil
+	}
+	return r.processResult(stack, input)
+}
+
+// evaluateTokens processes each token through the dispatch loop.
+// Returns (result, handled, error). If handled is true, a command consumed tokens.
+func (r *RPN) evaluateTokens(stack *Stack, tokens []string) (string, bool, error) {
 	for i, token := range tokens {
-		// Check for variable assignment: name value = (but not == or != etc.)
-		if token == "=" && (i+1 >= len(tokens) || tokens[i+1] != "=") {
-			return "", fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
+		result, handled, err := r.dispatchToken(stack, tokens, i, token)
+		if err != nil {
+			return "", false, err
 		}
-
-		// Push literal values (numbers, booleans, metric values, @metric prefix)
-		if pushed, err := r.pushLiteral(stack, token); err != nil {
-			return "", err
-		} else if pushed {
-			continue
+		if handled {
+			return result, true, nil
 		}
+	}
+	return "", false, nil
+}
 
-		// Handle multi-word metric command: metric <subcommand>
-		if result, handled, err := r.handleMetricCommand(stack, tokens, i); err != nil {
-			return "", err
-		} else if handled {
-			return result, nil
-		}
+// dispatchToken handles a single token during evaluation.
+// Returns (result, handled, error). If handled is true, evaluation stops.
+func (r *RPN) dispatchToken(stack *Stack, tokens []string, i int, token string) (string, bool, error) {
+	// Check for variable assignment: name value = (but not == or != etc.)
+	if token == "=" && (i+1 >= len(tokens) || tokens[i+1] != "=") {
+		return "", false, fmt.Errorf("rpn: invalid assignment syntax at token %d: 'name value =' requires spaces around =", i)
+	}
 
-		// Handle multi-word custom command: custom <subcommand>
-		if result, handled, err := r.handleCustomCommand(stack, tokens, i); err != nil {
-			return "", err
-		} else if handled {
-			return result, nil
-		}
+	// Push literal values (numbers, booleans, metric values, @metric prefix)
+	if pushed, err := r.pushLiteral(stack, token); err != nil {
+		return "", false, err
+	} else if pushed {
+		return "", false, nil
+	}
 
-		// Check if this is a variable name for assignment (:= or =:)
-		// For := (right assignment): name value := - first token is always a variable name
-		// For =: (left assignment): value name =: - token before =: is a variable name
-		if i+1 < len(tokens) {
-			nextToken := tokens[i+1]
-			if nextToken == ":=" || nextToken == "=:" {
-				// Stack assignment: exactly 2 tokens, first is variable name, second is operator
-				if len(tokens) == 2 && i == 0 {
-					// Handle inline: pop value, assign to variable name
-					val, err := stack.Pop()
-					if err != nil {
-						return "", fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
-					}
-					valF, err := toFloat64(val, token)
-					if err != nil {
-						return "", fmt.Errorf("failed to get float64 value for variable %q: %w", token, err)
-					}
-					if err := r.vars.SetVariable(token, valF); err != nil {
-						return "", fmt.Errorf("failed to set variable %q: %w", token, err)
-					}
-					return fmt.Sprintf("%s = %.10g", token, valF), nil
-				}
+	// Handle multi-word metric command: metric <subcommand>
+	if result, handled, err := r.handleMetricCommand(stack, tokens, i); err != nil {
+		return "", false, err
+	} else if handled {
+		return result, true, nil
+	}
+
+	// Handle multi-word custom command: custom <subcommand>
+	if result, handled, err := r.handleCustomCommand(stack, tokens, i); err != nil {
+		return "", false, err
+	} else if handled {
+		return result, true, nil
+	}
+
+	// Check for inline assignment: name value := (exactly 2 tokens)
+	if i+1 < len(tokens) {
+		nextToken := tokens[i+1]
+		if (nextToken == ":=" || nextToken == "=:") && len(tokens) == 2 && i == 0 {
+			val, err := stack.Pop()
+			if err != nil {
+				return "", false, fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
 			}
-		}
-
-		// Check if this token should be pushed as a variable name (StringNum)
-		shouldPushName := r.shouldPushName(stack, tokens, i)
-
-		if shouldPushName {
-			// This token is a variable name, push as StringNum
-			stack.Push(NewStringNum(token))
-			continue
-		}
-
-		// Special case: if token is a defined variable and appears before an assignment operator
-		// (within the next few tokens), push the variable NAME (StringNum) instead of VALUE
-		// to allow reassignment.
-		// For example: "x 5 := x 10 := ..." - the second "x" should be the name, not the value 5.
-		// We check if there's an assignment operator within the next 2 tokens (e.g., "x N :=" or "x N =:")
-		if isValidIdentifier(token) {
-			if _, exists := r.vars.GetVariable(token); exists {
-				// Check if there's an assignment operator within the next 2 tokens
-				// Format: variable value := or variable value =:
-				if i+2 < len(tokens) {
-					if tokens[i+2] == ":=" || tokens[i+2] == "=:" {
-						// Push the variable name (not value) for assignment
-						stack.Push(NewStringNum(token))
-						continue
-					}
-				}
+			valF, err := toFloat64(val, token)
+			if err != nil {
+				return "", false, fmt.Errorf("failed to get float64 value for variable %q: %w", token, err)
 			}
-		}
-
-		// Handle special operators and commands
-		if result, err := r.handleOperator(stack, token, i); err != nil {
-			return "", fmt.Errorf("rpn: failed to handle operator '%s' at position %d: %w", token, i, err)
-		} else if result != "" {
-			return result, nil
+			if err := r.vars.SetVariable(token, valF); err != nil {
+				return "", false, fmt.Errorf("failed to set variable %q: %w", token, err)
+			}
+			return fmt.Sprintf("%s = %.10g", token, valF), true, nil
 		}
 	}
 
-	// Check final stack state
+	// Handle variable name for assignment (shouldPushName or reassignment)
+	if handled := r.checkVariableName(stack, tokens, i, token); handled {
+		return "", false, nil
+	}
+
+	// Handle special operators and commands
+	result, err := r.handleOperator(stack, token, i)
+	if err != nil {
+		return "", false, fmt.Errorf("rpn: failed to handle operator '%s' at position %d: %w", token, i, err)
+	}
+	return result, result != "", nil
+}
+
+// checkVariableName handles variable name detection for assignment contexts.
+// Pushes token as StringNum if it's a variable name for reassignment.
+// Returns true if handled.
+func (r *RPN) checkVariableName(stack *Stack, tokens []string, i int, token string) bool {
+	// shouldPushName: token before := or =:
+	if r.shouldPushName(stack, tokens, i) {
+		stack.Push(NewStringNum(token))
+		return true
+	}
+
+	// Variable reassignment: push name instead of value for := or =:
+	if isValidIdentifier(token) {
+		if _, exists := r.vars.GetVariable(token); exists {
+			if i+2 < len(tokens) {
+				if tokens[i+2] == ":=" || tokens[i+2] == "=:" {
+					stack.Push(NewStringNum(token))
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// processResult checks the final stack state, saves it, and formats the result.
+func (r *RPN) processResult(stack *Stack, input string) (string, error) {
 	if stack.Len() == 0 {
-		// Empty stack might be valid for assignment operators (:= or =:)
-		// Check if the input was an assignment expression
 		if strings.Contains(input, ":=") || strings.Contains(input, "=:") {
-			// Assignment expression - empty stack is valid (side effect is variable assignment)
 			return "", nil
 		}
 		return "", fmt.Errorf("empty result: expression evaluated to nothing")
 	}
 
 	// Save the current stack state for continued operations
-	// Create a copy of the stack to preserve it
 	r.currentStack = NewStack()
 	for _, val := range stack.Values() {
 		r.currentStack.Push(val)
 	}
 
-	// Get the final result
 	if stack.Len() > 1 {
-		// Multiple values on stack - show them all
 		result, err := r.ops.Show(stack)
 		if err != nil {
 			return "", fmt.Errorf("final result: %w", err)
@@ -339,7 +357,6 @@ func (r *RPN) evaluate(input string, tokens []string) (string, error) {
 		return result, nil
 	}
 
-	// Single value - return it
 	val, _ := stack.Pop()
 	return val.String(), nil
 }
