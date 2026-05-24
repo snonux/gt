@@ -592,7 +592,7 @@ func TestResultStackErrors(t *testing.T) {
 		{
 			name:          "insufficient operands for =",
 			input:         []string{"="},
-			expectedError: "insufficient operands for =:",
+			expectedError: "insufficient operands",
 		},
 	}
 

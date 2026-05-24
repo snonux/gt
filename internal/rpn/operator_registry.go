@@ -46,7 +46,7 @@ func NewOperatorRegistry(op Operator) *OperatorRegistry {
 	registry.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
 	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
 	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
-	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignLeft(stack) })
+	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignRight(stack) })
 	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
 	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
 	registry.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
