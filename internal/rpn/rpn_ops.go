@@ -5,7 +5,6 @@ package rpn
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -26,22 +25,10 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 	stack := NewStack()
 
 	for _, token := range tokens {
-		// Check if it's a boolean literal
-		if token == "true" {
-			stack.Push(NewFloatFromBool(true))
-			continue
-		}
-		if token == "false" {
-			stack.Push(NewFloatFromBool(false))
-			continue
-		}
-
-		// Check if it's a number
-		if num, err := strconv.ParseFloat(token, 64); err == nil {
-			if stack.Len() >= r.maxStack {
-				return "", fmt.Errorf("stack overflow")
-			}
-			stack.Push(NewNumber(num, mode))
+		// Push literal values (numbers, booleans, metric values, @metric prefix)
+		if pushed, err := r.pushLiteral(stack, token); err != nil {
+			return "", err
+		} else if pushed {
 			continue
 		}
 
