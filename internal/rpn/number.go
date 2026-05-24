@@ -14,12 +14,6 @@ import (
 type StackValue interface {
 	// String returns the string representation of the value.
 	String() string
-	// IsBool returns true if this value represents a boolean value.
-	IsBool() bool
-	// IsString returns true if this value represents a string value.
-	IsString() bool
-	// IsSymbol returns true if this value represents a symbol.
-	IsSymbol() bool
 	// Metric returns the metric unit for this value.
 	Metric() *Metric
 }
@@ -137,10 +131,6 @@ func (f *Float) Float64() (float64, error) {
 	return f.n, nil
 }
 
-// IsBool returns true if this number represents a boolean value.
-func (f *Float) IsBool() bool {
-	return f.isBool
-}
 
 // Bool returns the boolean value.
 // Returns error if the number is not a boolean.
@@ -163,15 +153,7 @@ func (f *Float) IsNegative() bool {
 	return f.n < 0
 }
 
-// IsString returns true if this number represents a string value.
-func (f *Float) IsString() bool {
-	return false
-}
 
-// IsSymbol returns true if this number represents a symbol.
-func (f *Float) IsSymbol() bool {
-	return false
-}
 
 // Metric returns the metric for this number.
 func (f *Float) Metric() *Metric {
@@ -270,10 +252,6 @@ func (r *Rat) Float64() (float64, error) {
 	return f, nil
 }
 
-// IsBool returns true if this number represents a boolean value.
-func (r *Rat) IsBool() bool {
-	return r.isBool
-}
 
 // Bool returns the boolean value.
 // Returns error if the number is not a boolean.
@@ -294,15 +272,7 @@ func (r *Rat) IsNegative() bool {
 	return r.n.Sign() < 0
 }
 
-// IsString returns true if this number represents a string value.
-func (r *Rat) IsString() bool {
-	return false
-}
 
-// IsSymbol returns true if this number represents a symbol.
-func (r *Rat) IsSymbol() bool {
-	return false
-}
 
 // Metric returns the metric for this number.
 func (r *Rat) Metric() *Metric {
@@ -368,13 +338,7 @@ func (s *StringNum) String() string {
 	return s.value
 }
 
-// IsString returns true for StringNum.
-func (s *StringNum) IsString() bool {
-	return true
-}
 
-func (s *StringNum) IsBool() bool    { return false }
-func (s *StringNum) IsSymbol() bool  { return false }
 func (s *StringNum) Metric() *Metric { return GetCoolMetric() }
 
 // Symbol represents a variable symbol on the stack.
@@ -401,13 +365,7 @@ func (s *Symbol) Name() string {
 	return s.name
 }
 
-// IsSymbol returns true for Symbol.
-func (s *Symbol) IsSymbol() bool {
-	return true
-}
 
-func (s *Symbol) IsBool() bool    { return false }
-func (s *Symbol) IsString() bool  { return false }
 func (s *Symbol) Metric() *Metric { return GetCoolMetric() }
 
 

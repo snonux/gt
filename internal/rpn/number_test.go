@@ -36,9 +36,6 @@ func TestFloatString(t *testing.T) {
 
 func TestFloatBool(t *testing.T) {
 	f := NewFloatFromBool(true)
-	if !f.IsBool() {
-		t.Error("FloatFromBool(true).IsBool() should be true")
-	}
 	if f.String() != "true" {
 		t.Errorf("FloatFromBool(true).String() = %q, want 'true'", f.String())
 	}
@@ -64,9 +61,6 @@ func TestFloatBool(t *testing.T) {
 
 func TestFloatBoolOnNonBool(t *testing.T) {
 	f := NewFloat(42)
-	if f.IsBool() {
-		t.Error("Float(42).IsBool() should be false")
-	}
 	_, err := f.Bool()
 	if err == nil {
 		t.Error("Bool() on non-bool should return error")
@@ -100,15 +94,6 @@ func TestFloatIsNegative(t *testing.T) {
 	}
 }
 
-func TestFloatIsSymbolIsString(t *testing.T) {
-	f := NewFloat(42)
-	if f.IsSymbol() {
-		t.Error("Float.IsSymbol() should be false")
-	}
-	if f.IsString() {
-		t.Error("Float.IsString() should be false")
-	}
-}
 
 func TestFloatSetMetricCopy(t *testing.T) {
 	reg := GetMetricRegistry()
@@ -192,9 +177,6 @@ func TestRatString(t *testing.T) {
 
 func TestRatFromBool(t *testing.T) {
 	r := NewRatFromBool(true)
-	if !r.IsBool() {
-		t.Error("RatFromBool(true).IsBool() should be true")
-	}
 	if r.String() != "true" {
 		t.Errorf("RatFromBool(true).String() = %q, want 'true'", r.String())
 	}
@@ -215,9 +197,6 @@ func TestRatFromBool(t *testing.T) {
 
 func TestRatBoolOnNonBool(t *testing.T) {
 	r := NewRat(42)
-	if r.IsBool() {
-		t.Error("Rat(42).IsBool() should be false")
-	}
 	_, err := r.Bool()
 	if err == nil {
 		t.Error("Bool() on non-bool Rat should return error")
@@ -242,15 +221,6 @@ func TestRatIsNegative(t *testing.T) {
 	}
 }
 
-func TestRatIsSymbolIsString(t *testing.T) {
-	r := NewRat(42)
-	if r.IsSymbol() {
-		t.Error("Rat.IsSymbol() should be false")
-	}
-	if r.IsString() {
-		t.Error("Rat.IsString() should be false")
-	}
-}
 
 func TestRatSetMetricCopy(t *testing.T) {
 	reg := GetMetricRegistry()
@@ -348,18 +318,6 @@ func TestStringNumString(t *testing.T) {
 	}
 }
 
-func TestStringNumIsString(t *testing.T) {
-	s := NewStringNum("test")
-	if !s.IsString() {
-		t.Error("StringNum.IsString() should be true")
-	}
-	if s.IsBool() {
-		t.Error("StringNum.IsBool() should be false")
-	}
-	if s.IsSymbol() {
-		t.Error("StringNum.IsSymbol() should be false")
-	}
-}
 
 func TestStringNumMetricNil(t *testing.T) {
 	s := NewStringNum("test")
@@ -384,18 +342,6 @@ func TestSymbolName(t *testing.T) {
 	}
 }
 
-func TestSymbolIsSymbol(t *testing.T) {
-	s := NewSymbol("y")
-	if !s.IsSymbol() {
-		t.Error("Symbol.IsSymbol() should be true")
-	}
-	if s.IsBool() {
-		t.Error("Symbol.IsBool() should be false")
-	}
-	if s.IsString() {
-		t.Error("Symbol.IsString() should be false")
-	}
-}
 
 func TestSymbolMetricNil(t *testing.T) {
 	s := NewSymbol("z")
