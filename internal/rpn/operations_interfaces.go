@@ -132,17 +132,14 @@ type (
 	}
 	// VariableOpProvider covers variable assignment and metric conversion.
 	VariableOpProvider interface {
-		AssignRight(*Stack) error
-		AssignLeft(*Stack) error
-		Convert(*Stack) error
+		VariableOperator
+		MetricOperator
 	}
 	// CommandOpProvider covers command operators that return immediate results.
 	CommandOpProvider interface {
-		Show(*Stack) (string, error)
-		ListVariables() (string, error)
-		ListConstants() (string, error)
-		ClearVariables()
-		ClearConstants()
+		StackOperator
+		VariableOperator
+		ConstantOperator
 	}
 )
 
