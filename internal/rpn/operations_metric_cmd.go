@@ -85,7 +85,7 @@ func (o *Operations) MetricCompatible(stack *Stack) (string, error) {
 // so adding a new Category constant (between Universal and _sentinel) automatically
 // makes it available here without modifying this function.
 func parseCategory(name string) (Category, bool) {
-	for cat := Category(0); cat <= _sentinel; cat++ {
+	for cat := Category(0); cat < _sentinel; cat++ {
 		if cat.String() == name {
 			return cat, true
 		}
