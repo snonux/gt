@@ -314,7 +314,7 @@ func (r *RPN) dispatchToken(stack *Stack, tokens []string, i int, token string) 
 // Returns true if handled.
 func (r *RPN) checkVariableName(stack *Stack, tokens []string, i int, token string) bool {
 	// shouldPushName: token before := or =:
-	if r.shouldPushName(stack, tokens, i) {
+	if r.shouldPushName(tokens, i) {
 		stack.Push(NewStringNum(token))
 		return true
 	}
@@ -641,7 +641,7 @@ func (r *RPN) handleCustomCommand(stack *Stack, tokens []string, i int) (string,
 
 // shouldPushName determines whether a token should be pushed as a variable name (StringNum)
 // rather than evaluated as a value. Returns true if the token is part of an := or =: assignment.
-func (r *RPN) shouldPushName(stack *Stack, tokens []string, i int) bool {
+func (r *RPN) shouldPushName(tokens []string, i int) bool {
 	token := tokens[i]
 
 	// Check if next token is := or =:
