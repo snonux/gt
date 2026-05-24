@@ -4,7 +4,6 @@
 package rpn
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -26,20 +25,9 @@ func (o *Operations) Swap(stack *Stack) error {
 		return err
 	}
 
-	// Get the values without popping
-	vals := stack.Values()
-	top := vals[len(vals)-1]
-	second := vals[len(vals)-2]
+	top, _ := stack.Pop()
+	second, _ := stack.Pop()
 
-	// Pop both values
-	if _, err := stack.Pop(); err != nil {
-		return buildError("swap", fmt.Errorf("failed to pop top value: %w", err))
-	}
-	if _, err := stack.Pop(); err != nil {
-		return buildError("swap", fmt.Errorf("failed to pop second value: %w", err))
-	}
-
-	// Push in swapped order
 	stack.Push(top)
 	stack.Push(second)
 
