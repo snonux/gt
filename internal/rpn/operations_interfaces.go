@@ -68,40 +68,12 @@ type PowerIntOperator interface {
 	FastPower(stack *Stack) error
 }
 
-// Operator is the combined interface for all operator implementations.
-// This allows RPN to depend on an abstraction instead of the concrete Operations type.
+// Operator implementations are split across focused sub-interfaces
+// (ArithmeticOperator, BooleanOperator, HyperOperator, StackOperator,
+// VariableOperator, ConstantOperator, PowerIntOperator) for clarity.
+// The combined Operator interface was removed — RPN is the sole client
+// and Operations is the sole implementor, so the interface added
+// indirection without practical benefit (ISP).
 //
-// Design note: Operator intentionally mixes behavioral methods (arithmetic, stack,
-// boolean ops) with configuration methods (SetMode, SetPrefixMode, GetPrefixMode),
-// metric command handlers, and custom metric commands. Per ISP this could be split,
-// but RPN is the sole client and splitting would add indirection without practical
-// benefit. The concrete *Operations type satisfies this interface exclusively.
-type Operator interface {
-	ArithmeticOperator
-	BooleanOperator
-	HyperOperator
-	StackOperator
-	VariableOperator
-	ConstantOperator
-	PowerIntOperator
-	// SetMode sets the calculation mode (e.g., FloatMode, RationalMode).
-	SetMode(CalculationMode)
-	// GetMode returns the current calculation mode.
-	GetMode() CalculationMode
-	// SetPrefixMode sets the prefix mode for data size calculations
-	SetPrefixMode(PrefixMode)
-	// GetPrefixMode returns the current prefix mode
-	GetPrefixMode() PrefixMode
-	// Metric command handlers
-	MetricShow(stack *Stack) (string, error)
-	MetricList(stack *Stack) (string, error)
-	MetricCategory(stack *Stack, categoryName string) (string, error)
-	MetricCompatible(stack *Stack) (string, error)
-	// Custom metric commands
-	CustomShow(stack *Stack, name string) (string, error)
-	CustomList(stack *Stack) (string, error)
-	CustomDefine(name string, factor float64, category string) error
-	CustomUndefine(name string) error
-	// MetricRegistry returns the metric registry used by this Operations instance.
-	MetricRegistry() *MetricRegistry
-}
+// Each sub-interface is satisfied by *Operations, verified by compile-time
+// checks in operations.go.

@@ -17,7 +17,7 @@ type OperatorRegistry struct {
 }
 
 // NewOperatorRegistry creates a new operator registry and registers all operators.
-func NewOperatorRegistry(op Operator) *OperatorRegistry {
+func NewOperatorRegistry(op *Operations) *OperatorRegistry {
 	registry := &OperatorRegistry{
 		standardOperators: make(map[string]OperatorHandler),
 		hyperOperators:    make(map[string]OperatorHandler),

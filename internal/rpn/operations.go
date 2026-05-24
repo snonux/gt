@@ -17,10 +17,16 @@ type Operations struct {
 	mu             sync.RWMutex
 }
 
-// Ensure Operations implements Operator at compile time.
-// This is an explicit interface satisfaction check that will fail to compile
-// if Operations doesn't implement all methods required by the Operator interface.
-var _ Operator = (*Operations)(nil)
+// Ensure Operations implements all operator sub-interfaces at compile time.
+var (
+	_ ArithmeticOperator = (*Operations)(nil)
+	_ BooleanOperator    = (*Operations)(nil)
+	_ HyperOperator      = (*Operations)(nil)
+	_ StackOperator      = (*Operations)(nil)
+	_ VariableOperator   = (*Operations)(nil)
+	_ ConstantOperator   = (*Operations)(nil)
+	_ PowerIntOperator   = (*Operations)(nil)
+)
 
 // NewOperations creates a new Operations instance with the given variable store.
 // Creates a new ConstantsProvider internally; use SetConstants to replace it.
