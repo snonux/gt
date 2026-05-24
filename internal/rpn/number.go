@@ -460,8 +460,9 @@ func (v Value) Float64() float64 {
 	return v.numVal
 }
 
-// Number returns the float64 value (deprecated, use Float64 instead).
+// Number returns the float64 value.
 // If the value is a boolean, this returns 0 (the numeric value is not used for booleans).
+// Deprecated: Use Float64 instead.
 func (v Value) Number() float64 {
 	return v.numVal
 }
