@@ -22,21 +22,15 @@ func (o *Operations) binaryMetricOp(
 	op string,
 	compatCheck func(*Metric, *Metric) error,
 	compute func(float64, float64) float64,
-	resultMetricFn func(*MetricRegistry, *Metric, *Metric) (*Metric, error),
+	resultMetricFn func(*MetricRegistry, *Metric, *Metric) *Metric,
 ) error {
 	a, b, err := popTwo(stack, op)
 	if err != nil {
 		return err
 	}
 
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError(op, err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError(op, err)
-	}
+	aM := resolveMetric(o.metricRegistry, a)
+	bM := resolveMetric(o.metricRegistry, b)
 	if compatCheck != nil {
 		if err := compatCheck(aM, bM); err != nil {
 			return err
@@ -44,10 +38,7 @@ func (o *Operations) binaryMetricOp(
 	}
 
 	pm := o.GetPrefixMode()
-	resultMetric, err := resultMetricFn(o.metricRegistry, aM, bM)
-	if err != nil {
-		return buildError(op, err)
-	}
+	resultMetric := resultMetricFn(o.metricRegistry, aM, bM)
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
 		return buildError(op, err)
@@ -56,10 +47,7 @@ func (o *Operations) binaryMetricOp(
 	if err != nil {
 		return buildError(op, err)
 	}
-	resultVal, err := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
-	if err != nil {
-		return buildError(op, err)
-	}
+	resultVal := convertFromBase(o.metricRegistry, compute(aBase, bBase), resultMetric, pm)
 
 	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -120,32 +108,20 @@ func (o *Operations) Divide(stack *Stack) error {
 		return buildError("/", fmt.Errorf("division by zero"))
 	}
 
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError("/", err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError("/", err)
-	}
+	aM := resolveMetric(o.metricRegistry, a)
+	bM := resolveMetric(o.metricRegistry, b)
 
 	pm := o.GetPrefixMode()
-	resultMetric, err := resultMetricForDiv(o.metricRegistry, aM, bM)
-	if err != nil {
-		return buildError("/", err)
-	}
+	resultMetric := resultMetricForDiv(o.metricRegistry, aM, bM)
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
-		return buildError("division", err)
+		return buildError("/", err)
 	}
 	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
 	if err != nil {
-		return buildError("division", err)
-	}
-	resultVal, err := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
-	if err != nil {
 		return buildError("/", err)
 	}
+	resultVal := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
 
 	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil
@@ -196,35 +172,23 @@ func (o *Operations) Modulo(stack *Stack) error {
 		return buildError("%", fmt.Errorf("modulo by zero"))
 	}
 
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError("%", err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError("%", err)
-	}
+	aM := resolveMetric(o.metricRegistry, a)
+	bM := resolveMetric(o.metricRegistry, b)
 	if !categoriesCompatible(aM, bM) {
 		return metricError("%", aM, bM)
 	}
 
 	pm := o.GetPrefixMode()
-	resultMetric, err := compatibleMetric(o.metricRegistry, aM, bM)
-	if err != nil {
-		return buildError("%", err)
-	}
+	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
-		return buildError("modulo", err)
+		return buildError("%", err)
 	}
 	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
 	if err != nil {
-		return buildError("modulo", err)
-	}
-	resultVal, err := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
-	if err != nil {
 		return buildError("%", err)
 	}
+	resultVal := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
 
 	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
 	return nil

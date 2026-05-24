@@ -13,23 +13,14 @@ func compareValues(o *Operations, stack *Stack, op string, cmp func(float64, flo
 		return err
 	}
 
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError(op, err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError(op, err)
-	}
+	aM := resolveMetric(o.metricRegistry, a)
+	bM := resolveMetric(o.metricRegistry, b)
 	if !categoriesCompatible(aM, bM) {
 		return metricError(op, aM, bM)
 	}
 
 	pm := o.GetPrefixMode()
-	resultMetric, err := compatibleMetric(o.metricRegistry, aM, bM)
-	if err != nil {
-		return buildError(op, err)
-	}
+	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
 	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
 	if err != nil {
 		return buildError(op, err)
