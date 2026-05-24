@@ -173,83 +173,53 @@ gt '100kmh 1hr * @mi convert'        # → 62.13711922
 gt '1Gbps 1hr * @GB convert'         # → 450
 ```
 
-## Practical Use Cases
+## Examples
 
 ### Network Bandwidth
 
 ```bash
-# Convert internet speed to familiar units
 gt '500Mbps @Gbps convert'           # → 0.5
-
-# Calculate how many GB you download in an hour at 1 Gbps
 gt '1Gbps 1hr * @GB convert'         # → 450
-
-# Server throughput in Mbps
 gt '100Kbps @Mbps convert'           # → 0.1
 ```
 
 ### Travel Planning
 
 ```bash
-# Speed limit conversion (US to metric)
 gt '65mph @kmh convert'              # → 104.86
-
-# Distance conversion for flight planning
 gt '100nm @km convert'               # → 185.2 (nautical miles to km)
-
-# Flight time: 500 miles at 400 mph
 gt '500mi 400mph / @min convert'     # → 75 minutes
-
-# Speed of sound in km/h
 gt '340mps @kmh convert'             # → 1224
 ```
 
 ### Weight Conversions
 
 ```bash
-# Body weight
 gt '70kg @lb convert'                # → 154.32
-
-# Shipping: 50 oz to grams
 gt '50oz @g convert'                 # → 1417.476156
-
-# Industrial weight
 gt '2.5ton @kg convert'              # → 2500
 ```
 
 ### Cooking and Recipes
 
 ```bash
-# Kitchen weight
 gt '250g @oz convert'                # → 8.82
-
-# Small measurements
 gt '500mg @g convert'                # → 0.5
 ```
 
 ### Data Storage
 
 ```bash
-# Disk space: how many GB in a TB
 gt '1TB @GB convert'                 # → 1000
-
-# RAM: how many MiB in a GiB
 gt '1GiB @MiB convert'               # → 1024
-
-# File size: 500 MB in KB
 gt '500MB @KB convert'               # → 500000
 ```
 
 ### Time Planning
 
 ```bash
-# How many seconds in 3 days
 gt '3day @s convert'                 # → 259200
-
-# Half-hour delay in milliseconds
 gt '0.5hr @ms convert'               # → 1800000
-
-# Milliseconds to seconds
 gt '2500ms @s convert'               # → 2.5
 ```
 
@@ -257,7 +227,7 @@ gt '2500ms @s convert'               # → 2.5
 
 ### Incompatible Categories
 
-Converting between different metric categories produces an error because the units are fundamentally incompatible:
+Converting between different metric categories produces an error:
 
 ```bash
 gt '1km @hr convert'        # Error: incompatible metrics (Distance vs Time)

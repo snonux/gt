@@ -4,7 +4,7 @@ A command-line calculator with percentage calculations and RPN (Reverse Polish N
 
 ![gt Logo](logo.svg)
 
-This is a toy project created to experiment with local LLMs (Qwen, Gemma, Nemotron, GPT OSS) and how well they hold up as pair programmers.
+This is a toy project to experiment with local LLMs (Qwen, Gemma, Nemotron, GPT OSS) as pair programmers.
 
 ## Installation
 
@@ -30,7 +30,7 @@ gt                      # interactive REPL
 
 ## Feature Guide
 
-All features are documented in the [`docs/`](docs/) directory:
+All features are documented in [`docs/`](docs/):
 
 | Topic | Doc |
 |-------|-----|

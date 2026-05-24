@@ -2,7 +2,7 @@
 
 The `metric` command provides runtime introspection and configuration for gt's metrics system. It lets you inspect metric metadata, explore available categories and units, check compatibility between values, and switch between SI and IEC prefix modes.
 
-All metric commands are RPN operators — they work on the stack, consume tokens, and produce string output. They can be used in single-command mode (`./gt '<expression>'`) or interactively in REPL mode (`./gt`).
+All metric commands are RPN operators — they work on the stack, consume tokens, and produce string output. They work in single-command mode (`gt '<expression>'`) or interactively in REPL mode (`gt`).
 
 ## `metric show`
 
@@ -48,7 +48,7 @@ Cool (Universal)
 kmh, Speed, base: m/s, factor: 0.2777777778
 ```
 
-Note that `metric show` does not consume the value from the stack — it only peeks at the top.
+`metric show` does not consume the value from the stack — it only peeks at the top.
 
 ## `metric list`
 
@@ -58,8 +58,6 @@ Lists all available metric categories, alphabetically sorted and comma-separated
 gt 'metric list'
 # → DataRate, DataSize, Distance, Speed, Time, Universal, Weight
 ```
-
-This is useful for discovering what categories exist before drilling down with the category subcommand.
 
 ## `metric <category>`
 
@@ -91,8 +89,6 @@ Unknown category names produce an error:
 gt 'metric Temperature'
 # → Error: rpn: metric Temperature: metric: unknown category "Temperature"
 ```
-
-This subcommand is a good way to discover available units within a category, especially for DataSize which has both SI and IEC variants.
 
 ## `metric compatible`
 
@@ -175,9 +171,7 @@ The prefix mode only affects SI-prefixed data size units (KB, MB, GB, TB, PB). A
 
 ## REPL vs Single-Command Mode
 
-The `metric` commands behave differently depending on how gt is invoked:
-
-### Single-command mode (`./gt '<expression>'`)
+### Single-command mode (`gt '<expression>'`)
 
 A fresh RPN engine is created for each invocation. State changes like `metric binary set` only apply to that single expression and are discarded afterward:
 
@@ -193,7 +187,7 @@ gt '1GB @MB convert'
 
 Note: In single-command mode, `metric binary set` and subsequent tokens in the same expression may not all execute — metric commands return immediately after handling their tokens. Use REPL mode for mode changes followed by calculations.
 
-### REPL mode (`./gt` interactively)
+### REPL mode (`gt` interactively)
 
 The RPN engine persists across lines, so prefix mode changes remain in effect:
 
@@ -234,7 +228,7 @@ gt '1KiB @bytes convert'  # Always 1024
 - **IEC mode**: Matches operating system memory reporting. Use when you need 1 GB = 1,024 MB.
 - **IEC units** (KiB/MiB/GiB): Always unambiguous — use these in scripts or documentation where precision matters.
 
-## Practical Use Cases
+## Examples
 
 ### Exploring the metrics system
 

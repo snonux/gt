@@ -1,6 +1,6 @@
 # Constants
 
-The gt calculator includes a comprehensive set of built-in mathematical constants that can be used directly in RPN expressions. Constants are resolved automatically — just use the name as a token.
+gt includes these built-in mathematical constants. They're resolved automatically — just use the name as a token.
 
 ## Built-in Constants
 
@@ -81,9 +81,9 @@ Lists all 36 built-in constants with their values, sorted alphabetically.
 gt 'clearconstants'
 ```
 
-Removes all user-defined constants and resets built-in constants to their default values. Built-in constants cannot be permanently deleted.
+Removes all user-defined constants and resets built-in constants to their default values. Built-in constants can't be permanently deleted.
 
-## Practical Use Cases
+## Examples
 
 ### Geometry
 
@@ -140,4 +140,4 @@ gt 'pi'                  # → 3.141592654  (constant restored)
 - Constants are resolved before variables in the lookup order
 - All constants use float64 precision (10 significant digits in output)
 - Greek letter aliases are fully supported for the most common constants
-- Built-in constants cannot be individually deleted, only overwritten with variables
+- Built-in constants can't be individually deleted, only overwritten with variables

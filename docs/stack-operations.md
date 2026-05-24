@@ -1,14 +1,10 @@
 # Stack Manipulation Operators
 
-`gt` provides a set of operators for directly manipulating the RPN stack. These
-let you duplicate values, reorder elements, discard items, inspect the stack,
-and clear everything.
+gt provides operators for directly manipulating the RPN stack. These let you duplicate values, reorder elements, discard items, inspect the stack, and clear everything.
 
 ## How the Stack Works
 
-The RPN stack grows from bottom to top. The **top** of the stack is the most
-recently pushed value. Stack manipulation operators read and modify this
-structure without performing arithmetic.
+The RPN stack grows from bottom to top. The **top** of the stack is the most recently pushed value. Stack manipulation operators read and modify this structure without performing arithmetic.
 
 ```
 Stack (bottom -> top):
@@ -40,8 +36,7 @@ Stack (bottom -> top):
 
 ## `dup` — Duplicate Top Value
 
-Pushes a copy of the top stack value onto the stack. Requires at least one
-value on the stack.
+Pushes a copy of the top stack value onto the stack. Requires at least one value on the stack.
 
 ### Stack visualization
 
@@ -77,8 +72,7 @@ $ gt '7 dup dup +'
 7 14
 ```
 
-Step by step: `7` pushed, `dup` produces `[7, 7]`, `dup` produces `[7, 7, 7]`,
-`+` pops the top two producing `[7, 14]`.
+Step by step: `7` pushed, `dup` produces `[7, 7]`, `dup` produces `[7, 7, 7]`, `+` pops the top two producing `[7, 14]`.
 
 ### Practical use cases
 
@@ -89,9 +83,7 @@ $ gt '10 dup 5 gt'
 true
 ```
 
-Checks if `10 > 5` while keeping the original `10` available (the comparison
-pops both values, but `dup` ensures the original is preserved before the
-operation).
+Checks if `10 > 5` while keeping the original `10` available (the comparison pops both values, but `dup` ensures the original is preserved before the operation).
 
 **Reuse without re-entry** — avoid typing the same value multiple times:
 
@@ -106,8 +98,7 @@ Computes `2*pi` and `4*pi` from a single entry of pi.
 
 ## `swap` — Swap Top Two Values
 
-Exchanges the positions of the top two stack values. Requires at least two
-values on the stack.
+Exchanges the positions of the top two stack values. Requires at least two values on the stack.
 
 ### Stack visualization
 
@@ -148,13 +139,11 @@ $ gt '3 4 5 swap -'
 3 1
 ```
 
-Step by step: `3` pushed `[3]`, `4` pushed `[3, 4]`, `5` pushed `[3, 4, 5]`,
-`swap` swaps top two `[3, 5, 4]`, `-` pops 5 and 4 pushing 1 `[3, 1]`.
+Step by step: `3` pushed `[3]`, `4` pushed `[3, 4]`, `5` pushed `[3, 4, 5]`, `swap` swaps top two `[3, 5, 4]`, `-` pops 5 and 4 pushing 1 `[3, 1]`.
 
 ### Practical use cases
 
-**Correct operand order** — when the natural reading order differs from RPN
-order:
+**Correct operand order** — when the natural reading order differs from RPN order:
 
 ```
 $ gt '100 1 swap /'
@@ -170,15 +159,13 @@ $ gt '4 3 swap ^'
 81
 ```
 
-Computes `3^4` = 81 (swap turns `[4, 3]` into `[3, 4]`, then `^` computes
-`3^4`).
+Computes `3^4` = 81 (swap turns `[4, 3]` into `[3, 4]`, then `^` computes `3^4`).
 
 ---
 
 ## `pop` — Discard Top Value
 
-Removes and discards the top stack value. Requires at least one value on the
-stack.
+Removes and discards the top stack value. Requires at least one value on the stack.
 
 ### Stack visualization
 
@@ -208,8 +195,7 @@ $ gt '10 20 + 30 pop'
 30
 ```
 
-Step by step: `10` pushed, `20` pushed, `+` produces `[30]`, `30` pushed
-`[30, 30]`, `pop` discards top `[30]`.
+Step by step: `10` pushed, `20` pushed, `+` produces `[30]`, `30` pushed `[30, 30]`, `pop` discards top `[30]`.
 
 ### Practical use cases
 
@@ -231,8 +217,7 @@ $ gt '100 200 pop'
 
 ## `show` / `showstack` / `print` — Display the Stack
 
-Prints all values currently on the stack without modifying it. All three are
-equivalent. Requires no operands.
+Prints all values currently on the stack without modifying it. All three are equivalent. Requires no operands.
 
 ### Stack visualization
 
@@ -301,21 +286,11 @@ Displays `10` (the result of `100 / 10`) before adding 5.
 
 ## `clear` — Reset Variables and Constants
 
-Clears all user-defined variables and constants from the session. This affects
-the variable table, not the RPN stack directly.
+Clears all user-defined variables and constants from the session. This affects the variable table, not the RPN stack directly.
 
 ### Examples
 
 Clear all user-defined variables:
-
-```
-$ gt 'clear'
-All variables cleared
-```
-
-### Practical use cases
-
-**Clean slate** — reset a session after defining many temporary variables:
 
 ```
 $ gt 'clear'
@@ -357,8 +332,7 @@ $ gt '5 dup dup + *'
 75
 ```
 
-Step by step: `[5]` -> `dup` -> `[5, 5]` -> `dup` -> `[5, 5, 5]` -> `+` ->
-`[5, 10]` -> `*` -> `[50]`. This computes `5 * (5 + 5)` = 50.
+Step by step: `[5]` -> `dup` -> `[5, 5]` -> `dup` -> `[5, 5, 5]` -> `+` -> `[5, 10]` -> `*` -> `[50]`. This computes `5 * (5 + 5)` = 50.
 
 ### Swap-based reordering in complex expressions
 
@@ -367,8 +341,7 @@ $ gt '2 3 4 swap ^ -'
 -62
 ```
 
-Step by step: `[2]` -> `[2, 3]` -> `[2, 3, 4]` -> `swap` -> `[2, 4, 3]` ->
-`^` -> `[2, 4^3]` = `[2, 64]` -> `-` -> `[2 - 64]` = `[-62]`.
+Step by step: `[2]` -> `[2, 3]` -> `[2, 3, 4]` -> `swap` -> `[2, 4, 3]` -> `^` -> `[2, 4^3]` = `[2, 64]` -> `-` -> `[2 - 64]` = `[-62]`.
 
 ### Show the intermediate state
 
@@ -376,5 +349,4 @@ Step by step: `[2]` -> `[2, 3]` -> `[2, 3, 4]` -> `swap` -> `[2, 4, 3]` ->
 $ gt '10 20 30 + show 5 *'
 ```
 
-This pushes 10, 20, 30, adds top two (50), shows the stack `[10, 50]`, then
-multiplies to get `500`.
+This pushes 10, 20, 30, adds top two (50), shows the stack `[10, 50]`, then multiplies to get `500`.

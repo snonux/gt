@@ -1,7 +1,6 @@
 # Percentage Calculations
 
-`gt` supports three forms of percentage calculation, each solving a different
-unknown. All inputs are case-insensitive and support decimal numbers.
+gt supports three forms of percentage calculation, each solving a different unknown. All inputs are case-insensitive and support decimal numbers.
 
 ## Syntax
 
@@ -46,10 +45,6 @@ gt '20% of 150'
 gt '50% of 200'
 # 50.00% of 200.00 = 100.00
 #   Steps: (50.00 / 100) * 200.00 = 0.50 * 200.00 = 100.00
-
-gt 'what is 20% of 150'
-# 20.00% of 150.00 = 30.00
-#   Steps: (20.00 / 100) * 150.00 = 0.20 * 150.00 = 30.00
 ```
 
 ### Form 2: X is what % of Y
@@ -62,10 +57,6 @@ gt '30 is what % of 150'
 gt '75 is what % of 300'
 # 75.00 is 25.00% of 300.00
 #   Steps: (75.00 / 300.00) * 100 = 0.25 * 100 = 25.00%
-
-gt '3.75 is what % of 150'
-# 3.75 is 2.50% of 150.00
-#   Steps: (3.75 / 150.00) * 100 = 0.03 * 100 = 2.50%
 ```
 
 ### Form 3: X is Y% of what
@@ -78,10 +69,6 @@ gt '30 is 20% of what'
 gt '50 is 25% of what'
 # 50.00 is 25.00% of 200.00
 #   Steps: (50.00 / 25.00) * 100 = 2.00 * 100 = 200.00
-
-gt '3.75 is 2.5% of what'
-# 3.75 is 2.50% of 150.00
-#   Steps: (3.75 / 2.50) * 100 = 1.50 * 100 = 150.00
 ```
 
 ## Output Format
@@ -97,10 +84,9 @@ Every percentage calculation returns two lines:
 | X is what % of Y | `X.00 is P.00% of Y.00` |
 | X is Y% of what | `X.00 is Y.00% of Whole.00` |
 
-The steps line shows the formula used, intermediate values, and the final
-result so you can verify the math.
+The steps line shows the formula used, intermediate values, and the final result so you can verify the math.
 
-## Practical Use Cases
+## Examples
 
 ### Discounts
 
@@ -156,8 +142,6 @@ gt '0% of 150'
 # 0.00% of 150.00 = 0.00
 ```
 
-Zero percent of any number is always zero.
-
 ### Percentages over 100%
 
 ```bash
@@ -167,9 +151,6 @@ gt '150% of 200'
 gt '200% of 50'
 # 200.00% of 50.00 = 100.00
 ```
-
-Percentages over 100% are fully supported and produce values greater than
-the base.
 
 ### Decimal values
 
@@ -181,16 +162,12 @@ gt '3.75 is what % of 150'
 # 3.75 is 2.50% of 150.00
 ```
 
-All three forms accept decimal numbers for both the percentage and the values.
-
 ### Large numbers
 
 ```bash
 gt '15% of 1000000'
 # 15.00% of 1000000.00 = 150000.00
 ```
-
-Calculations handle large numbers without issue.
 
 ### Case insensitivity
 
@@ -200,8 +177,6 @@ gt '30 IS WHAT % OF 150'
 gt '30 IS 20% OF WHAT'
 ```
 
-All keyword matching is case-insensitive.
-
 ### Whitespace flexibility
 
 ```bash
@@ -209,28 +184,17 @@ gt '20  %   of   150'
 gt '30 is what% of 150'
 ```
 
-Extra whitespace is tolerated. Spaces around the `%` sign are optional in
-forms 2 and 3.
-
 ### Not supported
 
-- **Negative numbers** — `-20% of 150` is not recognized; only non-negative
-  numbers are accepted
-- **Division by zero** — `30 is what % of 0` and `30 is 0% of what` both
-  produce an error since they require dividing by zero
+- **Negative numbers** — `-20% of 150` is not recognized; only non-negative numbers are accepted
+- **Division by zero** — `30 is what % of 0` and `30 is 0% of what` both produce an error since they require dividing by zero
 
 ## Known Limitations
 
-1. **No negative numbers** — The regex patterns only match non-negative
-   numeric values (`\d+(?:\.\d+)?`). Expressions like `-20% of 150` will not
-   be recognized as percentage calculations.
+1. **No negative numbers** — The regex patterns only match non-negative numeric values (`\d+(?:\.\d+)?`). Expressions like `-20% of 150` will not be recognized as percentage calculations.
 
-2. **Single-line input** — Percentage calculations are single-command
-   operations; they do not interact with the RPN stack.
+2. **Single-line input** — Percentage calculations are single-command operations; they do not interact with the RPN stack.
 
-3. **No chained operations** — You cannot combine percentage calculations
-   with RPN in a single expression. Use RPN for the arithmetic after
-   getting the percentage result.
+3. **No chained operations** — You cannot combine percentage calculations with RPN in a single expression. Use RPN for the arithmetic after getting the percentage result.
 
-4. **Zero percent with "of what"** — `X is 0% of what` is mathematically
-   undefined and returns a division-by-zero error.
+4. **Zero percent with "of what"** — `X is 0% of what` is mathematically undefined and returns a division-by-zero error.

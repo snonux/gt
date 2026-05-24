@@ -328,7 +328,7 @@ Five methods exit the REPL:
 
 Ctrl+C does not exit by default — it gives you a chance to cancel. Press Ctrl+D or type `quit` to leave.
 
-## Practical Workflow Examples
+## Examples
 
 ### Multi-step RPN calculation
 

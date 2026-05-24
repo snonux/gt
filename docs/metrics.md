@@ -148,7 +148,7 @@ prefix mode: IEC
 
 In single-command mode, SI is always used.
 
-## Practical Use Cases
+## Examples
 
 ### Bandwidth Planning
 

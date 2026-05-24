@@ -1,8 +1,8 @@
 # Custom Metrics
 
-The `custom` command lets you define your own units of measurement. Custom metrics behave like built-in metrics — they support suffix notation (`10foobar`), metric-aware arithmetic, and conversion to their base unit. They are particularly useful for domain-specific units that gt doesn't ship with out of the box.
+The `custom` command lets you define your own units of measurement. Custom metrics behave like built-in metrics — they support suffix notation (`10foobar`), metric-aware arithmetic, and conversion to their base unit. They're useful for domain-specific units that gt doesn't ship with.
 
-Custom metrics are RPN operators — they work on the stack, consume tokens, and produce string output. They can be used in single-command mode (`./gt '<expression>'`) or interactively in REPL mode (`./gt`).
+Custom metrics are RPN operators — they work on the stack, consume tokens, and produce string output. They work in single-command mode (`gt '<expression>'`) or interactively in REPL mode (`gt`).
 
 ## `custom define`
 
@@ -25,12 +25,6 @@ gt 'custom define myhour 3600 Time'
 
 gt 'custom define widget 0.5 Universal'
 # → defined custom metric "widget" (factor: 0.5, category: Universal)
-
-gt 'custom define negtest -5 Custom'
-# → defined custom metric "negtest" (factor: -5, category: Custom)
-
-gt 'custom define zerounit 0 Custom'
-# → defined custom metric "zerounit" (factor: 0, category: Custom)
 ```
 
 The factor determines how many base units one unit of the custom metric equals. For example, `foobar` with factor 42 means `1foobar = 42 Custom_base`.
@@ -59,7 +53,7 @@ gt 'custom define foobar 42 Custom'
 
 ## `custom undefine`
 
-Remove a previously defined custom metric. Built-in metrics cannot be removed.
+Remove a previously defined custom metric. Built-in metrics can't be removed.
 
 ```bash
 gt 'custom undefine <name>'
@@ -112,13 +106,6 @@ gt 'custom show [name]'
 
 ### Show all custom metrics
 
-```bash
-gt 'custom show'
-# → no custom metrics defined
-```
-
-In REPL mode after defining metrics:
-
 ```
 > custom define foobar 42 Custom
 defined custom metric "foobar" (factor: 42, category: Custom)
@@ -163,19 +150,15 @@ defined custom metric "foobar" (factor: 42, category: Custom)
 Custom metrics in the same category are compatible for addition and subtraction. The result uses the unit of the bottom-of-stack operand:
 
 ```
-> custom define foobar 42 Custom
-defined custom metric "foobar" (factor: 42, category: Custom)
 > 10foobar 5foobar +
 15
 > 5foobar 3foobar -
 2
 ```
 
-The result is unitless because the metric system resolves to base units for the calculation. For factor 42: `10foobar = 420`, `5foobar = 210`, so `420 + 210 = 630` which is `15 foobar` in base units. The displayed value is the quotient in terms of the result's unit.
+The result is unitless because the metric system resolves to base units for the calculation. For factor 42: `10foobar = 420`, `5foobar = 210`, so `420 + 210 = 630` which is `15 foobar` in base units.
 
 ### Multiplication and division
-
-Custom metrics work with multiplication and division:
 
 ```
 > custom define mul_unit 5 Custom
@@ -193,15 +176,13 @@ defined custom metric "div_unit" (factor: 10, category: Custom)
 Unitless values (`Cool`/Universal) can be added to custom metrics:
 
 ```
-> custom define foobar 42 Custom
-defined custom metric "foobar" (factor: 42, category: Custom)
 > 10foobar 5 +
 10
 ```
 
 ### Incompatible categories
 
-Custom metrics in different categories cannot be mixed:
+Custom metrics in different categories can't be mixed:
 
 ```
 > custom define timetest 3600 Time
@@ -217,8 +198,6 @@ Error: metric arithmetic requires compatible categories (Time vs Distance)
 Custom metrics support `@<unit> convert` within their category. Conversion to a different category fails:
 
 ```
-> custom define foobar 42 Custom
-defined custom metric "foobar" (factor: 42, category: Custom)
 > 10foobar @Custom_base convert
 420
 > 10foobar @Mbps convert
@@ -236,22 +215,18 @@ defined custom metric "hyper_test" (factor: 100, category: Custom)
 18
 ```
 
-## Practical Use Cases
+## Examples
 
 ### Company-specific units
 
-Define internal measurement units that aren't standard:
-
 ```
-> custom define reel 304.8 meters
+> custom define reel 304.8 Distance
 defined custom metric "reel" (factor: 304.8, category: Distance)
 > 5reel @m convert
 1524
 ```
 
 ### Recipe and cooking units
-
-Create convenient cooking measurements:
 
 ```
 > custom define cup 240 Weight
@@ -264,8 +239,6 @@ defined custom metric "cup" (factor: 240, category: Weight)
 
 ### Game currencies and points
 
-Define game-specific units for calculating rewards:
-
 ```
 > custom define gold 1000 Universal
 defined custom metric "gold" (factor: 1000, category: Universal)
@@ -274,8 +247,6 @@ defined custom metric "gold" (factor: 1000, category: Universal)
 ```
 
 ### Time conversions with custom units
-
-Create convenient time units:
 
 ```
 > custom define fortnight 1209600 Time
@@ -293,10 +264,6 @@ Defining a metric with a name that already exists (including built-in metrics) f
 ```bash
 gt 'custom define Mbps 1000 DataRate'
 # → Error: rpn: custom define: metric "Mbps" already exists
-
-gt 'custom define foobar 42 Custom'
-gt 'custom define foobar 99 Custom'
-# → Error: rpn: custom define: metric "foobar" already exists
 ```
 
 In REPL mode, the second define on the same RPN instance fails:
@@ -372,9 +339,7 @@ gt 'custom rename foobar'
 
 ## REPL vs Single-Command Mode
 
-Custom metric commands behave differently depending on how gt is invoked:
-
-### Single-command mode (`./gt '<expression>'`)
+### Single-command mode (`gt '<expression>'`)
 
 Each invocation creates a fresh process with a clean metric registry. `custom define` confirms the metric was registered but stops evaluation, so subsequent tokens are not processed:
 
@@ -387,7 +352,7 @@ gt 'custom define foobar 42 Custom 10foobar 5foobar +'
 # → defined custom metric "foobar" (factor: 42, category: Custom)
 ```
 
-### REPL mode (`./gt` interactively)
+### REPL mode (`gt` interactively)
 
 The RPN engine and metric registry persist across lines. Define metrics first, then use them in subsequent calculations:
 
@@ -408,7 +373,7 @@ removed custom metric "foobar"
 no custom metrics defined
 ```
 
-REPL mode is the recommended way to work with custom metrics, as it allows defining, using, and managing metrics in a single session.
+REPL mode is the recommended way to work with custom metrics.
 
 ## Summary
 

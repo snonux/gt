@@ -112,4 +112,4 @@ The `**` operator **requires** an integer exponent. Use `^` for fractional expon
 - **Time complexity**: O(log |n|) where n is the exponent. An exponent of 100 requires only ~7 loop iterations (vs 99 naive multiplications).
 - **Space complexity**: O(1) for positive exponents; O(log |n|) stack depth for negative exponents (recursive call).
 - The implementation uses `float64` throughout, so results may lose precision for very large exponents (same limitations as any floating-point computation).
-- For the specific case of exponent 0, the function returns 1 immediately without entering the loop.
+- For exponent 0, the function returns 1 immediately without entering the loop.

@@ -146,7 +146,7 @@ Stack operators that work on any `StackValue` work with symbols:
 :x pop              → error: empty result: expression evaluated to nothing
 ```
 
-## Practical Use Cases
+## Examples
 
 ### Explicit Variable Assignment
 
@@ -198,10 +198,3 @@ vars                → No variables defined
 | `:x 1 +` | value ":x" is not numeric | Symbols can't be used in arithmetic |
 | `:x d` | variable not found: x | Variable x not defined |
 | `:x pop` | empty result: expression evaluated to nothing | Stack empty after pop |
-
-## Reference
-
-- **Type**: `internal/rpn/number.go` — `Symbol` struct and `NewSymbol()`
-- **Parsing**: `internal/rpn/rpn_parse.go` — `checkAndPushSymbol()`, `dispatchOperator()`
-- **Assignment**: `internal/rpn/operations_variables.go` — `AssignLeft()`, `AssignRight()` (both accept `*Symbol` as the name argument)
-- **Deletion**: `internal/rpn/operations_variables.go` — `DeleteVariable()` (called via the `d` operator, expects `*Symbol` or `*StringNum`)

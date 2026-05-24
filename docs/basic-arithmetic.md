@@ -1,9 +1,6 @@
 # Basic Arithmetic RPN Operators
 
-`gt` evaluates expressions using Reverse Polish Notation (RPN), a stack-based
-calculation method where operators follow their operands. No parentheses are
-needed, and the order of operations is determined entirely by the sequence of
-tokens.
+gt evaluates expressions using Reverse Polish Notation (RPN), a stack-based calculation method where operators follow their operands. No parentheses needed — the token sequence determines the order of operations.
 
 ## How RPN Works
 
@@ -12,8 +9,7 @@ Each token is processed left to right:
 1. **Numbers** are pushed onto the stack.
 2. **Operators** pop the required operands, compute the result, and push it back.
 
-For example, `3 4 +` pushes 3, then 4, then `+` pops both (3 and 4), adds
-them, and pushes the result (7).
+For example, `3 4 +` pushes 3, then 4, then `+` pops both, adds them, and pushes 7.
 
 ### Stack visualization
 
@@ -31,9 +27,7 @@ Result: 7
 
 ## Operators
 
-All binary arithmetic operators pop two values and push one result. The
-**first** value pushed is the left operand (`a`), and the **second** value
-pushed is the right operand (`b`). The operation is always `a <op> b`.
+All binary arithmetic operators pop two values and push one result. The **first** value pushed is the left operand (`a`), the **second** is the right operand (`b`). The operation is always `a <op> b`.
 
 ### `+` Addition
 
@@ -44,15 +38,12 @@ $ gt '3 4 +'
 
 ### `-` Subtraction
 
-Computes `a - b` (first value minus second value).
+Computes `a - b` (first value minus second). Order matters:
 
 ```
 $ gt '3 4 -'
 -1
 ```
-
-Note: order matters in RPN subtraction. `3 4 -` yields `-1` because it
-computes `3 - 4`.
 
 ### `*` Multiplication
 
@@ -63,7 +54,7 @@ $ gt '5 6 *'
 
 ### `/` Division
 
-Computes `a / b` (first value divided by second value).
+Computes `a / b` (first value divided by second).
 
 ```
 $ gt '20 4 /'
@@ -72,26 +63,15 @@ $ gt '20 4 /'
 
 ### `^` Power
 
-Computes `a ^ b` (first value raised to the power of the second). Result is
-always unitless.
+Computes `a ^ b` (first value raised to the power of the second). Result is always unitless.
 
 ```
 $ gt '2 3 ^'
 8
-```
-
-Additional examples:
-
-```
 $ gt '2 10 ^'
 1024
 $ gt '5 0 ^'
 1
-```
-
-Supports negative exponents:
-
-```
 $ gt '2 -3 ^'
 0.125
 ```
@@ -103,11 +83,6 @@ Computes `a % b` (remainder of `a / b`).
 ```
 $ gt '10 3 %'
 1
-```
-
-Additional examples:
-
-```
 $ gt '7 3 %'
 1
 $ gt '13 5 %'
@@ -118,7 +93,7 @@ $ gt '100 7 %'
 
 ## Multi-operand Expressions
 
-RPN naturally handles complex expressions without parentheses.
+RPN handles complex expressions without parentheses.
 
 ### Chained operations
 
@@ -127,16 +102,14 @@ $ gt '1 2 3 + +'
 6
 ```
 
-Step by step: `1` pushed, `2` pushed, `3` pushed, `+` pops 2 and 3
-producing 5 (stack: `[1, 5]`), `+` pops 1 and 5 producing 6.
+Step by step: `1` pushed, `2` pushed, `3` pushed, `+` pops 2 and 3 producing 5 (stack: `[1, 5]`), `+` pops 1 and 5 producing 6.
 
 ```
 $ gt '10 2 3 - *'
 -10
 ```
 
-Step by step: `10` pushed, `2` pushed, `3` pushed, `-` pops 2 and 3
-producing -1 (stack: `[10, -1]`), `*` pops 10 and -1 producing -10.
+Step by step: `10` pushed, `2` pushed, `3` pushed, `-` pops 2 and 3 producing -1 (stack: `[10, -1]`), `*` pops 10 and -1 producing -10.
 
 ### Nested operations
 
@@ -156,15 +129,14 @@ This is `2^3 + 4^5` = `8 + 1024` = `1032`.
 
 ### Order of operations
 
-In RPN, the order of operations is explicit in the token sequence:
+In RPN, the order is explicit in the token sequence:
 
 ```
 $ gt '10 3 2 * /'
 1.666666667
 ```
 
-This computes `10 / (3 * 2)` = `10 / 6`. The inner operation `3 2 *` is
-evaluated first because the `*` comes before `/`.
+This computes `10 / (3 * 2)` = `10 / 6`. The inner operation `3 2 *` is evaluated first because `*` comes before `/`.
 
 ```
 $ gt '100 10 / 5 +'
@@ -182,7 +154,7 @@ $ gt '1 2 + 3 4 + * 5 6 + +'
 
 Breakdown: `(1+2) * (3+4) + (5+6)` = `3 * 7 + 11` = `21 + 11` = `32`.
 
-## Practical Use Cases
+## Examples
 
 ### Compound calculations
 
@@ -191,21 +163,6 @@ Compute `(a + b) * c - d / e` in RPN:
 ```
 $ gt '10 5 + 3 * 20 4 / -'
 35
-```
-
-Stack trace:
-```
-  Token  Stack
-  -----  -----
-  10     [10]
-   5     [10, 5]
-   +     [15]
-   3     [15, 3]
-   *     [45]
-  20     [45, 20]
-   4     [45, 20, 4]
-   /     [45, 5]
-   -     [40]
 ```
 
 ### Geometry
@@ -242,7 +199,7 @@ $ gt '10 20 30 + + 3 /'
 
 ### Division by zero
 
-Returns an error rather than infinity or NaN:
+Returns an error:
 
 ```
 $ gt '5 0 /'
@@ -260,16 +217,9 @@ Error: modulo by zero
 
 ### Negative results
 
-Subtraction produces negative numbers naturally:
-
 ```
 $ gt '3 7 -'
 -4
-```
-
-Multiplication with negative numbers works as expected:
-
-```
 $ gt '-5 3 *'
 -15
 ```
@@ -284,22 +234,6 @@ Error: stack is empty
 
 $ gt '5 +'
 Error: stack has insufficient operands
-```
-
-### Power special cases
-
-Any number to the power of 0 yields 1:
-
-```
-$ gt '5 0 ^'
-1
-```
-
-Negative exponents produce fractional results:
-
-```
-$ gt '2 -3 ^'
-0.125
 ```
 
 ## Summary Table

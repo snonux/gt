@@ -134,7 +134,7 @@ The `=` operator supports evaluating an expression immediately after assignment:
 x 10 = x 5 +    → 15   (assigns x=10, then computes x+5)
 ```
 
-## Practical Use Cases
+## Examples
 
 ### Storing Reusable Values
 
@@ -167,10 +167,3 @@ sum 10 +               → 10
 sum 20 +               → 30
 sum 5 -                → 25
 ```
-
-## Reference
-
-- **Implementation**: `internal/rpn/operations_variables.go` (assignment operators, variable CRUD)
-- **Parsing**: `internal/rpn/rpn_parse.go` (`handleAssignmentOp()`, `handleStandardAssign()`)
-- **Registry**: `internal/rpn/operator_registry.go` (operator registration for `:=`, `=:`, `=`, `d`)
-- **Variable store**: `internal/rpn/variables.go` (thread-safe variable storage with save/load)

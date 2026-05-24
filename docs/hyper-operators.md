@@ -1,11 +1,8 @@
 # Hyper RPN Operators
 
-Hyper operators operate on **all** values currently on the stack, rather than
-just the top one or two. They pop every value, reduce them left-associatively,
-and push a single result back.
+Hyper operators operate on **all** values currently on the stack, rather than just the top one or two. They pop every value, reduce them left-associatively, and push a single result back.
 
-The syntax uses square brackets: `[+]`, `[*]`, `[-]`, `[/]`, `[^]`, `[%]`,
-`[lg]`, `[log]`, `[ln]`.
+The syntax uses square brackets: `[+]`, `[*]`, `[-]`, `[/]`, `[^]`, `[%]`, `[lg]`, `[log]`, `[ln]`.
 
 ## How Hyper Operators Work
 
@@ -24,13 +21,11 @@ Input:  1  2  3  4  5  [+]
 Result: 15
 ```
 
-All five values are consumed, summed left-to-right (`((((1 + 2) + 3) + 4) +
-5)`), and the single result is pushed back.
+All five values are consumed, summed left-to-right (`((((1 + 2) + 3) + 4) + 5)`), and the single result is pushed back.
 
 ### Requirements
 
-- At least **two** values must be on the stack, or the operator returns an
-  error.
+- At least **two** values must be on the stack, or the operator returns an error.
 - After execution, exactly one value remains on the stack.
 
 ## Arithmetic Hyper Operators
@@ -43,8 +38,6 @@ Adds all stack values left-associatively.
 $ gt '1 2 3 4 5 [+]'
 15
 ```
-
-Equivalently: `1 + 2 + 3 + 4 + 5` = 15.
 
 With two operands, behaves identically to binary `+`:
 
@@ -60,11 +53,6 @@ Multiplies all stack values left-associatively. Result is always unitless.
 ```
 $ gt '2 3 4 [*]'
 24
-```
-
-Equivalently: `2 * 3 * 4` = 24.
-
-```
 $ gt '1 2 3 [*]'
 6
 ```
@@ -76,38 +64,24 @@ Subtracts all stack values left-associatively from the first.
 ```
 $ gt '10 3 2 [-]'
 5
-```
-
-Equivalently: `10 - 3 - 2` = 5.
-
-```
 $ gt '100 10 20 30 [-]'
 40
 ```
 
-Equivalently: `100 - 10 - 20 - 30` = 40.
-
 ### `[/]` Division
 
-Divides all stack values left-associatively from the first. Result is always
-unitless.
+Divides all stack values left-associatively from the first. Result is always unitless.
 
 ```
 $ gt '100 5 2 [/]'
 10
-```
-
-Equivalently: `100 / 5 / 2` = 10.
-
-```
 $ gt '1000 10 10 [/]'
 10
 ```
 
 ### `[^]` Power
 
-Raises left-associatively. The first value is the base, subsequent values are
-successive exponents. Result is always unitless.
+Raises left-associatively. The first value is the base, subsequent values are successive exponents. Result is always unitless.
 
 ```
 $ gt '2 3 2 [^]'
@@ -139,12 +113,9 @@ $ gt '10 3 2 2 [%]'
 0
 ```
 
-Equivalently: `((((10 % 3) % 2) % 2)` = `(1 % 2) % 2` = `1 % 2` = 1.
-
 ## Logarithmic Hyper Operators
 
-Logarithmic hyper operators compute the **sum** of the log function applied to
-each stack value. All input values must be positive.
+Logarithmic hyper operators compute the **sum** of the log function applied to each stack value. All input values must be positive.
 
 ### `[lg]` Base-2 Logarithm Sum
 
@@ -180,18 +151,15 @@ Equivalently: `ln(2.718281828) + ln(7.389)` ≈ `1 + 2` ≈ 3.
 
 ## Metric-Aware Behavior
 
-Some hyper operators are metric-aware, meaning they understand units and can
-operate on values with compatible units.
+Some hyper operators are metric-aware, meaning they understand units and can operate on values with compatible units.
 
 ### Metric-aware operators: `[+]`, `[-]`, `[%]`
 
 These operators:
 
-1. **Validate** that all operands share the same metric category (or are
-   unitless, which is always compatible).
+1. **Validate** that all operands share the same metric category (or are unitless, which is always compatible).
 2. **Convert** all values to the result metric's base units before computing.
-3. **Push** the result with the first non-unitless metric (or unitless if all
-   inputs are unitless).
+3. **Push** the result with the first non-unitless metric (or unitless if all inputs are unitless).
 
 ```
 $ gt '1km 2km 3km [+]'
@@ -208,60 +176,33 @@ $ gt '1km 500m [+]'
 `500m` is converted to `0.5km`, then `1km + 0.5km = 1.5km`.
 
 ```
-$ gt '100m 0.005km [+]'
-105
-```
-
-`0.005km` is converted to `5m`, then `100m + 5m = 105m`.
-
-```
-$ gt '5km 1km 2km [-]'
-2
-```
-
-Result is `5 - 1 - 2 = 2 km`.
-
-```
 $ gt '10m 3m 2m [%]'
 1
 ```
 
 `10 % 3 = 1`, then `1 % 2 = 1 m`.
 
-```
-$ gt '1km 1000m [+]'
-2
-```
-
-`1000m` converts to `1km`, result is `1 + 1 = 2 km`.
-
 ### Non-metric operators: `[*]`, `[/]`, `[^]`, `[lg]`, `[log]`, `[ln]`
 
-These operators use raw numeric values and always produce unitless (Cool)
-results, regardless of input units:
+These operators use raw numeric values and always produce unitless (Cool) results, regardless of input units:
 
-- `[*]` — multiplying meters by meters would yield square meters, a different
-  category, so the result is unitless.
+- `[*]` — multiplying meters by meters would yield square meters, a different category, so the result is unitless.
 - `[/]` — dividing two like units yields a ratio, which is unitless.
 - `[^]` — exponents are inherently unitless.
-- `[lg]`, `[log]`, `[ln]` — logarithms require dimensionless inputs, so the
-  raw numeric value is used and the result is unitless.
+- `[lg]`, `[log]`, `[ln]` — logarithms require dimensionless inputs, so the raw numeric value is used and the result is unitless.
 
 ### Mixed unitless and unit values
 
-Unitless (Cool) values can be combined with any metric category — they
-"absorb" and take on the category of the other operands:
+Unitless (Cool) values can be combined with any metric category — they "absorb" and take on the category of the other operands:
 
 ```
 $ gt '0 5km [+]'
 5
 ```
 
-## Practical Use Cases
+## Examples
 
 ### Batch aggregation
-
-Sum a series of readings in one command:
 
 ```
 $ gt '12 15 18 14 16 [+]'
@@ -269,8 +210,6 @@ $ gt '12 15 18 14 16 [+]'
 ```
 
 ### Running total with metric conversion
-
-Sum distances in different units:
 
 ```
 $ gt '5km 2km 1000m [+]'
@@ -284,26 +223,6 @@ Result is in km: `5 + 2 + 1 = 8 km`.
 ```
 $ gt '2 5 10 [*]'
 100
-```
-
-### Chained reduction with regular operators
-
-Compare hyper `[+]` with chained binary `+`:
-
-```
-$ gt '1 2 3 4 5 +'
-  +
-  +
-  +
-  +'
-15
-```
-
-Equivalent (but much shorter) with hyper:
-
-```
-$ gt '1 2 3 4 5 [+]'
-15
 ```
 
 ### Cascading subtraction
@@ -363,8 +282,7 @@ Error: ln undefined for non-positive numbers
 
 ### Incompatible metrics
 
-Mixing different metric categories (e.g., length and weight) in a metric-aware
-operator returns an error.
+Mixing different metric categories (e.g., length and weight) in a metric-aware operator returns an error.
 
 ### Insufficient operands
 
