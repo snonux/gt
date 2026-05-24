@@ -44,14 +44,23 @@ func tryAssignment(name, valueStr string, r *RPN, input, after string) (string, 
 	}
 
 	varName := extractVariableName(name)
-	if err := r.vars.SetVariable(varName, val); err != nil {
+	result, err := r.setVariableResult(varName, val)
+	if err != nil {
 		return "", false, err
 	}
 	if after == "" {
-		return fmt.Sprintf("%s = %.10g", varName, val), true, nil
+		return result, true, nil
 	}
-	result, err := r.evaluate(input, strings.Fields(after))
-	return result, true, err
+	evalResult, err := r.evaluate(input, strings.Fields(after))
+	return evalResult, true, err
+}
+
+// setVariableResult sets a variable and returns the formatted result string.
+func (r *RPN) setVariableResult(name string, value float64) (string, error) {
+	if err := r.vars.SetVariable(name, value); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s = %.10g", name, value), nil
 }
 
 // handleAssignRight handles the := operator (right assignment).
@@ -92,10 +101,11 @@ func handleStandardAssign(input string, r *RPN) (string, bool, error) {
 		if err != nil {
 			return "", false, nil
 		}
-		if err := r.vars.SetVariable(name, val); err != nil {
+		result, err := r.setVariableResult(name, val)
+		if err != nil {
 			return "", false, err
 		}
-		return fmt.Sprintf("%s = %.10g", name, val), true, nil
+		return result, true, nil
 	}
 
 	// Handle assignment with expression: "name value = expression..."
@@ -110,15 +120,16 @@ func handleStandardAssign(input string, r *RPN) (string, bool, error) {
 		if err != nil {
 			return "", false, nil
 		}
-		if err := r.vars.SetVariable(name, val); err != nil {
+		result, err := r.setVariableResult(name, val)
+		if err != nil {
 			return "", false, err
 		}
 
 		if len(afterTokens) == 0 {
-			return fmt.Sprintf("%s = %.10g", name, val), true, nil
+			return result, true, nil
 		}
-		result, err := r.evaluate(input, afterTokens)
-		return result, true, err
+		evalResult, err := r.evaluate(input, afterTokens)
+		return evalResult, true, err
 	}
 
 	return "", false, nil
@@ -595,10 +606,11 @@ func (r *RPN) handleInlineAssignment(stack *Stack, name, op string) (string, boo
 	if err != nil {
 		return "", false, fmt.Errorf("failed to get float64 value for variable %q: %w", name, err)
 	}
-	if err := r.vars.SetVariable(name, valF); err != nil {
+	result, err := r.setVariableResult(name, valF)
+	if err != nil {
 		return "", false, fmt.Errorf("failed to set variable %q: %w", name, err)
 	}
-	return fmt.Sprintf("%s = %.10g", name, valF), true, nil
+	return result, true, nil
 }
 
 // handleMetricPrefix handles metric binary/decimal prefix mode switching.
