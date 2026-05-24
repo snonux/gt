@@ -133,6 +133,18 @@ type RPNHandler struct {
 	BaseHandler
 }
 
+// evalWithStackRestore evaluates an RPN expression, restoring the stack on error
+// so that a failed parse never corrupts the user's stack.
+func (h *RPNHandler) evalWithStackRestore(repl *REPL, input string) (string, error) {
+	savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
+	result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(input)
+	if err != nil {
+		repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
+		return "", err
+	}
+	return result, nil
+}
+
 // Handle processes RPN commands and expressions.
 // It handles:
 //   - Commands with "rpn" or "calc" prefix
@@ -153,12 +165,8 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 		// Extract the expression after rpn/calc
 		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
 
-		// Save stack state so a failed expression doesn't corrupt it
-		savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
-
-		result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(rest)
+		result, err := h.evalWithStackRestore(repl, rest)
 		if err != nil {
-			repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
 			return "", true, err
 		}
 		return result, true, nil
@@ -168,13 +176,8 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if repl.rpnState != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
-			// Save stack state so a failed expression doesn't corrupt it
-			savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
-
-			result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(input)
+			result, err := h.evalWithStackRestore(repl, input)
 			if err != nil {
-				// Restore the stack to its state before the failed expression
-				repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
 				return "", true, err
 			}
 			return result, true, nil
@@ -194,14 +197,14 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 			}
 			// Numbers and symbols (:x) are handled by ParseAndEvaluate
 			if _, err := strconv.ParseFloat(token, 64); err == nil {
-				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(token)
+				result, err := h.evalWithStackRestore(repl, token)
 				if err != nil {
 					return "", true, err
 				}
 				return result, true, nil
 			}
 			if len(token) > 0 && token[0] == ':' {
-				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(token)
+				result, err := h.evalWithStackRestore(repl, token)
 				if err != nil {
 					return "", true, err
 				}
