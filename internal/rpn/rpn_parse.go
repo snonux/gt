@@ -278,21 +278,10 @@ func (r *RPN) dispatchToken(stack *Stack, tokens []string, i int, token string) 
 	}
 
 	// Check for inline assignment: name value := (exactly 2 tokens)
-	if i+1 < len(tokens) {
+	if i+1 < len(tokens) && len(tokens) == 2 && i == 0 {
 		nextToken := tokens[i+1]
-		if (nextToken == ":=" || nextToken == "=:") && len(tokens) == 2 && i == 0 {
-			val, err := stack.Pop()
-			if err != nil {
-				return "", false, fmt.Errorf("insufficient operands for %s: stack is empty", nextToken)
-			}
-			valF, err := toFloat64(val, token)
-			if err != nil {
-				return "", false, fmt.Errorf("failed to get float64 value for variable %q: %w", token, err)
-			}
-			if err := r.vars.SetVariable(token, valF); err != nil {
-				return "", false, fmt.Errorf("failed to set variable %q: %w", token, err)
-			}
-			return fmt.Sprintf("%s = %.10g", token, valF), true, nil
+		if nextToken == ":=" || nextToken == "=:" {
+			return r.handleInlineAssignment(stack, token, nextToken)
 		}
 	}
 
@@ -547,17 +536,9 @@ func (r *RPN) handleMetricCommand(stack *Stack, tokens []string, i int) (string,
 		}
 		return result, true, nil
 	case "binary":
-		if i+2 < len(tokens) && tokens[i+2] == "set" {
-			r.ops.SetPrefixMode(IEC)
-			return "prefix mode: IEC", true, nil
-		}
-		return "", true, fmt.Errorf("rpn: metric binary: use 'metric binary set'")
+		return r.handleMetricPrefix(tokens, i, IEC, "IEC")
 	case "decimal":
-		if i+2 < len(tokens) && tokens[i+2] == "set" {
-			r.ops.SetPrefixMode(SI)
-			return "prefix mode: SI", true, nil
-		}
-		return "", true, fmt.Errorf("rpn: metric decimal: use 'metric decimal set'")
+		return r.handleMetricPrefix(tokens, i, SI, "SI")
 	case "compatible":
 		result, err := r.ops.MetricCompatible(stack)
 		if err != nil {
@@ -600,31 +581,9 @@ func (r *RPN) handleCustomCommand(stack *Stack, tokens []string, i int) (string,
 		}
 		return result, true, nil
 	case "define":
-		if i+4 < len(tokens) {
-			name := tokens[i+2]
-			factorStr := tokens[i+3]
-			category := tokens[i+4]
-			factor, err := strconv.ParseFloat(factorStr, 64)
-			if err != nil {
-				return "", true, fmt.Errorf("rpn: custom define: invalid factor %q", factorStr)
-			}
-			err = r.ops.CustomDefine(name, factor, category)
-			if err != nil {
-				return "", true, fmt.Errorf("rpn: custom define: %w", err)
-			}
-			return fmt.Sprintf("defined custom metric %q (factor: %g, category: %s)", name, factor, category), true, nil
-		}
-		return "", true, fmt.Errorf("rpn: custom define: usage: custom define <name> <factor> <category>")
+		return r.handleCustomDefine(tokens, i)
 	case "undefine":
-		if i+2 < len(tokens) {
-			name := tokens[i+2]
-			err := r.ops.CustomUndefine(name)
-			if err != nil {
-				return "", true, fmt.Errorf("rpn: custom undefine: %w", err)
-			}
-			return fmt.Sprintf("removed custom metric %q", name), true, nil
-		}
-		return "", true, fmt.Errorf("rpn: custom undefine: usage: custom undefine <name>")
+		return r.handleCustomUndefine(tokens, i)
 	default:
 		return "", true, fmt.Errorf("rpn: unknown custom subcommand %q. Use: show, list, define, undefine", subCmd)
 	}
@@ -655,4 +614,62 @@ func (r *RPN) shouldPushName(tokens []string, i int) bool {
 	}
 
 	return false
+}
+
+// handleInlineAssignment handles the inline "name value :=" / "name value =:" assignment.
+// Pops the stack value, converts it, and sets the variable.
+func (r *RPN) handleInlineAssignment(stack *Stack, name, op string) (string, bool, error) {
+	val, err := stack.Pop()
+	if err != nil {
+		return "", false, fmt.Errorf("insufficient operands for %s: stack is empty", op)
+	}
+	valF, err := toFloat64(val, name)
+	if err != nil {
+		return "", false, fmt.Errorf("failed to get float64 value for variable %q: %w", name, err)
+	}
+	if err := r.vars.SetVariable(name, valF); err != nil {
+		return "", false, fmt.Errorf("failed to set variable %q: %w", name, err)
+	}
+	return fmt.Sprintf("%s = %.10g", name, valF), true, nil
+}
+
+// handleMetricPrefix handles metric binary/decimal prefix mode switching.
+func (r *RPN) handleMetricPrefix(tokens []string, i int, mode PrefixMode, label string) (string, bool, error) {
+	if i+2 < len(tokens) && tokens[i+2] == "set" {
+		r.ops.SetPrefixMode(mode)
+		return fmt.Sprintf("prefix mode: %s", label), true, nil
+	}
+	return "", true, fmt.Errorf("rpn: metric %s: use 'metric %s set'", label, label)
+}
+
+// handleCustomDefine handles the 'custom define <name> <factor> <category>' subcommand.
+func (r *RPN) handleCustomDefine(tokens []string, i int) (string, bool, error) {
+	if i+4 < len(tokens) {
+		name := tokens[i+2]
+		factorStr := tokens[i+3]
+		category := tokens[i+4]
+		factor, err := strconv.ParseFloat(factorStr, 64)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: custom define: invalid factor %q", factorStr)
+		}
+		err = r.ops.CustomDefine(name, factor, category)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: custom define: %w", err)
+		}
+		return fmt.Sprintf("defined custom metric %q (factor: %g, category: %s)", name, factor, category), true, nil
+	}
+	return "", true, fmt.Errorf("rpn: custom define: usage: custom define <name> <factor> <category>")
+}
+
+// handleCustomUndefine handles the 'custom undefine <name>' subcommand.
+func (r *RPN) handleCustomUndefine(tokens []string, i int) (string, bool, error) {
+	if i+2 < len(tokens) {
+		name := tokens[i+2]
+		err := r.ops.CustomUndefine(name)
+		if err != nil {
+			return "", true, fmt.Errorf("rpn: custom undefine: %w", err)
+		}
+		return fmt.Sprintf("removed custom metric %q", name), true, nil
+	}
+	return "", true, fmt.Errorf("rpn: custom undefine: usage: custom undefine <name>")
 }
