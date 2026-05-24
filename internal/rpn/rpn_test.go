@@ -590,9 +590,9 @@ func TestResultStackErrors(t *testing.T) {
 			expectedError: "insufficient operands",
 		},
 		{
-			name:          "insufficient operands for =",
+			name:          "unknown token (= is not an operator)",
 			input:         []string{"="},
-			expectedError: "insufficient operands",
+			expectedError: "unknown token",
 		},
 	}
 

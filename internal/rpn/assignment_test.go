@@ -264,7 +264,7 @@ func TestAssignmentOperatorRegistry(t *testing.T) {
 	reg := NewOperatorRegistry(ops)
 
 	// Verify assignment operators are registered as standard operators
-	for _, op := range []string{"=", ":=", "=: "} {
+	for _, op := range []string{":=", "=: "} {
 		trimmed := op
 		if op == "=: " {
 			trimmed = "=:"

@@ -88,7 +88,6 @@ func (r *OperatorRegistry) registerStackOperators(op *Operations) {
 
 // registerVariableOperators registers assignment and conversion operators.
 func (r *OperatorRegistry) registerVariableOperators(op *Operations) {
-	r.registerStandardOperator("=", func(stack *Stack) error { return op.AssignRight(stack) })
 	r.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
 	r.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
 	r.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
