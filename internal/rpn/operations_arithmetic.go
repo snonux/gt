@@ -18,16 +18,24 @@ import (
 //   - compatCheck: metric compatibility validator (nil to skip, e.g., for Multiply)
 //   - compute: the arithmetic function to apply on base-unit values
 //   - resultMetricFn: function to determine the result metric from input metrics
+//   - preChecks: optional functions called on the right operand (b) before metric resolution
 func (o *Operations) binaryMetricOp(
 	stack *Stack,
 	op string,
 	compatCheck func(*Metric, *Metric) error,
 	compute func(float64, float64) float64,
 	resultMetricFn func(*MetricRegistry, *Metric, *Metric) (*Metric, error),
+	preChecks ...func(StackValue) error,
 ) error {
 	a, b, err := popTwo(stack, op)
 	if err != nil {
 		return err
+	}
+
+	for _, preCheck := range preChecks {
+		if err := preCheck(b); err != nil {
+			return err
+		}
 	}
 
 	aM, err := resolveMetric(o.metricRegistry, a)
@@ -112,48 +120,22 @@ func (o *Operations) Multiply(stack *Stack) error {
 
 // Divide pops two values from stack, divides (a / b), and pushes result.
 func (o *Operations) Divide(stack *Stack) error {
-	a, b, err := popTwo(stack, "/")
-	if err != nil {
-		return err
-	}
-
-	bF, err := toFloat64(b, "/")
-	if err != nil {
-		return err
-	}
-	if bF == 0 {
-		return buildError("/", fmt.Errorf("division by zero"))
-	}
-
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError("/", err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError("/", err)
-	}
-
-	pm := o.GetPrefixMode()
-	resultMetric, err := resultMetricForDiv(o.metricRegistry, aM, bM)
-	if err != nil {
-		return buildError("/", err)
-	}
-	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
-	if err != nil {
-		return buildError("/", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
-	if err != nil {
-		return buildError("/", err)
-	}
-	resultVal, err := convertFromBase(o.metricRegistry, aBase/bBase, resultMetric, pm)
-	if err != nil {
-		return buildError("/", err)
-	}
-
-	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.binaryMetricOp(
+		stack, "/",
+		nil, // no compatibility check — resultMetricForDiv handles result type
+		func(a, b float64) float64 { return a / b },
+		resultMetricForDiv,
+		func(sv StackValue) error {
+			f, err := toFloat64(sv, "/")
+			if err != nil {
+				return err
+			}
+			if f == 0 {
+				return buildError("/", fmt.Errorf("division by zero"))
+			}
+			return nil
+		},
+	)
 }
 
 // Power pops two values from stack, raises first to power of second (a ^ b), and pushes result.
