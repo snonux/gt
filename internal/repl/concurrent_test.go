@@ -15,7 +15,7 @@ func TestConcurrentExecutor(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
@@ -37,7 +37,7 @@ func TestConcurrentRPN(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 			_, _ = rpnCalc.ParseAndEvaluate("3 4 +")
 		}(i)
 	}
@@ -52,7 +52,7 @@ func TestConcurrentRatModeToggle(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
@@ -74,7 +74,7 @@ func TestConcurrentExecutorAndRPN(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 			rpl := &REPL{
 				ttyChecker:    &TTYChecker{},
 				historyMgr:    NewHistoryManager(".gt_history"),
@@ -87,7 +87,7 @@ func TestConcurrentExecutorAndRPN(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 			_, _ = rpnCalc.ParseAndEvaluate("3 4 +")
 		}(i)
 	}

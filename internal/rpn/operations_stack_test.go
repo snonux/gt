@@ -11,7 +11,7 @@ import (
 func TestShowWithMetrics(t *testing.T) {
 	reg := GetMetricRegistry()
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	mbps, _ := reg.Find("Mbps")
@@ -39,7 +39,7 @@ func TestShowWithMetrics(t *testing.T) {
 
 func TestShowEmptyStack(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	result, err := ops.Show(stack)
@@ -53,7 +53,7 @@ func TestShowEmptyStack(t *testing.T) {
 
 func TestShowWithBooleanValues(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	stack.Push(NewFloatFromBool(true))
@@ -74,7 +74,7 @@ func TestShowWithBooleanValues(t *testing.T) {
 
 func TestShowWithSymbols(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	stack.Push(NewSymbol("x"))
@@ -99,7 +99,7 @@ func TestShowWithSymbols(t *testing.T) {
 
 func TestShowWithStringNum(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	stack.Push(NewStringNum("hello"))
@@ -120,7 +120,7 @@ func TestShowWithStringNum(t *testing.T) {
 
 func TestShowWithMixedTypes(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 	reg := GetMetricRegistry()
 
@@ -158,7 +158,7 @@ func TestShowWithMixedTypes(t *testing.T) {
 
 func TestShowWithMultipleMetrics(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 	reg := GetMetricRegistry()
 
@@ -187,7 +187,7 @@ func TestShowWithMultipleMetrics(t *testing.T) {
 
 func TestShowWithRat(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	// Rational numbers
@@ -210,7 +210,7 @@ func TestShowWithRat(t *testing.T) {
 
 func TestShowWithRatFromBool(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	stack.Push(NewRatFromBool(true))
@@ -231,7 +231,7 @@ func TestShowWithRatFromBool(t *testing.T) {
 
 func TestShowValuesOrder(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	stack := NewStack()
 
 	// Push in order: 1, 2, 3

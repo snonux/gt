@@ -11,7 +11,7 @@ import (
 // TestAssignmentStandard tests standard assignment 'x 5 ='
 func TestAssignmentStandard(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("x 5 =")
 	if err != nil {
@@ -33,7 +33,7 @@ func TestAssignmentStandard(t *testing.T) {
 // TestAssignmentRight tests right assignment '5 x :='
 func TestAssignmentRight(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("5 x :=")
 	if err != nil {
@@ -55,7 +55,7 @@ func TestAssignmentRight(t *testing.T) {
 // TestAssignmentLeft tests left assignment '5 x =:'
 func TestAssignmentLeft(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("5 x =:")
 	if err != nil {
@@ -77,7 +77,7 @@ func TestAssignmentLeft(t *testing.T) {
 // TestAssignmentReassignment tests variable reassignment
 func TestAssignmentReassignment(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("x 5 =")
 	if err != nil {
@@ -104,7 +104,7 @@ func TestAssignmentReassignment(t *testing.T) {
 // TestAssignmentInExpression tests assignment used in an expression
 func TestAssignmentInExpression(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// 'x 5 = x 2 +' should assign x=5, then push x and 2, then add: 5 + 2 = 7
 	result, err := rpn.ParseAndEvaluate("x 5 = x 2 +")
@@ -119,7 +119,7 @@ func TestAssignmentInExpression(t *testing.T) {
 // TestAssignmentMultipleVariables tests multiple variable assignments
 func TestAssignmentMultipleVariables(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, _ = rpn.ParseAndEvaluate("x 5 =")
 	_, _ = rpn.ParseAndEvaluate("y 10 =")
@@ -146,7 +146,7 @@ func TestAssignmentMultipleVariables(t *testing.T) {
 // TestAssignmentArithmeticWithVariable tests arithmetic using assigned variable
 func TestAssignmentArithmeticWithVariable(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, _ = rpn.ParseAndEvaluate("x 5 =")
 
@@ -163,7 +163,7 @@ func TestAssignmentArithmeticWithVariable(t *testing.T) {
 // TestAssignmentNegativeValue tests assignment with negative value
 func TestAssignmentNegativeValue(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("x -5 =")
 	if err != nil {
@@ -182,7 +182,7 @@ func TestAssignmentNegativeValue(t *testing.T) {
 // TestAssignmentDecimalValue tests assignment with decimal value
 func TestAssignmentDecimalValue(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("x 3.14 =")
 	if err != nil {
@@ -201,7 +201,7 @@ func TestAssignmentDecimalValue(t *testing.T) {
 // TestAssignmentUnderscoreVariable tests assignment with underscore variable
 func TestAssignmentUnderscoreVariable(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("my_var 42 =")
 	if err != nil {
@@ -220,7 +220,7 @@ func TestAssignmentUnderscoreVariable(t *testing.T) {
 // TestAssignmentWithCalculationResult tests assigning result of calculation
 func TestAssignmentWithCalculationResult(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// 3 4 + x =: should push 3, 4, add (=7), then assign 7 to x
 	_, err := rpn.ParseAndEvaluate("3 4 + x =:")
@@ -240,7 +240,7 @@ func TestAssignmentWithCalculationResult(t *testing.T) {
 // TestAssignmentAllOperatorsInSequence tests all three assignment operators
 func TestAssignmentAllOperatorsInSequence(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, _ = rpn.ParseAndEvaluate("a 1 =")  // standard
 	_, _ = rpn.ParseAndEvaluate("2 b :=") // right
@@ -260,7 +260,7 @@ func TestAssignmentAllOperatorsInSequence(t *testing.T) {
 // TestAssignmentOperatorRegistry verifies all assignment operators are registered
 func TestAssignmentOperatorRegistry(t *testing.T) {
 	vars := NewVariables()
-	ops := NewOperations(vars)
+	ops := NewOperations(vars, nil)
 	reg := NewOperatorRegistry(ops)
 
 	// Verify assignment operators are registered as standard operators
@@ -278,7 +278,7 @@ func TestAssignmentOperatorRegistry(t *testing.T) {
 // TestAssignmentNotTriggeredByEqualEqual ensures that == is not misparsed as an assignment.
 func TestAssignmentNotTriggeredByEqualEqual(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// "a == b" should NOT be treated as an assignment
 	_, err := rpn.ParseAndEvaluate("a == b")
@@ -297,7 +297,7 @@ func TestAssignmentNotTriggeredByEqualEqual(t *testing.T) {
 // TestAssignmentNotTriggeredByNotEqual ensures that != is not misparsed as an assignment.
 func TestAssignmentNotTriggeredByNotEqual(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// "a != b" should NOT be treated as an assignment
 	_, err := rpn.ParseAndEvaluate("a != b")
@@ -311,7 +311,7 @@ func TestAssignmentNotTriggeredByNotEqual(t *testing.T) {
 // TestAssignmentAfterEqualEqual ensures "x 5 =" still works even when == exists in the expression.
 func TestAssignmentAfterEqualEqual(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// A standalone assignment should work regardless of == elsewhere
 	result, err := rpn.ParseAndEvaluate("x 5 =")
@@ -342,7 +342,7 @@ func TestAssignRightOperator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRPN(NewVariables())
+			r := NewRPN(NewVariables(), nil)
 			result, err := r.ParseAndEvaluate(tt.expr)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
@@ -367,7 +367,7 @@ func TestAssignLeftOperator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRPN(NewVariables())
+			r := NewRPN(NewVariables(), nil)
 			result, err := r.ParseAndEvaluate(tt.expr)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
@@ -393,7 +393,7 @@ func TestStandardAssignOperator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRPN(NewVariables())
+			r := NewRPN(NewVariables(), nil)
 			result, err := r.ParseAndEvaluate(tt.expr)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) error = %v", tt.expr, err)
@@ -421,7 +421,7 @@ func TestVariableInExpression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := NewRPN(NewVariables())
+			r := NewRPN(NewVariables(), nil)
 			_, err := r.ParseAndEvaluate(tt.setup)
 			if err != nil {
 				t.Fatalf("Setup failed for %q: %v", tt.setup, err)
@@ -439,7 +439,7 @@ func TestVariableInExpression(t *testing.T) {
 
 // TestChainedAssignments tests chaining multiple assignments in one expression.
 func TestChainedAssignments(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 	result, err := r.ParseAndEvaluate("a 10 := b 3 := c 2 :=")
 	if err != nil {
 		t.Fatalf("Chained assignment failed: %v", err)
@@ -472,7 +472,7 @@ func TestChainedAssignments(t *testing.T) {
 
 // TestVarsCommand tests the vars command.
 func TestVarsCommand(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 
 	// Empty vars
 	result, err := r.ParseAndEvaluate("vars")
@@ -501,7 +501,7 @@ func TestVarsCommand(t *testing.T) {
 
 // TestClearCommand tests the clear command.
 func TestClearCommand(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 	r.ParseAndEvaluate("x 5 :=")
 	r.ParseAndEvaluate("y 10 :=")
 
@@ -521,7 +521,7 @@ func TestClearCommand(t *testing.T) {
 
 // TestDeleteVariableOperator tests the d (delete) operator.
 func TestDeleteVariableOperator(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 
 	// Create variable
 	r.ParseAndEvaluate("x 5 :=")
@@ -544,7 +544,7 @@ func TestDeleteVariableOperator(t *testing.T) {
 
 // TestDeleteNonExistentVariableOperator tests deleting a variable that doesn't exist.
 func TestDeleteNonExistentVariableOperator(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 	_, err := r.ParseAndEvaluate(":nonexistent d")
 	if err == nil {
 		t.Error("Deleting non-existent variable should return error")
@@ -554,7 +554,7 @@ func TestDeleteNonExistentVariableOperator(t *testing.T) {
 // TestVariablePersistenceAcrossExpressions tests that variables persist across
 // multiple ParseAndEvaluate calls on the same RPN instance.
 func TestVariablePersistenceAcrossExpressions(t *testing.T) {
-	r := NewRPN(NewVariables())
+	r := NewRPN(NewVariables(), nil)
 
 	r.ParseAndEvaluate("a 10 :=")
 	r.ParseAndEvaluate("b 3 :=")

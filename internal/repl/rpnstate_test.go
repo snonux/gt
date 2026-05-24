@@ -14,7 +14,7 @@ import (
 
 func TestNewRPNState(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	state := NewRPNState(vars, rpnCalc)
 	if state == nil {
 		t.Fatal("NewRPNState() returned nil")
@@ -25,7 +25,7 @@ func TestRPNStateLoadVariablesEmpty(t *testing.T) {
 	// When varStoreFile is empty, LoadVariables should return nil
 	state := &RPNState{
 		vars:      rpn.NewVariables(),
-		rpnCalc:   rpn.NewRPN(rpn.NewVariables()),
+		rpnCalc:   rpn.NewRPN(rpn.NewVariables(), nil),
 		varStoreFile: "",
 	}
 	err := state.LoadVariables()
@@ -37,7 +37,7 @@ func TestRPNStateLoadVariablesEmpty(t *testing.T) {
 func TestRPNStateSaveVariablesEmpty(t *testing.T) {
 	state := &RPNState{
 		vars:        rpn.NewVariables(),
-		rpnCalc:     rpn.NewRPN(rpn.NewVariables()),
+		rpnCalc:     rpn.NewRPN(rpn.NewVariables(), nil),
 		varStoreFile: "",
 	}
 	err := state.SaveVariables()
@@ -70,7 +70,7 @@ func TestRPNStateSaveLoadRoundTrip(t *testing.T) {
 	vars.SetVariable("x", 42.0)
 	vars.SetVariable("y", 3.14)
 
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	state := &RPNState{
 		vars:         vars,
 		rpnCalc:      rpnCalc,
@@ -91,7 +91,7 @@ func TestRPNStateSaveLoadRoundTrip(t *testing.T) {
 	newVars := rpn.NewVariables()
 	newState := &RPNState{
 		vars:         newVars,
-		rpnCalc:      rpn.NewRPN(newVars),
+		rpnCalc:      rpn.NewRPN(newVars, nil),
 		varStoreFile: varStorePath,
 	}
 

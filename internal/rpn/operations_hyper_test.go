@@ -81,7 +81,7 @@ func TestHyperMetricAwareOperations(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 			result, err := rpn.ParseAndEvaluate(tc.expr)
 			if tc.wantErr {
 				if err == nil {
@@ -162,7 +162,7 @@ func TestHyperCoolResultOperations(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 			result, err := rpn.ParseAndEvaluate(tc.expr)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -198,7 +198,7 @@ func TestHyperErrorCases(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 			_, err := rpn.ParseAndEvaluate(tc.expr)
 			if err == nil {
 				t.Fatal("expected error, got none")

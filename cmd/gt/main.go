@@ -170,7 +170,7 @@ func runREPL() error {
 // making it suitable for one-off calculations.
 func runRPN(input string) (string, error) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 
 	// Strip "rpn " or "calc " prefix if present
 	input = strings.TrimSpace(input)

@@ -18,7 +18,7 @@ func createTestREPL() *REPL {
 		historyMgr:    NewHistoryManager(".gt_history"),
 		signalHandler: NewSignalHandler(),
 		commandChain:  NewCommandChain(),
-		rpnState:      &RPNState{vars: vars, rpnCalc: rpn.NewRPN(vars)},
+		rpnState:      &RPNState{vars: vars, rpnCalc: rpn.NewRPN(vars, nil)},
 	}
 }
 
@@ -186,7 +186,7 @@ func TestRunRPN(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := rpn.NewVariables()
-			rpnCalc := rpn.NewRPN(vars)
+			rpnCalc := rpn.NewRPN(vars, nil)
 
 			input := strings.TrimSpace(tt.input)
 			if strings.HasPrefix(input, "rpn ") {
@@ -408,7 +408,7 @@ func TestExecutorWithCalcPrefixMixed(t *testing.T) {
 // TestExecutorWithRatModeOn tests that rat on works with fresh REPL
 func TestExecutorWithRatModeOn(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -425,7 +425,7 @@ func TestExecutorWithRatModeOn(t *testing.T) {
 // TestExecutorWithRatModeOff tests that rat off works with fresh REPL
 func TestExecutorWithRatModeOff(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -442,7 +442,7 @@ func TestExecutorWithRatModeOff(t *testing.T) {
 // TestExecutorWithRatModeToggle tests that rat toggle works with fresh REPL
 func TestExecutorWithRatModeToggle(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -487,7 +487,7 @@ func TestIsBuiltinCommandWithSubcommandHelp(t *testing.T) {
 // TestExecutorWithAssignmentRight tests := and =: operators
 func TestExecutorWithAssignmentRight(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -520,7 +520,7 @@ func TestExecutorWithAssignmentRight(t *testing.T) {
 // TestExecutorWithAssignmentAfterCalculation tests assignment after a calculation
 func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -543,7 +543,7 @@ func TestExecutorWithAssignmentAfterCalculation(t *testing.T) {
 // TestExecutorWithIncrementalAssignment tests that assignment works after a calculation with separate commands
 func TestExecutorWithIncrementalAssignment(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -570,7 +570,7 @@ func TestExecutorWithIncrementalAssignment(t *testing.T) {
 // TestExecutorWithSimpleIncrementalAssignment tests x =: after 2 in REPL
 func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -596,7 +596,7 @@ func TestExecutorWithSimpleIncrementalAssignment(t *testing.T) {
 // TestExecutorWithExactUserScenario tests the exact user scenario: 2 then x =:
 func TestExecutorWithExactUserScenario(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -628,7 +628,7 @@ func TestExecutorWithExactUserScenario(t *testing.T) {
 // TestExecutorWithExactUserScenarioWithOutput tests that x =: assigns and shows result
 func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),
@@ -660,7 +660,7 @@ func TestExecutorWithExactUserScenarioWithOutput(t *testing.T) {
 // TestExecutorWithExactUserScenarioDirect simulates REPL input flow
 func TestExecutorWithExactUserScenarioDirect(t *testing.T) {
 	vars := rpn.NewVariables()
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpl := &REPL{
 		ttyChecker:    &TTYChecker{},
 		historyMgr:    NewHistoryManager(".gt_history"),

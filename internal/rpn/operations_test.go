@@ -124,7 +124,7 @@ func TestStackClear(t *testing.T) {
 
 func TestOperationsAdd(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(3.0, FloatMode))
 	s.Push(NewNumber(4.0, FloatMode))
@@ -147,7 +147,7 @@ func TestOperationsAdd(t *testing.T) {
 
 func TestOperationsSubtract(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(10.0, FloatMode))
 	s.Push(NewNumber(4.0, FloatMode))
@@ -170,7 +170,7 @@ func TestOperationsSubtract(t *testing.T) {
 
 func TestOperationsMultiply(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(5.0, FloatMode))
 	s.Push(NewNumber(3.0, FloatMode))
@@ -193,7 +193,7 @@ func TestOperationsMultiply(t *testing.T) {
 
 func TestOperationsDivide(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(20.0, FloatMode))
 	s.Push(NewNumber(4.0, FloatMode))
@@ -216,7 +216,7 @@ func TestOperationsDivide(t *testing.T) {
 
 func TestOperationsDivideByZero(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(10.0, FloatMode))
 	s.Push(NewNumber(0.0, FloatMode))
@@ -232,7 +232,7 @@ func TestOperationsDivideByZero(t *testing.T) {
 
 func TestOperationsPower(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(2.0, FloatMode))
 	s.Push(NewNumber(3.0, FloatMode))
@@ -255,7 +255,7 @@ func TestOperationsPower(t *testing.T) {
 
 func TestOperationsPowerLargeExponent(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// Test 2^10 = 1024 (large exponent)
@@ -299,7 +299,7 @@ func TestOperationsPowerLargeExponent(t *testing.T) {
 
 func TestOperationsPowerNegativeExponent(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// Test 2^-3 = 1/8 = 0.125
@@ -343,7 +343,7 @@ func TestOperationsPowerNegativeExponent(t *testing.T) {
 
 func TestOperationsPowInt(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// Test PowInt(2, 10) = 1024
@@ -387,7 +387,7 @@ func TestOperationsPowInt(t *testing.T) {
 
 func TestOperationsPowIntRat(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// Enable rational mode
@@ -435,7 +435,7 @@ func TestOperationsPowIntRat(t *testing.T) {
 
 func TestOperationsModulo(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(10.0, FloatMode))
 	s.Push(NewNumber(3.0, FloatMode))
@@ -458,7 +458,7 @@ func TestOperationsModulo(t *testing.T) {
 
 func TestOperationsModuloByZero(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(10.0, FloatMode))
 	s.Push(NewNumber(0.0, FloatMode))
@@ -471,7 +471,7 @@ func TestOperationsModuloByZero(t *testing.T) {
 
 func TestOperationsInsufficientOperands(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(5.0, FloatMode))
 
@@ -484,7 +484,7 @@ func TestOperationsInsufficientOperands(t *testing.T) {
 
 func TestOperationsDup(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(7.0, FloatMode))
 
@@ -513,7 +513,7 @@ func TestOperationsDup(t *testing.T) {
 
 func TestOperationsSwap(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(1.0, FloatMode))
 	s.Push(NewNumber(2.0, FloatMode))
@@ -539,7 +539,7 @@ func TestOperationsSwap(t *testing.T) {
 
 func TestOperationsSwapInsufficient(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(5.0, FloatMode))
 
@@ -551,7 +551,7 @@ func TestOperationsSwapInsufficient(t *testing.T) {
 
 func TestOperationsPop(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(1.0, FloatMode))
 	s.Push(NewNumber(2.0, FloatMode))
@@ -569,7 +569,7 @@ func TestOperationsPop(t *testing.T) {
 
 func TestOperationsPopEmpty(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	err := o.Pop(s)
@@ -580,7 +580,7 @@ func TestOperationsPopEmpty(t *testing.T) {
 
 func TestOperationsShow(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(1.0, FloatMode))
 	s.Push(NewNumber(2.0, FloatMode))
@@ -598,7 +598,7 @@ func TestOperationsShow(t *testing.T) {
 
 func TestOperationsShowEmpty(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	result, err := o.Show(s)
@@ -613,7 +613,7 @@ func TestOperationsShowEmpty(t *testing.T) {
 
 func TestOperationsAssignVariable(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 	s.Push(NewNumber(5.0, FloatMode))
 
@@ -638,7 +638,7 @@ func TestOperationsAssignVariable(t *testing.T) {
 
 func TestOperationsAssignVariableEmptyName(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	err := o.AssignVariable(s, "")
@@ -649,7 +649,7 @@ func TestOperationsAssignVariableEmptyName(t *testing.T) {
 
 func TestOperationsUseVariable(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	if err := v.SetVariable("pi", 3.14159); err != nil {
@@ -674,7 +674,7 @@ func TestOperationsUseVariable(t *testing.T) {
 
 func TestOperationsUseVariableUndefined(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	err := o.UseVariable(s, "undefined")
@@ -688,7 +688,7 @@ func TestOperationsUseVariableUndefined(t *testing.T) {
 
 func TestOperationsDeleteVariable(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	if err := v.SetVariable("temp", 100.0); err != nil {
 		t.Fatalf("SetVariable() returned error: %v", err)
@@ -707,7 +707,7 @@ func TestOperationsDeleteVariable(t *testing.T) {
 
 func TestOperationsDeleteVariableUndefined(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	err := o.DeleteVariable("nonexistent")
 	if err == nil {
@@ -717,7 +717,7 @@ func TestOperationsDeleteVariableUndefined(t *testing.T) {
 
 func TestOperationsListVariables(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	if err := v.SetVariable("x", 1.0); err != nil {
 		t.Fatalf("SetVariable() returned error: %v", err)
@@ -741,7 +741,7 @@ func TestOperationsListVariables(t *testing.T) {
 
 func TestOperationsClearVariables(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	_, _ = v.SetVariable("x", 1.0), v.SetVariable("y", 2.0)
 
@@ -754,7 +754,7 @@ func TestOperationsClearVariables(t *testing.T) {
 
 func TestOperationsConcurrent(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	// Test concurrent variable access
 	// Each goroutine uses its own stack to avoid race conditions
@@ -781,7 +781,7 @@ func TestOperationsConcurrent(t *testing.T) {
 }
 
 func TestLog2(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test log₂(8) = 3
@@ -825,7 +825,7 @@ func TestLog2(t *testing.T) {
 }
 
 func TestLog10(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test log₁₀(100) = 2
@@ -862,7 +862,7 @@ func TestLog10(t *testing.T) {
 }
 
 func TestLn(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test ln(e) ≈ 1
@@ -899,7 +899,7 @@ func TestLn(t *testing.T) {
 }
 
 func TestLog2WithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test with boolean true (should be converted to 1, log₂(1) = 0)
@@ -927,7 +927,7 @@ func TestLog2WithBoolean(t *testing.T) {
 }
 
 func TestLog10WithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test with boolean true (should be converted to 1, log₁₀(1) = 0)
@@ -955,7 +955,7 @@ func TestLog10WithBoolean(t *testing.T) {
 }
 
 func TestLnWithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test with boolean true (should be converted to 1, ln(1) = 0)
@@ -983,7 +983,7 @@ func TestLnWithBoolean(t *testing.T) {
 }
 
 func TestLnEdgeCases(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test ln(negative) should error
@@ -1018,7 +1018,7 @@ func TestLnEdgeCases(t *testing.T) {
 }
 
 func TestHyperLog2WithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperlog₂(4, true) = log₂(4) + log₂(1) = 2 + 0 = 2
@@ -1050,7 +1050,7 @@ func TestHyperLog2WithBoolean(t *testing.T) {
 }
 
 func TestHyperLog10WithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperlog₁₀(10, true) = log₁₀(10) + log₁₀(1) = 1 + 0 = 1
@@ -1081,7 +1081,7 @@ func TestHyperLog10WithBoolean(t *testing.T) {
 }
 
 func TestHyperLnWithBoolean(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperln(e, true) = ln(e) + ln(1) = 1 + 0 = 1
@@ -1112,7 +1112,7 @@ func TestHyperLnWithBoolean(t *testing.T) {
 }
 
 func TestHyperLog2(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperlog₂(4, 16) = log₂(4) + log₂(16) = 2 + 4 = 6
@@ -1141,7 +1141,7 @@ func TestHyperLog2(t *testing.T) {
 }
 
 func TestHyperLog10(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperlog₁₀(10, 100) = log₁₀(10) + log₁₀(100) = 1 + 2 = 3
@@ -1163,7 +1163,7 @@ func TestHyperLog10(t *testing.T) {
 }
 
 func TestHyperLn(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	stack := NewStack()
 
 	// Test hyperln(e, e²) = ln(e) + ln(e²) = 1 + 2 = 3
@@ -1185,7 +1185,7 @@ func TestHyperLn(t *testing.T) {
 }
 
 func TestOperatorRegistry(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	registry := NewOperatorRegistry(o)
 
 	// Test IsStandardOperator with valid operators
@@ -1221,7 +1221,7 @@ func TestOperatorRegistry(t *testing.T) {
 }
 
 func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
-	o := NewOperations(NewVariables())
+	o := NewOperations(NewVariables(), nil)
 	registry := NewOperatorRegistry(o)
 	stack := NewStack()
 
@@ -1266,7 +1266,7 @@ func TestOperatorRegistryHandleStandardOperator(t *testing.T) {
 
 func TestAssignLeft(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// For "5 x =:":
@@ -1297,7 +1297,7 @@ func TestAssignLeft(t *testing.T) {
 
 func TestAssignRight(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	// For "x 5 :=":
@@ -1328,7 +1328,7 @@ func TestAssignRight(t *testing.T) {
 
 func TestAssignLeftErrorCases(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	err := o.AssignLeft(s)
@@ -1339,7 +1339,7 @@ func TestAssignLeftErrorCases(t *testing.T) {
 
 func TestAssignRightErrorCases(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 	s := NewStack()
 
 	err := o.AssignRight(s)

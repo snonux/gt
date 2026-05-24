@@ -9,7 +9,7 @@ import (
 
 func TestRPNGetConstants(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 	consts := r.GetConstants()
 	if consts == nil {
 		t.Fatal("GetConstants() returned nil")
@@ -26,7 +26,7 @@ func TestRPNGetConstants(t *testing.T) {
 
 func TestRPNGetModeAndSetMode(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Default should be FloatMode
 	if r.GetMode() != FloatMode {
@@ -48,7 +48,7 @@ func TestRPNGetModeAndSetMode(t *testing.T) {
 
 func TestRPNSetCurrentStack(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Start with empty stack
 	if got := r.GetCurrentStack(); len(got) != 0 {
@@ -76,7 +76,7 @@ func TestRPNSetCurrentStack(t *testing.T) {
 
 func TestRPNStack(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	values := []StackValue{
 		NewNumber(42.0, FloatMode),
@@ -94,7 +94,7 @@ func TestRPNStack(t *testing.T) {
 
 func TestRPNIsStandardOperator(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	tests := []struct {
 		token    string
@@ -125,7 +125,7 @@ func TestRPNIsStandardOperator(t *testing.T) {
 
 func TestRPNIsHyperOperator(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	tests := []struct {
 		token    string
@@ -155,7 +155,7 @@ func TestRPNIsHyperOperator(t *testing.T) {
 
 func TestOperationsMetricRegistry(t *testing.T) {
 	v := NewVariables()
-	o := NewOperations(v)
+	o := NewOperations(v, nil)
 
 	reg := o.MetricRegistry()
 	if reg == nil {
@@ -174,7 +174,7 @@ func TestOperationsMetricRegistry(t *testing.T) {
 
 func TestRPNSetPrefixMode(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Default should be SI
 	if r.GetPrefixMode() != SI {

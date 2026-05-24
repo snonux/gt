@@ -832,7 +832,7 @@ func TestAtPrefixMetricParsing(t *testing.T) {
 func TestAtPrefixIntegration(t *testing.T) {
 	// Test that @GB parses correctly through the full RPN pipeline
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Parse a standalone @ metric
 	result, err := rpn.ParseAndEvaluate("@GB")
@@ -880,7 +880,7 @@ func TestMetricAwareArithmetic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.expr, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 			result, err := rpn.ParseAndEvaluate(tt.expr)
 			if tt.wantErr {
 				if err == nil {
@@ -985,7 +985,7 @@ func TestMetricOperationsUnit(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			vars := NewVariables()
-			ops := NewOperations(vars)
+			ops := NewOperations(vars, nil)
 			s := NewStack()
 			tc.setup(s)
 
@@ -1040,7 +1040,7 @@ func TestConvertSameCategory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.expr, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 			result, err := rpn.ParseAndEvaluate(tt.expr)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -1064,7 +1064,7 @@ func TestConvertSameCategory(t *testing.T) {
 func TestConvertCoolAbsorbing(t *testing.T) {
 	reg := GetMetricRegistry()
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Cool to metric: 100 @GB convert → 100 GB
 	// With Cool absorption, 100 is treated as 100 in GB's space
@@ -1086,7 +1086,7 @@ func TestConvertCoolAbsorbing(t *testing.T) {
 	}
 
 	// Metric to Cool: 1hr @Cool convert → 3600 Cool
-	rpn2 := NewRPN(NewVariables())
+	rpn2 := NewRPN(NewVariables(), nil)
 	result2, err := rpn2.ParseAndEvaluate("1hr @Cool convert")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -1107,7 +1107,7 @@ func TestConvertCoolAbsorbing(t *testing.T) {
 
 func TestConvertIncompatible(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("100Mbps @hr convert")
 	if err == nil {
@@ -1121,7 +1121,7 @@ func TestConvertIncompatible(t *testing.T) {
 
 func TestConvertInsufficientOperands(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Missing value (only target on stack)
 	_, err := rpn.ParseAndEvaluate("@Gbps convert")
@@ -1130,7 +1130,7 @@ func TestConvertInsufficientOperands(t *testing.T) {
 	}
 
 	// Missing target (only value on stack, no @X before convert)
-	rpn2 := NewRPN(NewVariables())
+	rpn2 := NewRPN(NewVariables(), nil)
 	_, err = rpn2.ParseAndEvaluate("100Mbps convert")
 	if err == nil {
 		t.Error("expected error for missing target metric operand")

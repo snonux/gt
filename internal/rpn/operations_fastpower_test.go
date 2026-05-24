@@ -70,7 +70,7 @@ func TestFastPower(t *testing.T) {
 			stack := NewStack()
 			tt.prepare(stack)
 
-			o := NewOperations(NewVariables())
+			o := NewOperations(NewVariables(), nil)
 			err := o.FastPower(stack)
 
 			if tt.wantErr {

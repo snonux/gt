@@ -11,7 +11,7 @@ import (
 
 func TestMetricShow(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("100Mbps metric show")
 	if err != nil {
@@ -27,7 +27,7 @@ func TestMetricShow(t *testing.T) {
 
 func TestMetricShowUniversal(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("42 metric show")
 	if err != nil {
@@ -43,7 +43,7 @@ func TestMetricShowUniversal(t *testing.T) {
 
 func TestMetricShowEmptyStack(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("metric show")
 	if err == nil {
 		t.Error("expected error for empty stack")
@@ -52,7 +52,7 @@ func TestMetricShowEmptyStack(t *testing.T) {
 
 func TestMetricList(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("metric list")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -67,7 +67,7 @@ func TestMetricList(t *testing.T) {
 
 func TestMetricCategory(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("metric DataRate")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -82,7 +82,7 @@ func TestMetricCategory(t *testing.T) {
 
 func TestMetricCategoryTime(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("metric Time")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -97,7 +97,7 @@ func TestMetricCategoryTime(t *testing.T) {
 
 func TestMetricCategoryUnknown(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("metric Nope")
 	if err == nil {
 		t.Error("expected error for unknown category")
@@ -106,7 +106,7 @@ func TestMetricCategoryUnknown(t *testing.T) {
 
 func TestMetricCategoryCustom(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	// Custom category exists but has no built-in metrics, so result should be empty
 	result, err := rpn.ParseAndEvaluate("metric Custom")
 	if err != nil {
@@ -118,7 +118,7 @@ func TestMetricCategoryCustom(t *testing.T) {
 
 func TestMetricSetModeDecimal(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("metric decimal set")
 	if err != nil {
@@ -134,7 +134,7 @@ func TestMetricSetModeDecimal(t *testing.T) {
 
 func TestMetricSetModeBinary(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	result, err := rpn.ParseAndEvaluate("metric binary set")
 	if err != nil {
@@ -150,7 +150,7 @@ func TestMetricSetModeBinary(t *testing.T) {
 
 func TestMetricSetModeToggle(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Default is SI
 	if rpn.GetPrefixMode() != SI {
@@ -172,7 +172,7 @@ func TestMetricSetModeToggle(t *testing.T) {
 
 func TestMetricSetModeBinaryIncomplete(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("metric binary")
 	if err == nil {
 		t.Error("expected error for incomplete 'metric binary'")
@@ -181,7 +181,7 @@ func TestMetricSetModeBinaryIncomplete(t *testing.T) {
 
 func TestMetricSetModeDecimalIncomplete(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("metric decimal")
 	if err == nil {
 		t.Error("expected error for incomplete 'metric decimal'")
@@ -190,7 +190,7 @@ func TestMetricSetModeDecimalIncomplete(t *testing.T) {
 
 func TestMetricCompatibleSameCategory(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("100Mbps 1Gbps metric compatible")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -202,7 +202,7 @@ func TestMetricCompatibleSameCategory(t *testing.T) {
 
 func TestMetricCompatibleDifferentCategory(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("100Mbps 2hr metric compatible")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -221,7 +221,7 @@ func TestMetricCompatibleDifferentCategory(t *testing.T) {
 
 func TestMetricCompatibleWithUniversal(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("100Mbps 42 metric compatible")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -234,7 +234,7 @@ func TestMetricCompatibleWithUniversal(t *testing.T) {
 
 func TestMetricCompatibleNotEnoughValues(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("100 metric compatible")
 	if err == nil {
 		t.Error("expected error for insufficient stack values")
@@ -243,7 +243,7 @@ func TestMetricCompatibleNotEnoughValues(t *testing.T) {
 
 func TestMetricCompatibleEmptyStack(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("metric compatible")
 	if err == nil {
 		t.Error("expected error for empty stack")
@@ -349,7 +349,7 @@ func TestPrefixMode(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpn := NewRPN(vars)
+			rpn := NewRPN(vars, nil)
 
 			if tc.setMode == "iec" {
 				if _, err := rpn.ParseAndEvaluate("metric binary set"); err != nil {
@@ -383,7 +383,7 @@ func TestPrefixMode(t *testing.T) {
 
 func TestCustomDefineAndList(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Define a custom metric
 	result, err := rpn.ParseAndEvaluate("custom define foobar 42 Custom")
@@ -421,7 +421,7 @@ func TestCustomDefineAndList(t *testing.T) {
 
 func TestCustomDefineDuplicate(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("custom define Cool 1 Universal")
 	if err == nil {
 		t.Error("expected error for duplicate metric name")
@@ -430,7 +430,7 @@ func TestCustomDefineDuplicate(t *testing.T) {
 
 func TestCustomDefineInvalidCategory(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("custom define foo 1 Nope")
 	if err == nil {
 		t.Error("expected error for invalid category")
@@ -439,7 +439,7 @@ func TestCustomDefineInvalidCategory(t *testing.T) {
 
 func TestCustomUndefineBuiltIn(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("custom undefine Cool")
 	if err == nil {
 		t.Error("expected error for undefining built-in metric")
@@ -448,7 +448,7 @@ func TestCustomUndefineBuiltIn(t *testing.T) {
 
 func TestCustomUndefineNotFound(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	_, err := rpn.ParseAndEvaluate("custom undefine nonexistent")
 	if err == nil {
 		t.Error("expected error for undefining non-existent metric")
@@ -457,7 +457,7 @@ func TestCustomUndefineNotFound(t *testing.T) {
 
 func TestCustomListEmpty(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	result, err := rpn.ParseAndEvaluate("custom list")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

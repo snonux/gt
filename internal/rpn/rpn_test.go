@@ -11,7 +11,7 @@ import (
 
 func TestNewRPN(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 	if r == nil {
 		t.Fatal("NewRPN() returned nil")
 	}
@@ -102,7 +102,7 @@ func TestParseAndEvaluateSimple(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -140,7 +140,7 @@ func TestParseAndEvaluateChain(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -178,7 +178,7 @@ func TestParseAndEvaluateStackOps(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -192,7 +192,7 @@ func TestParseAndEvaluateStackOps(t *testing.T) {
 
 func TestParseAndEvaluateVariables(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test variable assignment and reuse
 	// First assign a variable
@@ -216,7 +216,7 @@ func TestParseAndEvaluateVariables(t *testing.T) {
 
 func TestParseAndEvaluateEmpty(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	_, err := r.ParseAndEvaluate("")
 	if err == nil {
@@ -249,7 +249,7 @@ func TestParseAndEvaluateAssignment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -263,7 +263,7 @@ func TestParseAndEvaluateAssignment(t *testing.T) {
 
 func TestParseAndEvaluateDivisionByZero(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	_, err := r.ParseAndEvaluate("5 0 /")
 	if err == nil {
@@ -276,7 +276,7 @@ func TestParseAndEvaluateDivisionByZero(t *testing.T) {
 
 func TestParseAndEvaluateUndefinedVariable(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	_, err := r.ParseAndEvaluate("undefined +")
 	if err == nil {
@@ -290,7 +290,7 @@ func TestParseAndEvaluateUndefinedVariable(t *testing.T) {
 
 func TestParseAndEvaluateUnknownToken(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	_, err := r.ParseAndEvaluate("1 2 + hello")
 	if err == nil {
@@ -314,7 +314,7 @@ func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("%q should return error for insufficient operands", tt.input)
@@ -325,7 +325,7 @@ func TestParseAndEvaluateInsufficientOperands(t *testing.T) {
 
 func TestParseAndEvaluateShow(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	result, err := r.ParseAndEvaluate("1 2 3 show")
 	if err != nil {
@@ -338,7 +338,7 @@ func TestParseAndEvaluateShow(t *testing.T) {
 
 func TestParseAndEvaluateVars(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Set some variables using new format: "name = value"
 	if _, err := r.ParseAndEvaluate("x = 5"); err != nil {
@@ -359,7 +359,7 @@ func TestParseAndEvaluateVars(t *testing.T) {
 
 func TestParseAndEvaluateClear(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Set and clear
 	if _, err := r.ParseAndEvaluate("x 5 ="); err != nil {
@@ -376,7 +376,7 @@ func TestParseAndEvaluateClear(t *testing.T) {
 
 func TestRPNConcurrency(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	done := make(chan bool, 10)
 	for i := 0; i < 5; i++ {
@@ -399,7 +399,7 @@ func TestRPNConcurrency(t *testing.T) {
 
 func TestResultStack(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	tokens := []string{"1", "2", "3", "+"}
 	result, err := r.ResultStack(tokens)
@@ -413,7 +413,7 @@ func TestResultStack(t *testing.T) {
 
 func TestResultStackEmpty(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	tokens := []string{}
 	result, err := r.ResultStack(tokens)
@@ -452,7 +452,7 @@ func TestParseAndEvaluateAssignmentExpression(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			result, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
 				t.Fatalf("ParseAndEvaluate(%q) returned error: %v", tt.input, err)
@@ -496,7 +496,7 @@ func TestParseAndEvaluateAssignmentErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("ParseAndEvaluate(%q) expected error, got nil", tt.input)
@@ -546,7 +546,7 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err == nil {
 				t.Errorf("ParseAndEvaluate(%q) expected error, got nil", tt.input)
@@ -561,7 +561,7 @@ func TestParseAndEvaluateEvaluateErrors(t *testing.T) {
 
 func TestResultStackErrors(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test error cases in ResultStack function
 	tests := []struct {
@@ -612,7 +612,7 @@ func TestResultStackErrors(t *testing.T) {
 
 func TestResultStackMultipleValues(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test Case where stack has multiple values at the end
 	tests := []struct {
@@ -659,7 +659,7 @@ func TestResultStackMultipleValues(t *testing.T) {
 
 func TestRPNIncrementalOperations(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test: 1 2 3 + then +
 	// First evaluate "1 2 3 +"
@@ -684,7 +684,7 @@ func TestRPNIncrementalOperations(t *testing.T) {
 // TestIncrementalAssignmentRPN tests x =: with value on stack in ParseAndEvaluate
 func TestIncrementalAssignmentRPN(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// First, put 2 on the stack
 	result, err := r.ParseAndEvaluate("2")
@@ -753,7 +753,7 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			v := NewVariables()
-			r := NewRPN(v)
+			r := NewRPN(v, nil)
 
 			_, err := r.ParseAndEvaluate(tt.input)
 			if err != nil {
@@ -775,7 +775,7 @@ func TestParseAndEvaluateAssignmentLeftRight(t *testing.T) {
 // TestSymbolPush verifies that :x syntax pushes a symbol
 func TestSymbolPush(t *testing.T) {
 	vars := NewVariables()
-	r := NewRPN(vars)
+	r := NewRPN(vars, nil)
 
 	// Test :x syntax
 	result, err := r.ParseAndEvaluate(":x")
@@ -807,7 +807,7 @@ func TestSymbolPush(t *testing.T) {
 // TestUnboundIdentifierAsSymbol verifies that unbound identifiers push symbols
 func TestUnboundIdentifierAsSymbol(t *testing.T) {
 	vars := NewVariables()
-	r := NewRPN(vars)
+	r := NewRPN(vars, nil)
 
 	// Use bare identifier x (unbound)
 	result, err := r.ParseAndEvaluate("x")
@@ -824,7 +824,7 @@ func TestUnboundIdentifierAsSymbol(t *testing.T) {
 // TestBoundIdentifierPushesValue verifies that bound identifiers push values
 func TestBoundIdentifierPushesValue(t *testing.T) {
 	vars := NewVariables()
-	r := NewRPN(vars)
+	r := NewRPN(vars, nil)
 
 	// First bind x to 5
 	if _, err := r.ParseAndEvaluate("x = 5"); err != nil {
@@ -847,7 +847,7 @@ func TestBoundIdentifierPushesValue(t *testing.T) {
 func TestSymbolWithAssignment(t *testing.T) {
 	// Test :x 10 := (symbol then value with right assignment)
 	vars := NewVariables()
-	r := NewRPN(vars)
+	r := NewRPN(vars, nil)
 
 	_, err := r.ParseAndEvaluate(":x 10 :=")
 	if err != nil {
@@ -865,7 +865,7 @@ func TestSymbolWithAssignment(t *testing.T) {
 
 	// Test 10 :x =: (value then symbol with left assignment)
 	vars2 := NewVariables()
-	r2 := NewRPN(vars2)
+	r2 := NewRPN(vars2, nil)
 
 	_, err = r2.ParseAndEvaluate("10 :x =:")
 	if err != nil {
@@ -884,7 +884,7 @@ func TestSymbolWithAssignment(t *testing.T) {
 // TestStackBasedAssignmentWithSymbol verifies stack-based assignment with symbol
 func TestStackBasedAssignmentWithSymbol(t *testing.T) {
 	vars := NewVariables()
-	r := NewRPN(vars)
+	r := NewRPN(vars, nil)
 
 	// Push 42 onto stack
 	_, err := r.ParseAndEvaluate("42")

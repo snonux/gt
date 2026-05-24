@@ -22,9 +22,9 @@ type RPN struct {
 
 // NewRPN creates a new RPN parser and evaluator with the given variable store.
 // If no registry is provided, defaults to the global MetricRegistry.
-func NewRPN(vars VariableStore, reg ...MetricReader) *RPN {
+func NewRPN(vars VariableStore, reg MetricReader) *RPN {
 	consts := NewConstants()
-	ops := NewOperations(vars, reg...)
+	ops := NewOperations(vars, reg)
 	ops.SetMode(FloatMode) // Set default mode
 	ops.SetConstants(consts) // Share the same constants provider
 	return &RPN{

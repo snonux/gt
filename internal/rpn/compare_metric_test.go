@@ -177,7 +177,7 @@ func TestMetricAwareComparisons(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpnCalc := NewRPN(vars)
+			rpnCalc := NewRPN(vars, nil)
 
 			if tt.prefixMode == IEC {
 				rpnCalc.SetPrefixMode(IEC)
@@ -282,7 +282,7 @@ func TestShorthandComparisonOperators(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpnCalc := NewRPN(vars)
+			rpnCalc := NewRPN(vars, nil)
 
 			result, err := rpnCalc.ParseAndEvaluate(tt.expression)
 
@@ -356,7 +356,7 @@ func TestIncompatibleCategoryComparison(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpnCalc := NewRPN(vars)
+			rpnCalc := NewRPN(vars, nil)
 
 			_, err := rpnCalc.ParseAndEvaluate(tt.expression)
 
@@ -414,7 +414,7 @@ func TestMetricComparisonEdgeCases(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpnCalc := NewRPN(vars)
+			rpnCalc := NewRPN(vars, nil)
 
 			if tt.prefixMode == IEC {
 				rpnCalc.SetPrefixMode(IEC)

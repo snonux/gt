@@ -213,7 +213,7 @@ func TestConstants_ThreadSafety(t *testing.T) {
 
 func TestConstants_RetrieveInRPN(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test pi constant
 	result, err := r.ParseAndEvaluate("pi")
@@ -226,7 +226,7 @@ func TestConstants_RetrieveInRPN(t *testing.T) {
 
 	// Create a new RPN instance for each test to avoid stack state conflicts
 	v2 := NewVariables()
-	r2 := NewRPN(v2)
+	r2 := NewRPN(v2, nil)
 
 	// Test e constant
 	result, err = r2.ParseAndEvaluate("e")
@@ -239,7 +239,7 @@ func TestConstants_RetrieveInRPN(t *testing.T) {
 
 	// Create a new RPN instance for the next test
 	v3 := NewVariables()
-	r3 := NewRPN(v3)
+	r3 := NewRPN(v3, nil)
 
 	// Test pi in expression
 	result, err = r3.ParseAndEvaluate("pi 2 *")
@@ -252,7 +252,7 @@ func TestConstants_RetrieveInRPN(t *testing.T) {
 
 	// Create a new RPN instance for phi test
 	v4 := NewVariables()
-	r4 := NewRPN(v4)
+	r4 := NewRPN(v4, nil)
 
 	// Test phi constant
 	result, err = r4.ParseAndEvaluate("phi")
@@ -266,7 +266,7 @@ func TestConstants_RetrieveInRPN(t *testing.T) {
 
 func TestConstants_RetrieveWithGreekLetters(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// Test pi with Greek letter
 	result, err := r.ParseAndEvaluate("π")
@@ -279,7 +279,7 @@ func TestConstants_RetrieveWithGreekLetters(t *testing.T) {
 
 	// Create a new RPN instance for phi test
 	v2 := NewVariables()
-	r2 := NewRPN(v2)
+	r2 := NewRPN(v2, nil)
 
 	// Test phi with Greek letter
 	result, err = r2.ParseAndEvaluate("φ")
@@ -293,7 +293,7 @@ func TestConstants_RetrieveWithGreekLetters(t *testing.T) {
 
 func TestConstants_ConflictWithVariables(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// First set a variable named pi
 	result, err := r.ParseAndEvaluate("pi = 3.0")
@@ -316,7 +316,7 @@ func TestConstants_ConflictWithVariables(t *testing.T) {
 
 func TestConstantsCommand(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 	result, err := r.ParseAndEvaluate("constants")
 	if err != nil {
 		t.Fatalf("ParseAndEvaluate(\"constants\") returned error: %v", err)
@@ -328,7 +328,7 @@ func TestConstantsCommand(t *testing.T) {
 
 func TestClearConstantsCommand(t *testing.T) {
 	v := NewVariables()
-	r := NewRPN(v)
+	r := NewRPN(v, nil)
 
 	// First add a custom constant
 	result, err := r.ParseAndEvaluate("custom 42 =")
@@ -409,7 +409,7 @@ func TestConstants_NewConstants(t *testing.T) {
 // TestConstants_ParseInRPN tests that new constants can be used in RPN expressions
 func TestConstants_ParseInRPN(t *testing.T) {
 	vars := NewVariables()
-	rpnCalc := NewRPN(vars)
+	rpnCalc := NewRPN(vars, nil)
 
 	tests := []struct {
 		expression string
@@ -532,7 +532,7 @@ func TestConstants_MoreInRPN(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			vars := NewVariables()
-			rpnCalc := NewRPN(vars)
+			rpnCalc := NewRPN(vars, nil)
 
 			result, err := rpnCalc.ParseAndEvaluate(tt.expression)
 			if err != nil {
@@ -567,7 +567,7 @@ func TestConstants_ListConstantsIncludesUserDefined(t *testing.T) {
 // TestConstants_NegativeInfInRPN tests negative infinity constant in RPN
 func TestConstants_NegativeInfInRPN(t *testing.T) {
 	vars := NewVariables()
-	rpnCalc := NewRPN(vars)
+	rpnCalc := NewRPN(vars, nil)
 
 	result, err := rpnCalc.ParseAndEvaluate("-inf")
 	if err != nil {
@@ -581,7 +581,7 @@ func TestConstants_NegativeInfInRPN(t *testing.T) {
 // TestConstants_InfExpression tests infinity in RPN expressions
 func TestConstants_InfExpression(t *testing.T) {
 	vars := NewVariables()
-	rpnCalc := NewRPN(vars)
+	rpnCalc := NewRPN(vars, nil)
 
 	// inf 1 + should still be inf
 	result, err := rpnCalc.ParseAndEvaluate("inf 1 +")

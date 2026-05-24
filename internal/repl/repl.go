@@ -179,7 +179,7 @@ func NewREPL(executor func(string), completer func() []string, logWriter io.Writ
 		fmt.Printf("Warning: Could not load saved variables: %v\n", err)
 	}
 
-	rpnCalc := rpn.NewRPN(vars)
+	rpnCalc := rpn.NewRPN(vars, nil)
 	rpnState := NewRPNState(vars, rpnCalc)
 
 	repl := &REPL{

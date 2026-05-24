@@ -38,10 +38,10 @@ var (
 // NewOperations creates a new Operations instance with the given variable store.
 // Does not create a ConstantsProvider internally; caller must use SetConstants.
 // If no registry is provided, defaults to the global MetricRegistry.
-func NewOperations(vars VariableStore, reg ...MetricReader) *Operations {
+func NewOperations(vars VariableStore, reg MetricReader) *Operations {
 	r := MetricReader(GetMetricRegistry())
-	if len(reg) > 0 && reg[0] != nil {
-		r = reg[0]
+	if reg != nil {
+		r = reg
 	}
 	return &Operations{
 		vars:           vars,

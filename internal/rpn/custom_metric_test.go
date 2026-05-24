@@ -20,7 +20,7 @@ func customCleanup(t *testing.T, rpn *RPN, name string) {
 // TestCustomDefineFactorZero tests defining a custom metric with factor=0
 func TestCustomDefineFactorZero(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "zero")
 
 	result, err := rpn.ParseAndEvaluate("custom define zero 0 Custom")
@@ -42,7 +42,7 @@ func TestCustomDefineFactorZero(t *testing.T) {
 // TestCustomDefineNegativeFactor tests defining a custom metric with negative factor
 func TestCustomDefineNegativeFactor(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "negtest")
 
 	result, err := rpn.ParseAndEvaluate("custom define negtest -5 Custom")
@@ -64,7 +64,7 @@ func TestCustomDefineNegativeFactor(t *testing.T) {
 // TestCustomDefineMalformedInput tests that malformed custom define input
 func TestCustomDefineMalformedInput(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	_, err := rpn.ParseAndEvaluate("custom define  1 Custom")
 	// Double-space collapses: fields = ["custom", "define", "1", "Custom"] (metric "" already exists as alias or empty check)
@@ -78,7 +78,7 @@ func TestCustomDefineMalformedInput(t *testing.T) {
 // that conflicts with an existing metric
 func TestCustomDefineConflictingAlias(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 
 	// Try to define a metric with a name that matches an existing one
 	_, err := rpn.ParseAndEvaluate("custom define Mbps 1000 DataRate")
@@ -90,7 +90,7 @@ func TestCustomDefineConflictingAlias(t *testing.T) {
 // TestCustomMetricArithmetic tests using a custom metric in arithmetic operations
 func TestCustomMetricArithmetic(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "arithmetic_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define arithmetic_test 42 Custom")
@@ -109,7 +109,7 @@ func TestCustomMetricArithmetic(t *testing.T) {
 // TestCustomMetricHyperOperations tests using a custom metric in hyper operations
 func TestCustomMetricHyperOperations(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "hyper_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define hyper_test 100 Custom")
@@ -128,7 +128,7 @@ func TestCustomMetricHyperOperations(t *testing.T) {
 // TestCustomMetricSubtraction tests subtraction with custom metrics
 func TestCustomMetricSubtraction(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "sub_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define sub_test 10 Custom")
@@ -146,7 +146,7 @@ func TestCustomMetricSubtraction(t *testing.T) {
 // TestCustomMetricMultiplication tests multiplication with custom metrics
 func TestCustomMetricMultiplication(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "mul_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define mul_test 5 Custom")
@@ -164,7 +164,7 @@ func TestCustomMetricMultiplication(t *testing.T) {
 // TestCustomMetricDivision tests division with custom metrics
 func TestCustomMetricDivision(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "div_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define div_test 10 Custom")
@@ -183,7 +183,7 @@ func TestCustomMetricDivision(t *testing.T) {
 // between different categories
 func TestCustomMetricConversionFail(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "conv_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define conv_test 10 Custom")
@@ -202,7 +202,7 @@ func TestCustomMetricConversionFail(t *testing.T) {
 // can't be mixed in operations
 func TestCustomMetricCrossCategory(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "cat_test1")
 	defer customCleanup(t, rpn, "cat_test2")
 
@@ -219,7 +219,7 @@ func TestCustomMetricCrossCategory(t *testing.T) {
 // TestCustomMetricShow tests that custom metrics display correctly in Show
 func TestCustomMetricShow(t *testing.T) {
 	vars := NewVariables()
-	rpn := NewRPN(vars)
+	rpn := NewRPN(vars, nil)
 	defer customCleanup(t, rpn, "show_test")
 
 	_, err := rpn.ParseAndEvaluate("custom define show_test 100 Custom")
