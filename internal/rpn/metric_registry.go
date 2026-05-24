@@ -17,6 +17,17 @@ type MetricRegistry struct {
 	exactMatchNames map[string]bool   // names that must match exactly (no case-insensitive fallback)
 }
 
+// MetricReader defines the read-only operations on a metric registry.
+// This interface allows tests to mock the registry without depending on the
+// concrete *MetricRegistry type.
+type MetricReader interface {
+	Find(name string) (*Metric, bool)
+	FindCaseInsensitive(name string) (*Metric, bool)
+	FindWithAliases(name string) (*Metric, bool)
+	List() []*Metric
+	ListByCategory(cat Category) []*Metric
+}
+
 // Global registry instance.
 var defaultRegistry *MetricRegistry
 var registryOnce sync.Once

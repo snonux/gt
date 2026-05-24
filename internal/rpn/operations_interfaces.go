@@ -87,7 +87,7 @@ type ModeController interface {
 
 // MetricCommander defines the interface for metric query commands.
 type MetricCommander interface {
-	MetricRegistry() *MetricRegistry
+	MetricRegistry() MetricReader
 	MetricShow(stack *Stack) (string, error)
 	MetricList(stack *Stack) (string, error)
 	MetricCategory(stack *Stack, categoryName string) (string, error)

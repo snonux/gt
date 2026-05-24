@@ -90,6 +90,6 @@ func (o *Operations) SetPrefixMode(mode PrefixMode) {
 }
 
 // MetricRegistry returns the metric registry used by this Operations instance.
-func (o *Operations) MetricRegistry() *MetricRegistry {
+func (o *Operations) MetricRegistry() MetricReader {
 	return o.metricRegistry
 }
