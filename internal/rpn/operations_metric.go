@@ -50,8 +50,7 @@ func resultMetricForAdd(metrics []*Metric) *Metric {
 	if len(metrics) > 0 && metrics[0] != nil {
 		return metrics[0]
 	}
-	m, _ := GetMetricRegistry().Find("Cool")
-	return m
+	return GetCoolMetric()
 }
 
 // categoriesCompatible checks if two metrics are compatible for arithmetic.
