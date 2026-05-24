@@ -97,6 +97,20 @@ func (o *Operations) ClearVariables() {
 	o.vars.ClearVariables()
 }
 
+// extractVarName extracts a variable name from a StackValue.
+// Symbols use their internal name, StringNums use their string value,
+// and all other types fall back to String().
+func extractVarName(val StackValue) string {
+	switch v := val.(type) {
+	case *Symbol:
+		return v.Name()
+	case *StringNum:
+		return v.String()
+	default:
+		return val.String()
+	}
+}
+
 // AssignLeft assigns a value to a variable (for =: operator).
 // Stack order: value name =: (value on bottom, name on top).
 // This function pops name first (top of stack), then value.
@@ -112,16 +126,7 @@ func (o *Operations) AssignLeft(stack *Stack) error {
 		return err
 	}
 
-	// Get the variable name - handle Symbol, StringNum, or convert to string
-	varName := ""
-	switch v := name.(type) {
-	case *Symbol:
-		varName = v.Name()
-	case *StringNum:
-		varName = v.String()
-	default:
-		varName = name.String()
-	}
+	varName := extractVarName(name)
 
 	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
@@ -145,16 +150,7 @@ func (o *Operations) AssignRight(stack *Stack) error {
 		return err
 	}
 
-	// Get the variable name - handle Symbol, StringNum, or convert to string
-	varName := ""
-	switch v := name.(type) {
-	case *Symbol:
-		varName = v.Name()
-	case *StringNum:
-		varName = v.String()
-	default:
-		varName = name.String()
-	}
+	varName := extractVarName(name)
 
 	valF, err := toFloat64(val, "assigning variable")
 	if err != nil {
