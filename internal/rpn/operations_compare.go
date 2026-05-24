@@ -13,8 +13,14 @@ func compareValues(o *Operations, stack *Stack, op string, cmp func(float64, flo
 		return err
 	}
 
-	aM := resolveMetric(o.metricRegistry, a)
-	bM := resolveMetric(o.metricRegistry, b)
+	aM, err := resolveMetric(o.metricRegistry, a)
+	if err != nil {
+		return buildError(op, err)
+	}
+	bM, err := resolveMetric(o.metricRegistry, b)
+	if err != nil {
+		return buildError(op, err)
+	}
 	if !categoriesCompatible(aM, bM) {
 		return metricError(op, aM, bM)
 	}
