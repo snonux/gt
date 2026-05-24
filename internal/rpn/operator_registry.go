@@ -17,7 +17,7 @@ type OperatorRegistry struct {
 }
 
 // NewOperatorRegistry creates a new operator registry and registers all operators.
-func NewOperatorRegistry(op *Operations) *OperatorRegistry {
+func NewOperatorRegistry(op OperatorProvider) *OperatorRegistry {
 	registry := &OperatorRegistry{
 		standardOperators: make(map[string]OperatorHandler),
 		hyperOperators:    make(map[string]OperatorHandler),
@@ -34,7 +34,7 @@ func NewOperatorRegistry(op *Operations) *OperatorRegistry {
 }
 
 // registerArithmeticOperators registers math and numeric operators.
-func (r *OperatorRegistry) registerArithmeticOperators(op *Operations) {
+func (r *OperatorRegistry) registerArithmeticOperators(op OperatorProvider) {
 	r.registerStandardOperator("+", func(stack *Stack) error { return op.Add(stack) })
 	r.registerStandardOperator("-", func(stack *Stack) error { return op.Subtract(stack) })
 	r.registerStandardOperator("*", func(stack *Stack) error { return op.Multiply(stack) })
@@ -48,7 +48,7 @@ func (r *OperatorRegistry) registerArithmeticOperators(op *Operations) {
 }
 
 // registerComparisonOperators registers equality and ordering operators.
-func (r *OperatorRegistry) registerComparisonOperators(op *Operations) {
+func (r *OperatorRegistry) registerComparisonOperators(op OperatorProvider) {
 	r.registerStandardOperator("gt", func(stack *Stack) error { return op.GT(stack) })
 	r.registerStandardOperator("lt", func(stack *Stack) error { return op.LT(stack) })
 	r.registerStandardOperator("<", func(stack *Stack) error { return op.LT(stack) })
@@ -64,7 +64,7 @@ func (r *OperatorRegistry) registerComparisonOperators(op *Operations) {
 }
 
 // registerStackOperators registers stack manipulation operators.
-func (r *OperatorRegistry) registerStackOperators(op *Operations) {
+func (r *OperatorRegistry) registerStackOperators(op OperatorProvider) {
 	r.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	r.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	r.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
@@ -87,14 +87,14 @@ func (r *OperatorRegistry) registerStackOperators(op *Operations) {
 }
 
 // registerVariableOperators registers assignment and conversion operators.
-func (r *OperatorRegistry) registerVariableOperators(op *Operations) {
+func (r *OperatorRegistry) registerVariableOperators(op OperatorProvider) {
 	r.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
 	r.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
 	r.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
 }
 
 // registerCommandOperators registers operators that return a result immediately.
-func (r *OperatorRegistry) registerCommandOperators(op *Operations) {
+func (r *OperatorRegistry) registerCommandOperators(op OperatorProvider) {
 	r.registerCommandOperator("show", func(stack *Stack) (string, error) { return op.Show(stack) })
 	r.registerCommandOperator("showstack", func(stack *Stack) (string, error) { return op.Show(stack) })
 	r.registerCommandOperator("print", func(stack *Stack) (string, error) { return op.Show(stack) })
@@ -105,7 +105,7 @@ func (r *OperatorRegistry) registerCommandOperators(op *Operations) {
 }
 
 // registerHyperOperators registers hyper (vectorized) operators.
-func (r *OperatorRegistry) registerHyperOperators(op *Operations) {
+func (r *OperatorRegistry) registerHyperOperators(op OperatorProvider) {
 	r.registerHyperOperator("[+]", func(stack *Stack) error { return op.HyperAdd(stack) })
 	r.registerHyperOperator("[-]", func(stack *Stack) error { return op.HyperSubtract(stack) })
 	r.registerHyperOperator("[*]", func(stack *Stack) error { return op.HyperMultiply(stack) })

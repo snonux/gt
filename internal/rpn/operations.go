@@ -32,6 +32,7 @@ var (
 	_ MetricCommander       = (*Operations)(nil)
 	_ CustomMetricManager   = (*Operations)(nil)
 	_ OperationsProvider    = (*Operations)(nil)
+	_ OperatorProvider      = (*Operations)(nil)
 )
 
 // NewOperations creates a new Operations instance with the given variable store.

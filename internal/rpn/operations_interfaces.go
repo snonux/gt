@@ -101,6 +101,20 @@ type CustomMetricManager interface {
 	CustomUndefine(name string) error
 }
 
+// OperatorProvider combines all operator interfaces needed by the OperatorRegistry.
+// This satisfies DIP by decoupling the registry from the concrete *Operations type.
+type OperatorProvider interface {
+	ArithmeticOperator
+	PowerIntOperator
+	LogarithmicOperator
+	BooleanOperator
+	StackOperator
+	VariableOperator
+	ConstantOperator
+	MetricOperator
+	HyperOperator
+}
+
 // OperationsProvider combines all interfaces that RPN needs from Operations.
 // RPN depends on this interface (DIP) rather than the concrete *Operations type.
 type OperationsProvider interface {
