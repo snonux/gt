@@ -11,16 +11,40 @@ import (
 	"sync"
 )
 
-// ConstantsProvider defines the interface for reading constant values.
-type ConstantsProvider interface {
+// ConstantsReader defines the interface for reading constant values.
+type ConstantsReader interface {
 	GetConstant(name string) (float64, bool)
 	ListConstants() []ConstantInfo
 	Count() int
 	HasConstant(name string) bool
+}
+
+// ConstantsWriter defines the interface for writing constant values.
+type ConstantsWriter interface {
 	SetConstant(name string, value float64) error
+}
+
+// ConstantsAdmin defines the interface for administrative constant operations.
+type ConstantsAdmin interface {
 	ClearConstants()
 	ReloadBuiltInConstants()
 }
+
+// ConstantsProvider combines ConstantsReader, ConstantsWriter, and ConstantsAdmin
+// for full constant storage access.
+type ConstantsProvider interface {
+	ConstantsReader
+	ConstantsWriter
+	ConstantsAdmin
+}
+
+// Ensure Constants implements all constant sub-interfaces at compile time.
+var (
+	_ ConstantsReader   = (*Constants)(nil)
+	_ ConstantsWriter   = (*Constants)(nil)
+	_ ConstantsAdmin    = (*Constants)(nil)
+	_ ConstantsProvider = (*Constants)(nil)
+)
 
 // ConstantInfo represents a single constant with its name and value.
 type ConstantInfo struct {
