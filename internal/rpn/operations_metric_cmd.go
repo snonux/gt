@@ -150,11 +150,19 @@ func (o *Operations) CustomDefine(name string, factor float64, category string) 
 		Factor:   func(PrefixMode) float64 { return factor },
 		IsCustom: true,
 	}
-	reg.Register(m)
+	writer, ok := reg.(MetricWriter)
+	if !ok {
+		return fmt.Errorf("metric registry does not support write operations")
+	}
+	writer.Register(m)
 	return nil
 }
 
 // CustomUndefine removes a custom metric.
 func (o *Operations) CustomUndefine(name string) error {
-	return o.metricRegistry.Unregister(name)
+	writer, ok := o.metricRegistry.(MetricWriter)
+	if !ok {
+		return fmt.Errorf("metric registry does not support write operations")
+	}
+	return writer.Unregister(name)
 }

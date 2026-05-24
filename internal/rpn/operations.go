@@ -13,7 +13,7 @@ type Operations struct {
 	consts         ConstantsProvider
 	mode           CalculationMode
 	prefixMode     PrefixMode
-	metricRegistry *MetricRegistry
+	metricRegistry MetricReader
 	mu             sync.RWMutex
 }
 
@@ -38,8 +38,8 @@ var (
 // NewOperations creates a new Operations instance with the given variable store.
 // Does not create a ConstantsProvider internally; caller must use SetConstants.
 // If no registry is provided, defaults to the global MetricRegistry.
-func NewOperations(vars VariableStore, reg ...*MetricRegistry) *Operations {
-	r := GetMetricRegistry()
+func NewOperations(vars VariableStore, reg ...MetricReader) *Operations {
+	r := MetricReader(GetMetricRegistry())
 	if len(reg) > 0 && reg[0] != nil {
 		r = reg[0]
 	}

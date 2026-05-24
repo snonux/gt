@@ -6,7 +6,7 @@ package rpn
 import "fmt"
 
 // resolveMetric returns the metric for a StackValue, defaulting to Cool if nil.
-func resolveMetric(reg *MetricRegistry, n StackValue) (*Metric, error) {
+func resolveMetric(reg MetricReader, n StackValue) (*Metric, error) {
 	m := n.Metric()
 	if m == nil {
 		var ok bool
@@ -59,7 +59,7 @@ func categoriesCompatible(a, b *Metric) bool {
 }
 
 // compatibleMetric returns the resulting metric for + and - operations.
-func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
+func compatibleMetric(reg MetricReader, a, b *Metric) *Metric {
 	return resultMetricForAdd([]*Metric{a, b})
 }
 
@@ -73,7 +73,7 @@ func compatibleMetric(reg *MetricRegistry, a, b *Metric) *Metric {
 // NOT by 1 (base units).
 //
 // Returns the converted float64 value in base units.
-func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMetric *Metric) (float64, error) {
+func convertToBase(reg MetricReader, n StackValue, mode PrefixMode, resultMetric *Metric) (float64, error) {
 	nv, ok := n.(NumericValue)
 	if !ok {
 		return 0, fmt.Errorf("convertToBase: value %q is not numeric", n)
@@ -95,7 +95,7 @@ func convertToBase(reg *MetricRegistry, n StackValue, mode PrefixMode, resultMet
 }
 
 // convertFromBase converts a base-unit value back to the given metric.
-func convertFromBase(reg *MetricRegistry, baseVal float64, m *Metric, mode PrefixMode) (float64, error) {
+func convertFromBase(reg MetricReader, baseVal float64, m *Metric, mode PrefixMode) (float64, error) {
 	if m == nil {
 		var err error
 		m, err = baseMetric(reg, "Cool")
@@ -116,7 +116,7 @@ var multiplicationInference = map[[2]Category]string{
 }
 
 // resultMetricForMul computes the resulting metric for multiplication.
-func resultMetricForMul(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
+func resultMetricForMul(reg MetricReader, a, b *Metric) (*Metric, error) {
 	if a == nil || a.Category == Universal {
 		if b == nil {
 			return baseMetric(reg, "Cool")
@@ -141,7 +141,7 @@ var divisionInference = map[[2]Category]string{
 }
 
 // resultMetricForDiv computes the resulting metric for division.
-func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
+func resultMetricForDiv(reg MetricReader, a, b *Metric) (*Metric, error) {
 	if a == nil && b == nil {
 		return baseMetric(reg, "Cool")
 	}
@@ -179,7 +179,7 @@ func metricError(op string, a, b *Metric) error {
 }
 
 // coolMetric returns the Cool metric from the registry.
-func coolMetric(reg *MetricRegistry) (*Metric, error) {
+func coolMetric(reg MetricReader) (*Metric, error) {
 	m, ok := reg.Find("Cool")
 	if !ok {
 		return nil, fmt.Errorf("metric registry missing Cool metric")
@@ -188,7 +188,7 @@ func coolMetric(reg *MetricRegistry) (*Metric, error) {
 }
 
 // baseMetric looks up a base metric from the registry.
-func baseMetric(reg *MetricRegistry, name string) (*Metric, error) {
+func baseMetric(reg MetricReader, name string) (*Metric, error) {
 	m, ok := reg.Find(name)
 	if !ok {
 		return nil, fmt.Errorf("metric registry missing base unit %q", name)

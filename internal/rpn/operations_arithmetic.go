@@ -24,7 +24,7 @@ func (o *Operations) binaryMetricOp(
 	op string,
 	compatCheck func(*Metric, *Metric) error,
 	compute func(float64, float64) float64,
-	resultMetricFn func(*MetricRegistry, *Metric, *Metric) (*Metric, error),
+	resultMetricFn func(MetricReader, *Metric, *Metric) (*Metric, error),
 	preChecks ...func(StackValue) error,
 ) error {
 	a, b, err := popTwo(stack, op)
@@ -85,7 +85,7 @@ func (o *Operations) Add(stack *Stack) error {
 			return nil
 		},
 		func(a, b float64) float64 { return a + b },
-		func(reg *MetricRegistry, aM, bM *Metric) (*Metric, error) {
+		func(reg MetricReader, aM, bM *Metric) (*Metric, error) {
 			return compatibleMetric(reg, aM, bM), nil
 		},
 	)
@@ -102,7 +102,7 @@ func (o *Operations) Subtract(stack *Stack) error {
 			return nil
 		},
 		func(a, b float64) float64 { return a - b },
-		func(reg *MetricRegistry, aM, bM *Metric) (*Metric, error) {
+		func(reg MetricReader, aM, bM *Metric) (*Metric, error) {
 			return compatibleMetric(reg, aM, bM), nil
 		},
 	)

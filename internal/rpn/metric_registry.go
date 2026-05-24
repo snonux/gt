@@ -28,6 +28,14 @@ type MetricReader interface {
 	ListByCategory(cat Category) []*Metric
 }
 
+// MetricWriter defines the write operations on a metric registry.
+type MetricWriter interface {
+	Register(m *Metric)
+	RegisterAlias(alias, canonicalName string)
+	Unregister(name string) error
+	MarkExactMatch(names ...string)
+}
+
 // Global registry instance.
 var defaultRegistry *MetricRegistry
 var registryOnce sync.Once
