@@ -478,6 +478,14 @@ func extractVariableName(token string) string {
 	return token
 }
 
+// checkStackOverflow returns an error if the stack has reached the maximum size.
+func (r *RPN) checkStackOverflow(stack *Stack) error {
+	if stack.Len() >= r.maxStack {
+		return fmt.Errorf("stack overflow")
+	}
+	return nil
+}
+
 // pushLiteral attempts to push a literal value (boolean, number, metric number, @metric) onto the stack.
 // Returns (true, nil) if a literal was pushed, (false, nil) if not a literal, or (false, err) on error.
 func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
@@ -493,8 +501,8 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 
 	// Check if it's a number
 	if num, err := strconv.ParseFloat(token, 64); err == nil {
-		if stack.Len() >= r.maxStack {
-			return false, fmt.Errorf("stack overflow")
+		if err := r.checkStackOverflow(stack); err != nil {
+			return false, err
 		}
 		if r.ops.GetMode() == RationalMode {
 			rat, err := NewRatFromString(token)
@@ -510,8 +518,8 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 
 	// Check if it's a number with a metric suffix (e.g., 100Mbps, 5.5GB, 2hr)
 	if num, metric, ok := parseNumberWithMetric(token, r.ops.MetricRegistry()); ok {
-		if stack.Len() >= r.maxStack {
-			return false, fmt.Errorf("stack overflow")
+		if err := r.checkStackOverflow(stack); err != nil {
+			return false, err
 		}
 		stack.Push(NewNumberWithMetric(num, r.ops.GetMode(), metric))
 		return true, nil
@@ -522,8 +530,8 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 	if len(token) > 1 && token[0] == '@' {
 		metricName := token[1:]
 		if metric, ok := r.ops.MetricRegistry().FindWithAliases(metricName); ok {
-			if stack.Len() >= r.maxStack {
-				return false, fmt.Errorf("stack overflow")
+			if err := r.checkStackOverflow(stack); err != nil {
+				return false, err
 			}
 			stack.Push(NewNumberWithMetric(1, r.ops.GetMode(), metric))
 			return true, nil
