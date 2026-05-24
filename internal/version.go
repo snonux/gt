@@ -47,4 +47,4 @@ package internal
 //
 //	$ gt version
 //	v0.4.2
-const Version = "v0.4.2"
+const Version = "v0.5.0"
