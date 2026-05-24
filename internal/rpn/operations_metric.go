@@ -106,6 +106,15 @@ func convertFromBase(reg *MetricRegistry, baseVal float64, m *Metric, mode Prefi
 	return baseVal / m.Factor(mode), nil
 }
 
+// multiplicationInference maps ordered category pairs to the result base-unit name.
+// Both orderings are stored so that map lookup replaces the switch for commutative mul.
+var multiplicationInference = map[[2]Category]string{
+	{DataRate, Time}: "bits",
+	{Time, DataRate}: "bits",
+	{Speed, Time}:    "m",
+	{Time, Speed}:    "m",
+}
+
 // resultMetricForMul computes the resulting metric for multiplication.
 func resultMetricForMul(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 	if a == nil || a.Category == Universal {
@@ -118,19 +127,17 @@ func resultMetricForMul(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 		return a, nil
 	}
 
-	// Cross-category inference
-	switch {
-	case a.Category == DataRate && b.Category == Time:
-		return baseMetric(reg, "bits")
-	case a.Category == Time && b.Category == DataRate:
-		return baseMetric(reg, "bits")
-	case a.Category == Speed && b.Category == Time:
-		return baseMetric(reg, "m")
-	case a.Category == Time && b.Category == Speed:
-		return baseMetric(reg, "m")
-	default:
-		return baseMetric(reg, "Cool")
+	if name, ok := multiplicationInference[[2]Category{a.Category, b.Category}]; ok {
+		return baseMetric(reg, name)
 	}
+	return baseMetric(reg, "Cool")
+}
+
+// divisionInference maps (dividend, divisor) category pairs to the result base-unit name.
+// Unlike multiplication, division is not commutative so order matters.
+var divisionInference = map[[2]Category]string{
+	{DataSize, Time}: "bps",
+	{Distance, Time}: "mps",
 }
 
 // resultMetricForDiv computes the resulting metric for division.
@@ -151,15 +158,10 @@ func resultMetricForDiv(reg *MetricRegistry, a, b *Metric) (*Metric, error) {
 		return baseMetric(reg, "Cool")
 	}
 
-	// Cross-category inference
-	switch {
-	case a.Category == DataSize && b.Category == Time:
-		return baseMetric(reg, "bps")
-	case a.Category == Distance && b.Category == Time:
-		return baseMetric(reg, "mps")
-	default:
-		return baseMetric(reg, "Cool")
+	if name, ok := divisionInference[[2]Category{a.Category, b.Category}]; ok {
+		return baseMetric(reg, name)
 	}
+	return baseMetric(reg, "Cool")
 }
 
 // metricError returns a descriptive error for incompatible metric operations.
