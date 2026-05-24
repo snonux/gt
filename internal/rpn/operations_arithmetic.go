@@ -170,48 +170,24 @@ func (o *Operations) Power(stack *Stack) error {
 
 // Modulo pops two values from stack, computes modulo (a % b), and pushes result.
 func (o *Operations) Modulo(stack *Stack) error {
-	a, b, err := popTwo(stack, "%")
-	if err != nil {
-		return err
-	}
-
-	bF, err := toFloat64(b, "%")
-	if err != nil {
-		return err
-	}
-	if bF == 0 {
-		return buildError("%", fmt.Errorf("modulo by zero"))
-	}
-
-	aM, err := resolveMetric(o.metricRegistry, a)
-	if err != nil {
-		return buildError("%", err)
-	}
-	bM, err := resolveMetric(o.metricRegistry, b)
-	if err != nil {
-		return buildError("%", err)
-	}
-	if !categoriesCompatible(aM, bM) {
-		return metricError("%", aM, bM)
-	}
-
-	pm := o.GetPrefixMode()
-	resultMetric := compatibleMetric(o.metricRegistry, aM, bM)
-	aBase, err := convertToBase(o.metricRegistry, a, pm, resultMetric)
-	if err != nil {
-		return buildError("%", err)
-	}
-	bBase, err := convertToBase(o.metricRegistry, b, pm, resultMetric)
-	if err != nil {
-		return buildError("%", err)
-	}
-	resultVal, err := convertFromBase(o.metricRegistry, math.Mod(aBase, bBase), resultMetric, pm)
-	if err != nil {
-		return buildError("%", err)
-	}
-
-	stack.Push(NewNumberWithMetric(resultVal, o.GetMode(), resultMetric))
-	return nil
+	return o.binaryMetricOp(
+		stack, "%",
+		nil, // no compatibility check — compatibleMetric handles result type
+		func(a, b float64) float64 { return math.Mod(a, b) },
+		func(reg MetricReader, aM, bM *Metric) (*Metric, error) {
+			return compatibleMetric(reg, aM, bM), nil
+		},
+		func(sv StackValue) error {
+			f, err := toFloat64(sv, "%")
+			if err != nil {
+				return err
+			}
+			if f == 0 {
+				return buildError("%", fmt.Errorf("modulo by zero"))
+			}
+			return nil
+		},
+	)
 }
 
 // FastPower pops two values from stack, raises first to integer power of second (a ** b), and pushes result.
