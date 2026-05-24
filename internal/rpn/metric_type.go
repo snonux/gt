@@ -36,28 +36,25 @@ const (
 // ignore the bool return cannot accidentally treat it as Universal.
 const invalidCategory Category = -1
 
+// categoryNames maps each Category value to its human-readable name.
+// Adding a new Category only requires appending here; _sentinel bounds the range.
+var categoryNames = []string{
+	"Universal",
+	"DataRate",
+	"DataSize",
+	"Time",
+	"Weight",
+	"Speed",
+	"Distance",
+	"Custom",
+}
+
 // String returns the human-readable name of the category.
 func (c Category) String() string {
-	switch c {
-	case Universal:
-		return "Universal"
-	case DataRate:
-		return "DataRate"
-	case DataSize:
-		return "DataSize"
-	case Time:
-		return "Time"
-	case Weight:
-		return "Weight"
-	case Speed:
-		return "Speed"
-	case Distance:
-		return "Distance"
-	case Custom:
-		return "Custom"
-	default:
-		return fmt.Sprintf("Category(%d)", c)
+	if c >= 0 && c < Category(len(categoryNames)) {
+		return categoryNames[c]
 	}
+	return fmt.Sprintf("Category(%d)", c)
 }
 
 // PrefixMode determines whether data size prefixes are SI (1000-based) or IEC (1024-based).
