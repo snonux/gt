@@ -180,10 +180,11 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 			return result, true, nil
 		}
 
-		// Try evaluating as a single operator on the current RPN stack
+		// Single-token input: try as operator, number, or symbol
 		fields := strings.Fields(input)
 		if len(fields) == 1 {
-			op := strings.ToLower(fields[0])
+			token := fields[0]
+			op := strings.ToLower(token)
 			if repl.rpnState.rpnCalc.IsStandardOperator(op) || repl.rpnState.rpnCalc.IsHyperOperator(op) {
 				result, err := repl.rpnState.rpnCalc.EvalOperator(op)
 				if err != nil {
@@ -191,26 +192,15 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 				}
 				return result, true, nil
 			}
-		}
-
-		// Check if input is a single number (valid RPN - pushes number onto stack)
-		if len(fields) == 1 {
-			if _, err := strconv.ParseFloat(fields[0], 64); err == nil {
-				// Push the number onto the RPN stack using ParseAndEvaluate
-				// This maintains the RPN state across multiple inputs in REPL mode
-				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(fields[0])
+			// Numbers and symbols (:x) are handled by ParseAndEvaluate
+			if _, err := strconv.ParseFloat(token, 64); err == nil {
+				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(token)
 				if err != nil {
 					return "", true, err
 				}
 				return result, true, nil
 			}
-		}
-
-		// Check if input is a symbol syntax (:x) - valid RPN that pushes a symbol
-		if len(fields) == 1 {
-			token := fields[0]
 			if len(token) > 0 && token[0] == ':' {
-				// This is a symbol syntax like :x
 				result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(token)
 				if err != nil {
 					return "", true, err
