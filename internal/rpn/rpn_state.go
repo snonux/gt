@@ -13,7 +13,7 @@ import (
 type RPN struct {
 	mu             sync.RWMutex
 	vars           VariableStore
-	consts         ConstantsReader
+	consts         ConstantsProvider
 	ops            OperationsProvider
 	opRegistry     *OperatorRegistry
 	assignHandler  *assignmentHandler
@@ -42,7 +42,7 @@ func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 // GetConstants returns the constants provider.
 // This method is thread-safe for concurrent reads.
 func (r *RPN) GetConstants() ConstantsProvider {
-	return r.consts.(ConstantsProvider)
+	return r.consts
 }
 
 // GetMode returns the current calculation mode.
