@@ -172,6 +172,24 @@ func (h *RPNHandler) evalWithStackRestore(repl *REPL, input string) (string, err
 	return result, nil
 }
 
+// looksLikeRPN checks if an input string appears to be an RPN expression.
+// It returns true if at least one token is a number, known operator, or symbol.
+// This prevents non-RPN phrases like "hello world" from being evaluated as RPN.
+func looksLikeRPN(input string, calc RPNCalculator) bool {
+	for _, token := range strings.Fields(input) {
+		if _, err := strconv.ParseFloat(token, 64); err == nil {
+			return true
+		}
+		if calc.IsStandardOperator(token) || calc.IsHyperOperator(token) {
+			return true
+		}
+		if len(token) > 0 && token[0] == ':' {
+			return true
+		}
+	}
+	return false
+}
+
 // Handle processes RPN commands and expressions.
 // It handles:
 //   - Commands with "rpn" or "calc" prefix
@@ -204,11 +222,13 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if calc != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
-			result, err := h.evalWithStackRestore(repl, input)
-			if err != nil {
-				return "", true, err
+			if looksLikeRPN(input, calc) {
+				result, err := h.evalWithStackRestore(repl, input)
+				if err != nil {
+					return "", true, err
+				}
+				return result, true, nil
 			}
-			return result, true, nil
 		}
 
 		// Single-token input: try as operator, number, or symbol
