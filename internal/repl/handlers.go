@@ -12,6 +12,10 @@ import (
 	"codeberg.org/snonux/gt/internal/rpn"
 )
 
+// rpnPrefixes lists the command prefixes that trigger RPN evaluation.
+// Adding a new prefix (e.g., "expr") requires only appending to this slice.
+var rpnPrefixes = []string{"rpn", "calc"}
+
 // RPNCalculator defines the methods needed by REPL handlers to interact with
 // the RPN engine. By depending on this interface instead of the concrete *rpn.RPN,
 // handlers obey DIP and the Law of Demeter.
@@ -174,17 +178,17 @@ func (h *RPNHandler) evalWithStackRestore(repl *REPL, input string) (string, err
 // input: the command string to process
 // Returns: (output string, handled bool, err error)
 func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bool, err error) {
-	// Check for rpn/calc prefix
+	// Check for rpn/calc prefix (data-driven; see rpnPrefixes)
 	lowerInput := strings.ToLower(input)
-	if strings.HasPrefix(lowerInput, "rpn ") || strings.HasPrefix(lowerInput, "calc ") {
-		// Extract the expression after rpn/calc
-		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
-
-		result, err := h.evalWithStackRestore(repl, rest)
-		if err != nil {
-			return "", true, err
+	for _, prefix := range rpnPrefixes {
+		if strings.HasPrefix(lowerInput, prefix+" ") {
+			rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
+			result, err := h.evalWithStackRestore(repl, rest)
+			if err != nil {
+				return "", true, err
+			}
+			return result, true, nil
 		}
-		return result, true, nil
 	}
 
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
