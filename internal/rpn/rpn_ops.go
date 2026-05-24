@@ -34,9 +34,8 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 
 		// Handle operator (common logic from executeOperator)
 		if result, handled, err := r.executeOperator(stack, token); err != nil {
-			// If the error is not "unknown token", return it
-			// Otherwise, fall through to check for variable
-			if !strings.Contains(err.Error(), "unknown token") {
+			// If not a recognized operator, fall through to check for variable
+			if r.opRegistry.IsStandardOperator(token) || r.opRegistry.IsHyperOperator(token) {
 				return "", err
 			}
 		} else if handled {
