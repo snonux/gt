@@ -40,6 +40,14 @@ type CommandHandler interface {
 	SetNext(next CommandHandler)
 }
 
+// Ensure all handler types implement CommandHandler at compile time.
+var (
+	_ CommandHandler = (*BuiltInCommandHandler)(nil)
+	_ CommandHandler = (*RPNHandler)(nil)
+	_ CommandHandler = (*PercentageHandler)(nil)
+	_ CommandHandler = (*ErrorHandler)(nil)
+)
+
 // BaseHandler provides common functionality for all handlers in the chain.
 // It stores a reference to the next handler and provides the Next() method
 // for forwarding requests.

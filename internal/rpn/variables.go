@@ -65,6 +65,14 @@ type VariableStore interface {
 	VariablePersistence
 }
 
+// Ensure Variables implements all variable interfaces at compile time.
+var (
+	_ VariableReader      = (*Variables)(nil)
+	_ VariableWriter      = (*Variables)(nil)
+	_ VariablePersistence = (*Variables)(nil)
+	_ VariableStore       = (*Variables)(nil)
+)
+
 // NewVariables creates and initializes a new Variables instance.
 func NewVariables() *Variables {
 	return &Variables{

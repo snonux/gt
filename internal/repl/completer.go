@@ -5,6 +5,8 @@ package repl
 
 import (
 	"strings"
+
+	"github.com/chzyer/readline"
 )
 
 // completer provides auto-completion for built-in commands.
@@ -28,6 +30,9 @@ func completer(text string) []string {
 	}
 	return suggestions
 }
+
+// Ensure AutoCompleteAdapter implements readline.AutoCompleter at compile time.
+var _ readline.AutoCompleter = (*AutoCompleteAdapter)(nil)
 
 // AutoCompleteAdapter implements the readline AutoCompleter interface,
 // providing tab-completion suggestions for built-in commands.
