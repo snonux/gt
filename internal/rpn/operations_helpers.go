@@ -79,6 +79,10 @@ func popAll(stack *Stack, op string) ([]StackValue, error) {
 	for stack.Len() > 0 {
 		val, err := stack.Pop()
 		if err != nil {
+			// Restore already-popped values in reverse order (top of stack first).
+			for i := len(values) - 1; i >= 0; i-- {
+				stack.Push(values[i])
+			}
 			return nil, fmt.Errorf("%s: failed to pop: %w", op, err)
 		}
 		values = append(values, val)
