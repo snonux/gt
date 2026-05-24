@@ -433,7 +433,7 @@ func isValidIdentifier(token string) bool {
 		return false
 	}
 	c := token[0]
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_'
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 }
 
 // extractVariableName extracts a variable name from a token, stripping the leading colon if present.
