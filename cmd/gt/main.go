@@ -70,85 +70,71 @@ func main() {
 	}
 }
 
-// runCommand processes command-line arguments and executes the appropriate action.
-//
-// It handles:
-//   - --log <file>: Append REPL input/output to the specified log file
-//   - No arguments: Start REPL mode if stdin is a TTY, otherwise read from stdin
-//   - "version" argument: Return the version string
-//   - Other arguments: Try RPN parsing first, then fall back to percentage calculation
+// runCommand orchestrates command-line argument processing and execution.
 func runCommand(args []string) (string, error) {
-	// Check for --log flag
-	var logFile string
-	var remainingArgs []string
+	logFile, args := parseFlags(args)
+	return dispatchInput(args, logFile)
+}
 
+// parseFlags extracts the --log <file> flag and returns it along with the remaining args.
+func parseFlags(args []string) (logFile string, remaining []string) {
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--log" && i+1 < len(args) {
 			logFile = args[i+1]
-			i++ // Skip the filename argument
+			i++
 		} else {
-			remainingArgs = append(remainingArgs, args[i])
+			remaining = append(remaining, args[i])
 		}
 	}
+	return
+}
 
-	// Update args to exclude --log flag
-	args = remainingArgs
-
+// dispatchInput routes based on the number and content of remaining args.
+func dispatchInput(args []string, logFile string) (string, error) {
 	if len(args) < 2 {
-		// No args provided - check if stdin is a TTY for REPL mode
-		if isatty.IsTerminal(os.Stdin.Fd()) {
-			if logFile != "" {
-				if err := repl.RunREPLWithLog(logFile); err != nil {
-					return "", err
-				}
-			} else {
-				if err := runREPL(); err != nil {
-					return "", err
-				}
-			}
-			return "", nil
-		}
-		// Read from stdin (pipe or redirect)
-		input, err := readStdin()
-		if err != nil {
-			return "", fmt.Errorf("failed to read stdin: %w", err)
-		}
-		input = strings.TrimSpace(input)
-		if input == "" {
-			printUsage()
-			return "", fmt.Errorf("no input provided")
-		}
-		// Try RPN parsing first
-		rpnResult, rpnErr := runRPN(input)
-		if rpnErr == nil {
-			return rpnResult, nil
-		}
-		// Fall back to percentage calculation
-		result, err := perc.Parse(input)
-		if err != nil {
-			return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
-		}
-		return result, nil
+		return handleNoInput(logFile)
 	}
-
 	if args[1] == "version" {
 		return internal.Version, nil
 	}
-
 	input := strings.Join(args[1:], " ")
+	return tryParse(input)
+}
 
-	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	rpnResult, rpnErr := runRPN(input)
-	if rpnErr == nil {
-		return rpnResult, nil
+// handleNoInput handles the no-argument case: REPL on TTY, or stdin read and parse.
+func handleNoInput(logFile string) (string, error) {
+	if isatty.IsTerminal(os.Stdin.Fd()) {
+		return startREPL(logFile)
 	}
+	input, err := readStdin()
+	if err != nil {
+		return "", fmt.Errorf("failed to read stdin: %w", err)
+	}
+	input = strings.TrimSpace(input)
+	if input == "" {
+		printUsage()
+		return "", fmt.Errorf("no input provided")
+	}
+	return tryParse(input)
+}
 
-	// Fall back to percentage calculation
+// startREPL launches the REPL, with optional logging when logFile is non-empty.
+func startREPL(logFile string) (string, error) {
+	if logFile != "" {
+		return "", repl.RunREPLWithLog(logFile)
+	}
+	return "", runREPL()
+}
+
+// tryParse attempts RPN evaluation first, falling back to percentage calculation.
+func tryParse(input string) (string, error) {
+	if result, err := runRPN(input); err == nil {
+		return result, nil
+	}
 	result, err := perc.Parse(input)
 	if err != nil {
 		return "", fmt.Errorf("rpn fallback failed for input %q: %w", input, err)
 	}
-
 	return result, nil
 }
 
