@@ -351,47 +351,58 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		return "", nil
 	}
 
-	// Check if it's a symbol syntax (:x)
-	// Only match :x where x is a valid identifier (not an operator like := or =:)
+	// Check symbol syntax (:x)
+	if pushed, err := r.checkAndPushSymbol(stack, token); err != nil {
+		return "", err
+	} else if pushed {
+		return "", nil
+	}
+
+	// Resolve variable or constant
+	if r.resolveVariableOrConstant(stack, token) {
+		return "", nil
+	}
+
+	// Handle operators and fallback to symbol for unknown identifiers
+	return r.dispatchOperator(stack, token)
+}
+
+// checkAndPushSymbol checks for :x syntax and pushes a Symbol if valid.
+// Returns (true, nil) if pushed, (false, nil) if not a symbol prefix, or (false, error).
+func (r *RPN) checkAndPushSymbol(stack *Stack, token string) (bool, error) {
 	if len(token) > 0 && token[0] == ':' {
 		symbolName := token[1:] // Remove the leading :
 		if symbolName == "" {
-			return "", fmt.Errorf("symbol name cannot be empty after colon")
+			return false, fmt.Errorf("symbol name cannot be empty after colon")
 		}
-		// Only push as symbol if the remaining part is a valid identifier
-		// This prevents := and =: from being treated as : followed by = operator
+		// Only push as symbol if valid identifier (prevents := and =: as : then =)
 		if isValidIdentifier(symbolName) {
 			stack.Push(NewSymbol(symbolName))
-			return "", nil
+			return true, nil
 		}
-		// Not a valid symbol, fall through to check for operators
 	}
+	return false, nil
+}
 
-	// Check if it's a variable reference first (before operators)
+// resolveVariableOrConstant looks up token as variable or constant and pushes value.
+func (r *RPN) resolveVariableOrConstant(stack *Stack, token string) bool {
 	if val, exists := r.vars.GetVariable(token); exists {
 		stack.Push(NewNumber(val, r.ops.GetMode()))
-		return "", nil
+		return true
 	}
-	// Check if it's a constant reference (before operators)
 	if val, exists := r.consts.GetConstant(token); exists {
 		stack.Push(NewNumber(val, r.ops.GetMode()))
-		return "", nil
+		return true
 	}
-	// Note: variable and constant values are stored as float64, so precision
-	// is already lost at storage time; NewNumber here preserves that behavior.
+	return false
+}
 
-	// Handle standard operators (common logic extracted for DRY)
-	// This must be done BEFORE pushing Symbol for unknown identifiers,
-	// so that operators are properly handled
+// dispatchOperator executes registered operators and falls back to symbol for unknown identifiers.
+func (r *RPN) dispatchOperator(stack *Stack, token string) (string, error) {
 	result, handled, err := r.executeOperator(stack, token)
 	if err != nil {
-		// If it's an unknown token error and we're at the evaluate stage,
-		// it might be a bare identifier that should be a symbol
-		// Check if the caller is the main evaluate loop
+		// Unknown token: fall back to symbol if valid identifier
 		if !r.opRegistry.IsStandardOperator(token) && !r.opRegistry.IsHyperOperator(token) {
-			// For bare identifiers, push a Symbol instead of returning error
-			// But only if it looks like a valid identifier (alphanumeric/underscore, starts with letter/_)
-			// Don't push symbols for tokens with special characters like %, ., etc.
 			if isValidIdentifier(token) {
 				stack.Push(NewSymbol(token))
 				return "", nil
@@ -403,8 +414,7 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		return result, nil
 	}
 
-	// For bare identifiers that don't exist as variables and aren't operators,
-	// push a Symbol (this implements the feature where unbound identifiers act as symbols)
+	// Bare identifier — push as symbol
 	if isValidIdentifier(token) {
 		stack.Push(NewSymbol(token))
 	}
