@@ -215,9 +215,8 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 		fields := strings.Fields(input)
 		if len(fields) == 1 {
 			token := fields[0]
-			op := strings.ToLower(token)
-			if calc.IsStandardOperator(op) || calc.IsHyperOperator(op) {
-				result, err := calc.EvalOperator(op)
+			if calc.IsStandardOperator(token) || calc.IsHyperOperator(token) {
+				result, err := calc.EvalOperator(token)
 				if err != nil {
 					return "", true, err
 				}
