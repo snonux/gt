@@ -23,42 +23,56 @@ func NewOperatorRegistry(op *Operations) *OperatorRegistry {
 		hyperOperators:    make(map[string]OperatorHandler),
 	}
 
-	// Register standard operators
-	registry.registerStandardOperator("+", func(stack *Stack) error { return op.Add(stack) })
-	registry.registerStandardOperator("-", func(stack *Stack) error { return op.Subtract(stack) })
-	registry.registerStandardOperator("*", func(stack *Stack) error { return op.Multiply(stack) })
-	registry.registerStandardOperator("/", func(stack *Stack) error { return op.Divide(stack) })
-	registry.registerStandardOperator("^", func(stack *Stack) error { return op.Power(stack) })
-	registry.registerStandardOperator("**", func(stack *Stack) error { return op.FastPower(stack) })
-	registry.registerStandardOperator("%", func(stack *Stack) error { return op.Modulo(stack) })
-	registry.registerStandardOperator("lg", func(stack *Stack) error { return op.Log2(stack) })
-	registry.registerStandardOperator("log", func(stack *Stack) error { return op.Log10(stack) })
-	registry.registerStandardOperator("ln", func(stack *Stack) error { return op.Ln(stack) })
-	registry.registerStandardOperator("gt", func(stack *Stack) error { return op.GT(stack) })
-	registry.registerStandardOperator("lt", func(stack *Stack) error { return op.LT(stack) })
-	registry.registerStandardOperator("<", func(stack *Stack) error { return op.LT(stack) })
-	registry.registerStandardOperator(">", func(stack *Stack) error { return op.GT(stack) })
-	registry.registerStandardOperator("gte", func(stack *Stack) error { return op.GTE(stack) })
-	registry.registerStandardOperator(">=", func(stack *Stack) error { return op.GTE(stack) })
-	registry.registerStandardOperator("lte", func(stack *Stack) error { return op.LTE(stack) })
-	registry.registerStandardOperator("<=", func(stack *Stack) error { return op.LTE(stack) })
-	registry.registerStandardOperator("eq", func(stack *Stack) error { return op.EQ(stack) })
-	registry.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
-	registry.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
-	registry.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
-	registry.registerStandardOperator("=", func(stack *Stack) error { return op.AssignRight(stack) })
-	registry.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
-	registry.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
-	registry.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
-	registry.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
-	registry.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
-	registry.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
-	registry.registerStandardOperator("d", func(stack *Stack) error {
+	registry.registerArithmeticOperators(op)
+	registry.registerComparisonOperators(op)
+	registry.registerStackOperators(op)
+	registry.registerVariableOperators(op)
+	registry.registerCommandOperators(op)
+	registry.registerHyperOperators(op)
+
+	return registry
+}
+
+// registerArithmeticOperators registers math and numeric operators.
+func (r *OperatorRegistry) registerArithmeticOperators(op *Operations) {
+	r.registerStandardOperator("+", func(stack *Stack) error { return op.Add(stack) })
+	r.registerStandardOperator("-", func(stack *Stack) error { return op.Subtract(stack) })
+	r.registerStandardOperator("*", func(stack *Stack) error { return op.Multiply(stack) })
+	r.registerStandardOperator("/", func(stack *Stack) error { return op.Divide(stack) })
+	r.registerStandardOperator("^", func(stack *Stack) error { return op.Power(stack) })
+	r.registerStandardOperator("**", func(stack *Stack) error { return op.FastPower(stack) })
+	r.registerStandardOperator("%", func(stack *Stack) error { return op.Modulo(stack) })
+	r.registerStandardOperator("lg", func(stack *Stack) error { return op.Log2(stack) })
+	r.registerStandardOperator("log", func(stack *Stack) error { return op.Log10(stack) })
+	r.registerStandardOperator("ln", func(stack *Stack) error { return op.Ln(stack) })
+}
+
+// registerComparisonOperators registers equality and ordering operators.
+func (r *OperatorRegistry) registerComparisonOperators(op *Operations) {
+	r.registerStandardOperator("gt", func(stack *Stack) error { return op.GT(stack) })
+	r.registerStandardOperator("lt", func(stack *Stack) error { return op.LT(stack) })
+	r.registerStandardOperator("<", func(stack *Stack) error { return op.LT(stack) })
+	r.registerStandardOperator(">", func(stack *Stack) error { return op.GT(stack) })
+	r.registerStandardOperator("gte", func(stack *Stack) error { return op.GTE(stack) })
+	r.registerStandardOperator(">=", func(stack *Stack) error { return op.GTE(stack) })
+	r.registerStandardOperator("lte", func(stack *Stack) error { return op.LTE(stack) })
+	r.registerStandardOperator("<=", func(stack *Stack) error { return op.LTE(stack) })
+	r.registerStandardOperator("eq", func(stack *Stack) error { return op.EQ(stack) })
+	r.registerStandardOperator("==", func(stack *Stack) error { return op.EQ(stack) })
+	r.registerStandardOperator("neq", func(stack *Stack) error { return op.NEQ(stack) })
+	r.registerStandardOperator("!=", func(stack *Stack) error { return op.NEQ(stack) })
+}
+
+// registerStackOperators registers stack manipulation operators.
+func (r *OperatorRegistry) registerStackOperators(op *Operations) {
+	r.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
+	r.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
+	r.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
+	r.registerStandardOperator("d", func(stack *Stack) error {
 		val, err := popStack(stack, "d")
 		if err != nil {
 			return err
 		}
-		// Extract variable name from the value
 		var name string
 		switch v := val.(type) {
 		case *Symbol:
@@ -70,28 +84,38 @@ func NewOperatorRegistry(op *Operations) *OperatorRegistry {
 		}
 		return op.DeleteVariable(name)
 	})
+}
 
-	// Commands that return immediately
-	registry.registerCommandOperator("show", func(stack *Stack) (string, error) { return op.Show(stack) })
-	registry.registerCommandOperator("showstack", func(stack *Stack) (string, error) { return op.Show(stack) })
-	registry.registerCommandOperator("print", func(stack *Stack) (string, error) { return op.Show(stack) })
-	registry.registerCommandOperator("vars", func(stack *Stack) (string, error) { return op.ListVariables() })
-	registry.registerCommandOperator("constants", func(stack *Stack) (string, error) { return op.ListConstants() })
-	registry.registerCommandOperator("clear", func(stack *Stack) (string, error) { op.ClearVariables(); return "All variables cleared", nil })
-	registry.registerCommandOperator("clearconstants", func(stack *Stack) (string, error) { op.ClearConstants(); return "All constants cleared", nil })
+// registerVariableOperators registers assignment and conversion operators.
+func (r *OperatorRegistry) registerVariableOperators(op *Operations) {
+	r.registerStandardOperator("=", func(stack *Stack) error { return op.AssignRight(stack) })
+	r.registerStandardOperator(":=", func(stack *Stack) error { return op.AssignRight(stack) })
+	r.registerStandardOperator("=:", func(stack *Stack) error { return op.AssignLeft(stack) })
+	r.registerStandardOperator("convert", func(stack *Stack) error { return op.Convert(stack) })
+}
 
-	// Register hyper operators
-	registry.registerHyperOperator("[+]", func(stack *Stack) error { return op.HyperAdd(stack) })
-	registry.registerHyperOperator("[-]", func(stack *Stack) error { return op.HyperSubtract(stack) })
-	registry.registerHyperOperator("[*]", func(stack *Stack) error { return op.HyperMultiply(stack) })
-	registry.registerHyperOperator("[/]", func(stack *Stack) error { return op.HyperDivide(stack) })
-	registry.registerHyperOperator("[^]", func(stack *Stack) error { return op.HyperPower(stack) })
-	registry.registerHyperOperator("[%]", func(stack *Stack) error { return op.HyperModulo(stack) })
-	registry.registerHyperOperator("[lg]", func(stack *Stack) error { return op.HyperLog2(stack) })
-	registry.registerHyperOperator("[log]", func(stack *Stack) error { return op.HyperLog10(stack) })
-	registry.registerHyperOperator("[ln]", func(stack *Stack) error { return op.HyperLn(stack) })
+// registerCommandOperators registers operators that return a result immediately.
+func (r *OperatorRegistry) registerCommandOperators(op *Operations) {
+	r.registerCommandOperator("show", func(stack *Stack) (string, error) { return op.Show(stack) })
+	r.registerCommandOperator("showstack", func(stack *Stack) (string, error) { return op.Show(stack) })
+	r.registerCommandOperator("print", func(stack *Stack) (string, error) { return op.Show(stack) })
+	r.registerCommandOperator("vars", func(stack *Stack) (string, error) { return op.ListVariables() })
+	r.registerCommandOperator("constants", func(stack *Stack) (string, error) { return op.ListConstants() })
+	r.registerCommandOperator("clear", func(stack *Stack) (string, error) { op.ClearVariables(); return "All variables cleared", nil })
+	r.registerCommandOperator("clearconstants", func(stack *Stack) (string, error) { op.ClearConstants(); return "All constants cleared", nil })
+}
 
-	return registry
+// registerHyperOperators registers hyper (vectorized) operators.
+func (r *OperatorRegistry) registerHyperOperators(op *Operations) {
+	r.registerHyperOperator("[+]", func(stack *Stack) error { return op.HyperAdd(stack) })
+	r.registerHyperOperator("[-]", func(stack *Stack) error { return op.HyperSubtract(stack) })
+	r.registerHyperOperator("[*]", func(stack *Stack) error { return op.HyperMultiply(stack) })
+	r.registerHyperOperator("[/]", func(stack *Stack) error { return op.HyperDivide(stack) })
+	r.registerHyperOperator("[^]", func(stack *Stack) error { return op.HyperPower(stack) })
+	r.registerHyperOperator("[%]", func(stack *Stack) error { return op.HyperModulo(stack) })
+	r.registerHyperOperator("[lg]", func(stack *Stack) error { return op.HyperLog2(stack) })
+	r.registerHyperOperator("[log]", func(stack *Stack) error { return op.HyperLog10(stack) })
+	r.registerHyperOperator("[ln]", func(stack *Stack) error { return op.HyperLn(stack) })
 }
 
 // registerStandardOperator registers a standard operator that returns empty result.
