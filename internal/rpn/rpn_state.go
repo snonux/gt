@@ -48,16 +48,12 @@ func (r *RPN) GetConstants() ConstantsProvider {
 // GetMode returns the current calculation mode.
 // This method is thread-safe for reads.
 func (r *RPN) GetMode() CalculationMode {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	return r.ops.GetMode()
 }
 
 // SetMode sets the calculation mode.
 // This method is thread-safe for writes.
 func (r *RPN) SetMode(mode CalculationMode) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.ops.SetMode(mode)
 }
 
@@ -96,8 +92,6 @@ func (r *RPN) Stack() []StackValue {
 // Delegates to the Operations instance.
 // This method is thread-safe for writes.
 func (r *RPN) SetPrefixMode(mode PrefixMode) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	r.ops.SetPrefixMode(mode)
 }
 
@@ -105,8 +99,6 @@ func (r *RPN) SetPrefixMode(mode PrefixMode) {
 // Delegates to the Operations instance.
 // This method is thread-safe for reads.
 func (r *RPN) GetPrefixMode() PrefixMode {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 	return r.ops.GetPrefixMode()
 }
 
