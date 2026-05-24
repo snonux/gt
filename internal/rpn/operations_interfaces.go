@@ -53,6 +53,7 @@ type StackOperator interface {
 	Dup(stack *Stack) error
 	Swap(stack *Stack) error
 	Pop(stack *Stack) error
+	Delete(stack *Stack) error
 	Show(stack *Stack) (string, error)
 }
 

@@ -68,22 +68,7 @@ func (r *OperatorRegistry) registerStackOperators(op OperatorProvider) {
 	r.registerStandardOperator("dup", func(stack *Stack) error { return op.Dup(stack) })
 	r.registerStandardOperator("swap", func(stack *Stack) error { return op.Swap(stack) })
 	r.registerStandardOperator("pop", func(stack *Stack) error { return op.Pop(stack) })
-	r.registerStandardOperator("d", func(stack *Stack) error {
-		val, err := popStack(stack, "d")
-		if err != nil {
-			return err
-		}
-		var name string
-		switch v := val.(type) {
-		case *Symbol:
-			name = v.Name()
-		case *StringNum:
-			name = v.String()
-		default:
-			return fmt.Errorf("delete expects a variable name, got %T", val)
-		}
-		return op.DeleteVariable(name)
-	})
+	r.registerStandardOperator("d", func(stack *Stack) error { return op.Delete(stack) })
 }
 
 // registerVariableOperators registers assignment and conversion operators.

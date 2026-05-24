@@ -65,6 +65,26 @@ func (o *Operations) DeleteVariable(name string) error {
 	return nil
 }
 
+// Delete pops a variable name from the stack and deletes that variable.
+// Usage: `name d`
+func (o *Operations) Delete(stack *Stack) error {
+	val, err := popStack(stack, "d")
+	if err != nil {
+		return err
+	}
+
+	var name string
+	switch v := val.(type) {
+	case *Symbol:
+		name = v.Name()
+	case *StringNum:
+		name = v.String()
+	default:
+		return fmt.Errorf("delete expects a variable name, got %T", val)
+	}
+	return o.DeleteVariable(name)
+}
+
 // ListVariables lists all variables.
 // Usage: `vars`
 func (o *Operations) ListVariables() (string, error) {
