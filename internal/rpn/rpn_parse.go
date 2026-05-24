@@ -123,74 +123,55 @@ func handleAssignLeft(input string, r *RPN) (string, bool, error) {
 // Format: name value = expression (name on bottom, value on top, expression after =)
 // Or: name = value (single assignment)
 func handleStandardAssign(input string, r *RPN) (string, bool, error) {
-	// Check for standard assignment format (name = value or name value = expression)
-	hasAssignment := strings.Contains(input, " = ")
-	if !hasAssignment {
-		// Check for " =" (space before equals) without space after
-		hasAssignment = strings.Contains(input, " =")
-		// Additional check: the = must not be followed by another = (i.e., not == or !=)
-		if hasAssignment && strings.Contains(input, "==") {
-			hasAssignment = false
-		}
-		if hasAssignment && strings.Contains(input, "!=") {
-			hasAssignment = false
+	// Tokenize and look for standalone "=" token.
+	// This avoids false positives from == or != which are separate tokens.
+	tokens := Tokenize(input)
+	eqIndex := -1
+	for i, tok := range tokens {
+		if tok == "=" {
+			eqIndex = i
+			break
 		}
 	}
-
-	if !hasAssignment {
+	if eqIndex < 0 {
 		return "", false, nil
 	}
 
-	// Handle single assignment: "name = value"
-	if parts := strings.SplitN(input, " = ", 2); len(parts) == 2 {
-		name := strings.TrimSpace(parts[0])
-		valueStr := strings.TrimSpace(parts[1])
-
-		// Validate name is a single word (variable name)
-		nameFields := strings.Fields(name)
-		if len(nameFields) == 1 {
-			// Validate value is a single number
-			valueFields := strings.Fields(valueStr)
-			if len(valueFields) == 1 {
-				val, err := strconv.ParseFloat(valueFields[0], 64)
-				if err != nil {
-					return "", false, fmt.Errorf("invalid value '%s' for assignment: %w", valueFields[0], err)
-				}
-				if err := r.vars.SetVariable(nameFields[0], val); err != nil {
-					return "", false, err
-				}
-				return fmt.Sprintf("%s = %.10g", nameFields[0], val), true, nil
-			}
+	// Handle single assignment: "name = value" (3 tokens: name, =, value)
+	if eqIndex == 1 && len(tokens) == 3 {
+		name := tokens[0]
+		valueStr := tokens[2]
+		val, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return "", false, nil
 		}
+		if err := r.vars.SetVariable(name, val); err != nil {
+			return "", false, err
+		}
+		return fmt.Sprintf("%s = %.10g", name, val), true, nil
 	}
 
 	// Handle assignment with expression: "name value = expression..."
-	pos := strings.Index(input, " =")
-	if pos >= 0 {
-		before := strings.TrimSpace(input[:pos])
-		after := strings.TrimSpace(input[pos+2:])
+	beforeTokens := tokens[:eqIndex]
+	afterTokens := tokens[eqIndex+1:]
 
-		beforeFields := strings.Fields(before)
-		if len(beforeFields) == 2 {
-			name := beforeFields[0]
-			valueStr := beforeFields[1]
+	if len(beforeTokens) == 2 {
+		name := beforeTokens[0]
+		valueStr := beforeTokens[1]
 
-			// Try to parse value as a number
-			val, err := strconv.ParseFloat(valueStr, 64)
-			if err == nil {
-				// Valid assignment pattern: "name value = expr..." or "name value ="
-				if err := r.vars.SetVariable(name, val); err != nil {
-					return "", false, err
-				}
-
-				// If no expression after assignment, just return assignment info
-				if after == "" {
-					return fmt.Sprintf("%s = %.10g", name, val), true, nil
-				}
-				result, err := r.evaluate(input, strings.Fields(after))
-				return result, true, err
-			}
+		val, err := strconv.ParseFloat(valueStr, 64)
+		if err != nil {
+			return "", false, nil
 		}
+		if err := r.vars.SetVariable(name, val); err != nil {
+			return "", false, err
+		}
+
+		if len(afterTokens) == 0 {
+			return fmt.Sprintf("%s = %.10g", name, val), true, nil
+		}
+		result, err := r.evaluate(input, afterTokens)
+		return result, true, err
 	}
 
 	return "", false, nil

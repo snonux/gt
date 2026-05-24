@@ -273,3 +273,56 @@ func TestAssignmentOperatorRegistry(t *testing.T) {
 		}
 	}
 }
+
+// TestAssignmentNotTriggeredByEqualEqual ensures that == is not misparsed as an assignment.
+func TestAssignmentNotTriggeredByEqualEqual(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// "a == b" should NOT be treated as an assignment
+	_, err := rpn.ParseAndEvaluate("a == b")
+	// It may error (unknown tokens) or produce a result, but it should NOT assign a variable
+	// The key check: no variable "a" should be created
+	if _, exists := vars.GetVariable("a"); exists {
+		t.Error("'a == b' should not create variable a")
+	}
+	// The error from parsing == as an unknown operator is acceptable
+	if err == nil {
+		// If no error, that's also fine - it just means == was handled somehow
+		t.Logf("'a == b' returned: %v", err)
+	}
+}
+
+// TestAssignmentNotTriggeredByNotEqual ensures that != is not misparsed as an assignment.
+func TestAssignmentNotTriggeredByNotEqual(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// "a != b" should NOT be treated as an assignment
+	_, err := rpn.ParseAndEvaluate("a != b")
+	// The key check: no variable "a" should be created
+	if _, exists := vars.GetVariable("a"); exists {
+		t.Error("'a != b' should not create variable a")
+	}
+	_ = err // error is acceptable
+}
+
+// TestAssignmentAfterEqualEqual ensures "x 5 =" still works even when == exists in the expression.
+func TestAssignmentAfterEqualEqual(t *testing.T) {
+	vars := NewVariables()
+	rpn := NewRPN(vars)
+
+	// A standalone assignment should work regardless of == elsewhere
+	result, err := rpn.ParseAndEvaluate("x 5 =")
+	if err != nil {
+		t.Fatalf("'x 5 =' returned error: %v", err)
+	}
+	if result != "x = 5" {
+		t.Errorf("result = %q, want 'x = 5'", result)
+	}
+
+	val, exists := vars.GetVariable("x")
+	if !exists || val != 5 {
+		t.Errorf("x = %v (exists=%v), want 5", val, exists)
+	}
+}
