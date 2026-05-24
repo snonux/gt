@@ -396,6 +396,8 @@ func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string
 		stack.Push(NewNumber(val, r.ops.GetMode()))
 		return "", nil
 	}
+	// Note: variable and constant values are stored as float64, so precision
+	// is already lost at storage time; NewNumber here preserves that behavior.
 
 	// Handle standard operators (common logic extracted for DRY)
 	// This must be done BEFORE pushing Symbol for unknown identifiers,
@@ -482,11 +484,20 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 	}
 
 	// Check if it's a number
-	if num, err := strconv.ParseFloat(token, 64); err == nil {
+	if _, err := strconv.ParseFloat(token, 64); err == nil {
 		if stack.Len() >= r.maxStack {
 			return false, fmt.Errorf("stack overflow")
 		}
-		stack.Push(NewNumber(num, r.ops.GetMode()))
+		if r.ops.GetMode() == RationalMode {
+			rat, err := NewRatFromString(token)
+			if err != nil {
+				return false, err
+			}
+			stack.Push(rat)
+		} else {
+			num, _ := strconv.ParseFloat(token, 64)
+			stack.Push(NewFloat(num))
+		}
 		return true, nil
 	}
 

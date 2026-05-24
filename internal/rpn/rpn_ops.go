@@ -49,7 +49,11 @@ func (r *RPN) ResultStack(tokens []string) (string, error) {
 		// Check if it's a variable reference (push its value)
 		val, exists := r.vars.GetVariable(token)
 		if exists {
-			stack.Push(NewNumber(val, mode))
+			if mode == RationalMode {
+				stack.Push(NewRat(val))
+			} else {
+				stack.Push(NewFloat(val))
+			}
 		} else {
 			return "", fmt.Errorf("unknown token '%s'", token)
 		}
