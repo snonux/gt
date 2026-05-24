@@ -492,7 +492,7 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 	}
 
 	// Check if it's a number
-	if _, err := strconv.ParseFloat(token, 64); err == nil {
+	if num, err := strconv.ParseFloat(token, 64); err == nil {
 		if stack.Len() >= r.maxStack {
 			return false, fmt.Errorf("stack overflow")
 		}
@@ -503,7 +503,6 @@ func (r *RPN) pushLiteral(stack *Stack, token string) (bool, error) {
 			}
 			stack.Push(rat)
 		} else {
-			num, _ := strconv.ParseFloat(token, 64)
 			stack.Push(NewFloat(num))
 		}
 		return true, nil
