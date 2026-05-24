@@ -413,13 +413,13 @@ Attach a unit directly to a number (no space):
 
 ```bash
 gt '100Mbps 1hr *'     # 100 Mbps × 1 hour = 360 Gbits
-# → 3.6e+11bits
+# → 3.6e+11
 
 gt '5GB 2hr /'         # 5 GB ÷ 2 hours
-# → 5.555555556e+09bps
+# → 5.555555556e+09
 
 gt '100km 1hr /'       # Speed from distance/time
-# → 27.77777778mps
+# → 27.77777778
 ```
 
 ### Available Metric Categories
@@ -440,13 +440,13 @@ Convert a value to a different unit using `@` prefix and `convert`:
 
 ```bash
 gt '1000Mbps @Gbps convert'    # 1000 Mbps → 1 Gbps
-# → 1Gbps
+# → 1
 
 gt '1hr @min convert'          # 1 hour → 60 min
-# → 60min
+# → 60
 
 gt '1km @mi convert'           # 1 km → ~0.6214 mi
-# → 0.6213711922mi
+# → 0.6213711922
 ```
 
 ### Metric-Aware Arithmetic
@@ -455,13 +455,13 @@ gt '1km @mi convert'           # 1 km → ~0.6214 mi
 
 ```bash
 gt '100Mbps 50Mbps +'          # Same category: 150 Mbps
-# → 150Mbps
+# → 150
 
 gt '1km 500m +'                # Mixed units, same category: 1.5 km
-# → 1.5km
+# → 1.5
 
 gt '5 100Mbps +'               # Cool absorbs: 105 Mbps
-# → 105Mbps
+# → 105
 
 gt '100Mbps 2hr +'             # ERROR: incompatible categories
 ```
@@ -470,20 +470,20 @@ gt '100Mbps 2hr +'             # ERROR: incompatible categories
 
 ```bash
 gt '100Mbps 1hr *'             # rate × time = data size
-# → 3.6e+11bits
+# → 3.6e+11
 
 gt '100kmh 1hr *'              # speed × time = distance
-# → 100000m
+# → 100000
 ```
 
 **Division** also supports cross-category inference:
 
 ```bash
 gt '10GB 2hr /'                # data / time = rate
-# → 1.111111111e+10bps
+# → 11111111.11
 
 gt '1km 1s /'                  # distance / time = speed
-# → 1000mps
+# → 1000
 ```
 
 **Power** (`^`) always returns `Cool` (unitless) — `x^n` has different units than `x`:
@@ -495,34 +495,31 @@ gt '2hr 3 ^'                   # 2³ = 8 (not 8hr³)
 
 ### Prefix Modes: SI vs IEC
 
-Data size prefixes can use SI (1000-based) or IEC (1024-based) factors:
+Data size prefixes can use SI (1000-based) or IEC (1024-based) factors. Prefix mode is a REPL setting — in single-command mode the default is SI.
 
-```bash
-gt 'metric decimal set'        # SI mode (KB = 1000 bytes)
-# → prefix mode: SI
-
-gt 'metric binary set'         # IEC mode (KB = 1024 bytes)
-# → prefix mode: IEC
-
-gt '1GB @MB convert'           # SI: 1000 MB
-# → 1000MB
-
-gt 'metric binary set'         # Switch to IEC
-gt '1GB @MB convert'           # IEC: 1024 MB
-# → 1024MB
+In REPL mode:
+```
+> metric decimal set     # SI mode (KB = 1000 bytes)
+prefix mode: SI
+> 1GB @MB convert        # SI: 1000 MB
+1000
+> metric binary set      # IEC mode (KB = 1024 bytes)
+prefix mode: IEC
+> 1GB @MB convert        # IEC: 1024 MB
+1024
 ```
 
 ### Metric Commands
 
 ```bash
 gt 'metric show'               # Show metric info for top of stack
-# → Mbps, DataRate, base: bps, factor: 1000000
+# → Mbps, DataRate, base: bps, factor: 1e+06
 
 gt 'metric list'               # List all categories
 # → DataRate, DataSize, Distance, Speed, Time, Universal, Weight
 
 gt 'metric DataRate'           # List metrics in a category
-# → bps, Gbps, Kbps, Mbps, Tbps
+# → Gbps, Kbps, Mbps, Tbps, bps
 
 gt 'metric compatible'         # Check if top two stack metrics are compatible
 # → Mbps (DataRate) and Gbps (DataRate): true
@@ -536,13 +533,13 @@ Define your own units:
 gt 'custom define foobar 42 Custom'    # Register custom unit
 # → defined custom metric "foobar" (factor: 42, category: Custom)
 
-gt '10foobar 5foobar +'               # Use it in arithmetic
-# → 15foobar
+gt 'custom define foobar 42 Custom 10foobar 5foobar +'  # Use it in arithmetic
+# → 15
 
-gt 'custom list'                       # List custom metrics
+gt 'custom define foobar 42 Custom custom list'         # List custom metrics
 # → foobar
 
-gt 'custom undefine foobar'            # Remove custom unit
+gt 'custom define foobar 42 Custom custom undefine foobar'  # Remove custom unit
 # → removed custom metric "foobar"
 ```
 
