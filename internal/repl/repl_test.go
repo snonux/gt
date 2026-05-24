@@ -774,3 +774,72 @@ func TestREPLDefaultGetCommandDescription(t *testing.T) {
 		})
 	}
 }
+
+func TestRPNHandlerStackNotCorruptedOnError(t *testing.T) {
+	repl := createTestREPL()
+
+	// First, push some values onto the stack
+	defaultExecutor(repl, "1 2 3 ")
+
+	// Save the stack state before the failing expression
+	beforeStack := repl.rpnState.rpnCalc.GetCurrentStack()
+	if len(beforeStack) != 3 {
+		t.Fatalf("expected 3 values on stack before error, got %d", len(beforeStack))
+	}
+
+	// Now try a failing multi-word RPN expression
+	defaultExecutor(repl, "4 5 + invalidtoken")
+
+	// Verify the stack was restored to its state before the failed expression
+	afterStack := repl.rpnState.rpnCalc.GetCurrentStack()
+	if len(afterStack) != len(beforeStack) {
+		t.Errorf("stack corrupted by failed expression: had %d values, now has %d", len(beforeStack), len(afterStack))
+	}
+	for i := range beforeStack {
+		if afterStack[i].String() != beforeStack[i].String() {
+			t.Errorf("stack[%d] corrupted: was %q, now %q", i, beforeStack[i].String(), afterStack[i].String())
+		}
+	}
+}
+
+func TestRPNHandlerErrorReturnedNotSwallowed(t *testing.T) {
+	repl := createTestREPL()
+
+	// Test that ParseAndEvaluate errors on multi-word input are propagated
+	h := &RPNHandler{}
+	_, handled, err := h.Handle(repl, "3 4 + invalidtoken")
+
+	if !handled {
+		t.Error("multi-word RPN with error should be handled (not fall through)")
+	}
+	if err == nil {
+		t.Error("multi-word RPN with invalid token should return an error")
+	}
+}
+
+func TestRPNHandlerStackNotCorruptedOnPrefixedError(t *testing.T) {
+	repl := createTestREPL()
+
+	// Push values onto the stack
+	defaultExecutor(repl, "10 20 ")
+
+	// Save the stack state before the failing prefixed expression
+	beforeStack := repl.rpnState.rpnCalc.GetCurrentStack()
+	if len(beforeStack) != 2 {
+		t.Fatalf("expected 2 values on stack before error, got %d", len(beforeStack))
+	}
+
+	// Try a failing prefixed RPN expression
+	defaultExecutor(repl, "rpn 30 40 + invalidtoken")
+
+	// Verify the stack was restored
+	afterStack := repl.rpnState.rpnCalc.GetCurrentStack()
+	if len(afterStack) != len(beforeStack) {
+		t.Errorf("stack corrupted by failed rpn-prefixed expression: had %d values, now has %d", len(beforeStack), len(afterStack))
+	}
+	for i := range beforeStack {
+		if afterStack[i].String() != beforeStack[i].String() {
+			t.Errorf("stack[%d] corrupted: was %q, now %q", i, beforeStack[i].String(), afterStack[i].String())
+		}
+	}
+}

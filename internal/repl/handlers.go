@@ -152,8 +152,13 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if strings.HasPrefix(lowerInput, "rpn ") || strings.HasPrefix(lowerInput, "calc ") {
 		// Extract the expression after rpn/calc
 		rest := strings.TrimSpace(strings.TrimPrefix(input, strings.SplitN(input, " ", 2)[0]))
+
+		// Save stack state so a failed expression doesn't corrupt it
+		savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
+
 		result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(rest)
 		if err != nil {
+			repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
 			return "", true, err
 		}
 		return result, true, nil
@@ -163,10 +168,16 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	if repl.rpnState != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
+			// Save stack state so a failed expression doesn't corrupt it
+			savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
+
 			result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(input)
-			if err == nil {
-				return result, true, nil
+			if err != nil {
+				// Restore the stack to its state before the failed expression
+				repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
+				return "", true, err
 			}
+			return result, true, nil
 		}
 
 		// Try evaluating as a single operator on the current RPN stack
