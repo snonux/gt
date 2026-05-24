@@ -87,6 +87,16 @@ type REPL struct {
 	logWriter     io.WriteCloser
 }
 
+// RpnCalculator returns the RPN calculator behind this REPL as an interface.
+// This lets handlers depend on the RPNCalculator interface (DIP) rather than
+// reaching through repl.rpnState.rpnCalc into concrete types.
+func (r *REPL) RpnCalculator() RPNCalculator {
+	if r.rpnState == nil {
+		return nil
+	}
+	return r.rpnState.rpnCalc
+}
+
 // ReadlinePrompt provides an interactive prompt using chzyer/readline.
 // It supports:
 //   - Ctrl+R for reverse history search

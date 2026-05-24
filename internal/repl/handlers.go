@@ -12,6 +12,20 @@ import (
 	"codeberg.org/snonux/gt/internal/rpn"
 )
 
+// RPNCalculator defines the methods needed by REPL handlers to interact with
+// the RPN engine. By depending on this interface instead of the concrete *rpn.RPN,
+// handlers obey DIP and the Law of Demeter.
+type RPNCalculator interface {
+	ParseAndEvaluate(string) (string, error)
+	EvalOperator(string) (string, error)
+	GetCurrentStack() []rpn.StackValue
+	SetCurrentStack([]rpn.StackValue)
+	SetMode(rpn.CalculationMode)
+	GetMode() rpn.CalculationMode
+	IsStandardOperator(string) bool
+	IsHyperOperator(string) bool
+}
+
 // CommandHandler represents a handler in the chain of responsibility pattern.
 // Each handler can process a command or pass it to the next handler in the chain.
 //
@@ -104,21 +118,21 @@ func handleRatCommand(repl *REPL, input string) (string, bool, error) {
 	}
 
 	modeArg := strings.ToLower(args[1])
-	rpnCalc := repl.rpnState.rpnCalc
+	calc := repl.RpnCalculator()
 
 	switch modeArg {
 	case "on":
-		rpnCalc.SetMode(rpn.RationalMode)
+		calc.SetMode(rpn.RationalMode)
 		return "Rational mode enabled", true, nil
 	case "off":
-		rpnCalc.SetMode(rpn.FloatMode)
+		calc.SetMode(rpn.FloatMode)
 		return "Rational mode disabled (using float64)", true, nil
 	case "toggle":
-		if rpnCalc.GetMode() == rpn.FloatMode {
-			rpnCalc.SetMode(rpn.RationalMode)
+		if calc.GetMode() == rpn.FloatMode {
+			calc.SetMode(rpn.RationalMode)
 			return "Rational mode enabled", true, nil
 		} else {
-			rpnCalc.SetMode(rpn.FloatMode)
+			calc.SetMode(rpn.FloatMode)
 			return "Rational mode disabled (using float64)", true, nil
 		}
 	default:
@@ -136,10 +150,11 @@ type RPNHandler struct {
 // evalWithStackRestore evaluates an RPN expression, restoring the stack on error
 // so that a failed parse never corrupts the user's stack.
 func (h *RPNHandler) evalWithStackRestore(repl *REPL, input string) (string, error) {
-	savedStack := repl.rpnState.rpnCalc.GetCurrentStack()
-	result, err := repl.rpnState.rpnCalc.ParseAndEvaluate(input)
+	calc := repl.RpnCalculator()
+	savedStack := calc.GetCurrentStack()
+	result, err := calc.ParseAndEvaluate(input)
 	if err != nil {
-		repl.rpnState.rpnCalc.SetCurrentStack(savedStack)
+		calc.SetCurrentStack(savedStack)
 		return "", err
 	}
 	return result, nil
@@ -173,7 +188,8 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 	}
 
 	// Try RPN parsing first (for bare RPN expressions like "3 4 +")
-	if repl.rpnState != nil {
+	calc := repl.RpnCalculator()
+	if calc != nil {
 		// Check if input looks like RPN (contains spaces or is a single known operator)
 		if strings.Contains(input, " ") {
 			result, err := h.evalWithStackRestore(repl, input)
@@ -188,8 +204,8 @@ func (h *RPNHandler) Handle(repl *REPL, input string) (output string, handled bo
 		if len(fields) == 1 {
 			token := fields[0]
 			op := strings.ToLower(token)
-			if repl.rpnState.rpnCalc.IsStandardOperator(op) || repl.rpnState.rpnCalc.IsHyperOperator(op) {
-				result, err := repl.rpnState.rpnCalc.EvalOperator(op)
+			if calc.IsStandardOperator(op) || calc.IsHyperOperator(op) {
+				result, err := calc.EvalOperator(op)
 				if err != nil {
 					return "", true, err
 				}
