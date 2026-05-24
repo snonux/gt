@@ -352,11 +352,6 @@ func (r *RPN) processResult(stack *Stack, input string) (string, error) {
 
 // handleOperator handles operators and special commands using the operator registry.
 func (r *RPN) handleOperator(stack *Stack, token string, tokenIndex int) (string, error) {
-	// Check if it's a number first
-	if _, err := strconv.ParseFloat(token, 64); err == nil {
-		return "", nil
-	}
-
 	// Check symbol syntax (:x)
 	if pushed, err := r.checkAndPushSymbol(stack, token); err != nil {
 		return "", err
