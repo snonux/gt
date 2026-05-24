@@ -76,13 +76,48 @@ type PowerIntOperator interface {
 	FastPower(stack *Stack) error
 }
 
+// ModeController defines the interface for calculation mode and prefix mode control.
+type ModeController interface {
+	SetMode(CalculationMode)
+	GetMode() CalculationMode
+	SetPrefixMode(PrefixMode)
+	GetPrefixMode() PrefixMode
+}
+
+// MetricCommander defines the interface for metric query commands.
+type MetricCommander interface {
+	MetricRegistry() *MetricRegistry
+	MetricShow(stack *Stack) (string, error)
+	MetricList(stack *Stack) (string, error)
+	MetricCategory(stack *Stack, categoryName string) (string, error)
+	MetricCompatible(stack *Stack) (string, error)
+}
+
+// CustomMetricManager defines the interface for custom metric operations.
+type CustomMetricManager interface {
+	CustomShow(stack *Stack, name string) (string, error)
+	CustomList(stack *Stack) (string, error)
+	CustomDefine(name string, factor float64, category string) error
+	CustomUndefine(name string) error
+}
+
+// OperationsProvider combines all interfaces that RPN needs from Operations.
+// RPN depends on this interface (DIP) rather than the concrete *Operations type.
+type OperationsProvider interface {
+	ModeController
+	StackOperator
+	MetricCommander
+	CustomMetricManager
+	SetConstants(ConstantsProvider)
+}
+
 // Operator implementations are split across focused sub-interfaces
 // (ArithmeticOperator, LogarithmicOperator, MetricOperator, BooleanOperator,
 // HyperOperator, StackOperator, VariableOperator, ConstantOperator,
 // PowerIntOperator) for clarity.
-// The combined Operator interface was removed — RPN is the sole client
-// and Operations is the sole implementor, so the interface added
-// indirection without practical benefit (ISP).
 //
-// Each sub-interface is satisfied by *Operations, verified by compile-time
-// checks in operations.go.
+// The OperationsProvider interface is the combined interface that RPN depends
+// on, satisfying DIP by decoupling RPN from the concrete *Operations type.
+//
+// Each sub-interface and OperationsProvider is satisfied by *Operations,
+// verified by compile-time checks in operations.go.

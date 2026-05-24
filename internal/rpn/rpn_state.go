@@ -14,7 +14,7 @@ type RPN struct {
 	mu             sync.RWMutex
 	vars           VariableStore
 	consts         ConstantsProvider
-	ops            *Operations
+	ops            OperationsProvider
 	opRegistry     *OperatorRegistry
 	assignHandler  *assignmentHandler
 	maxStack       int
