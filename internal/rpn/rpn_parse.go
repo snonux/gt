@@ -9,59 +9,6 @@ import (
 	"strings"
 )
 
-// assignmentHandler manages all assignment strategies.
-// It delegates assignment parsing to specialized handlers for :=, =:, and = operators.
-type assignmentHandler struct {
-	registry *assignmentRegistry
-}
-
-// assignmentRegistry maintains a registry of assignment strategies.
-type assignmentRegistry struct {
-	strategies []AssignmentStrategy
-}
-
-// AssignmentStrategy represents a function that attempts to parse and handle an assignment.
-// Returns (result string, handled bool, error error).
-type AssignmentStrategy func(input string, r *RPN) (string, bool, error)
-
-// newAssignmentRegistry creates a new assignment strategy registry.
-func newAssignmentRegistry() *assignmentRegistry {
-	return &assignmentRegistry{
-		strategies: make([]AssignmentStrategy, 0),
-	}
-}
-
-// register adds an assignment strategy to the registry.
-func (r *assignmentRegistry) register(strategy AssignmentStrategy) {
-	r.strategies = append(r.strategies, strategy)
-}
-
-// parse attempts to parse input using registered strategies in order.
-func (r *assignmentRegistry) parse(input string, rn *RPN) (string, bool, error) {
-	for _, strategy := range r.strategies {
-		if result, handled, err := strategy(input, rn); handled {
-			return result, true, err
-		}
-	}
-	return "", false, nil
-}
-
-// newAssignmentHandler creates a new assignment handler with all strategies registered.
-func newAssignmentHandler() *assignmentHandler {
-	h := &assignmentHandler{
-		registry: newAssignmentRegistry(),
-	}
-	h.registry.register(handleAssignRight)
-	h.registry.register(handleAssignLeft)
-	h.registry.register(handleStandardAssign)
-	return h
-}
-
-// handle attempts to parse input using registered assignment strategies.
-func (h *assignmentHandler) handle(input string, r *RPN) (string, bool, error) {
-	return h.registry.parse(input, r)
-}
-
 // handleAssignmentOp is the shared implementation for := and =: operators.
 // Both share identical logic: check for operator, extract fields, try two
 // orderings (value name, then name value), parse, set variable, evaluate remainder.
@@ -194,10 +141,23 @@ func (r *RPN) ParseAndEvaluate(input string) (string, error) {
 	}
 	r.mu.Unlock()
 
-	// Handle assignment formats using the new assignment handler
-	if assignmentResult, isAssignment, err := r.assignHandler.handle(input, r); err != nil {
-		return "", fmt.Errorf("rpn: failed to handle assignment: %w", err)
-	} else if isAssignment {
+	// Handle assignment formats: :=, =:, =
+	var assignmentResult string
+	var isAssignment bool
+	var assignmentErr error
+
+	assignmentResult, isAssignment, assignmentErr = handleAssignRight(input, r)
+	if !isAssignment {
+		assignmentResult, isAssignment, assignmentErr = handleAssignLeft(input, r)
+	}
+	if !isAssignment {
+		assignmentResult, isAssignment, assignmentErr = handleStandardAssign(input, r)
+	}
+
+	if assignmentErr != nil {
+		return "", fmt.Errorf("rpn: failed to handle assignment: %w", assignmentErr)
+	}
+	if isAssignment {
 		return assignmentResult, nil
 	}
 

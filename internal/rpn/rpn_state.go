@@ -16,7 +16,6 @@ type RPN struct {
 	consts         ConstantsProvider
 	ops            OperationsProvider
 	opRegistry     *OperatorRegistry
-	assignHandler  *assignmentHandler
 	maxStack       int
 	currentStack   *Stack
 }
@@ -33,7 +32,6 @@ func NewRPN(vars VariableStore, reg ...*MetricRegistry) *RPN {
 		consts:        consts,
 		ops:           ops,
 		opRegistry:    NewOperatorRegistry(ops),
-		assignHandler: newAssignmentHandler(),
 		maxStack:      1000, // Reasonable limit for RPN expressions
 		currentStack:  NewStack(),
 	}
