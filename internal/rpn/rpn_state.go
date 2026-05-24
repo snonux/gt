@@ -15,7 +15,7 @@ type RPN struct {
 	vars           VariableStore
 	consts         ConstantsProvider
 	ops            OperationsProvider
-	opRegistry     *OperatorRegistry
+	opRegistry     OperatorRegistryProvider
 	maxStack       int
 	currentStack   *Stack
 }

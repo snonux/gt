@@ -152,6 +152,15 @@ type OperationsProvider interface {
 	CustomMetricManager
 }
 
+// OperatorRegistryProvider defines the methods RPN needs from the operator registry.
+// RPN depends on this interface (DIP) rather than the concrete *OperatorRegistry type.
+type OperatorRegistryProvider interface {
+	IsStandardOperator(token string) bool
+	IsHyperOperator(token string) bool
+	HandleStandardOperator(stack *Stack, token string) (string, bool, error)
+	HandleHyperOperator(stack *Stack, token string) (string, bool, error)
+}
+
 // Operator implementations are split across focused sub-interfaces
 // (ArithmeticOperator, LogarithmicOperator, MetricOperator, BooleanOperator,
 // HyperOperator, StackOperator, VariableOperator, ConstantOperator,
