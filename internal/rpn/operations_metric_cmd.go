@@ -81,16 +81,13 @@ func (o *Operations) MetricCompatible(stack *Stack) (string, error) {
 }
 
 // parseCategory converts a category name string to a Category constant.
-// Iterates over all valid Category values using a for loop bounded by _sentinel,
-// so adding a new Category constant (between Universal and _sentinel) automatically
-// makes it available here without modifying this function.
+// Uses a pre-built map for O(1) lookup.
 func parseCategory(name string) (Category, bool) {
-	for cat := Category(0); cat < _sentinel; cat++ {
-		if cat.String() == name {
-			return cat, true
-		}
+	cat, ok := categoryByName[name]
+	if !ok {
+		return invalidCategory, false
 	}
-	return invalidCategory, false
+	return cat, true
 }
 
 // CustomShow returns detailed info for custom metrics.

@@ -49,6 +49,15 @@ var categoryNames = []string{
 	"Custom",
 }
 
+// categoryByName provides O(1) lookup from category name to Category value.
+var categoryByName = func() map[string]Category {
+	m := make(map[string]Category, len(categoryNames))
+	for i, name := range categoryNames {
+		m[name] = Category(i)
+	}
+	return m
+}()
+
 // String returns the human-readable name of the category.
 func (c Category) String() string {
 	if c >= 0 && c < Category(len(categoryNames)) {
