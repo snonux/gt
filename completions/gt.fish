@@ -27,360 +27,360 @@ end
 # ── Flags ────────────────────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_needs_top_level" \
-    -l log -r -d "Session log file (REPL mode)"
+    -l log -r
 
 # ── Top-level subcommands ────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_needs_top_level" \
-    -a version -d "Show version"
+    -a version
 
 # ── Expression prefixes ──────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "rpn" -d "RPN expression prefix"
+    -a "rpn"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "calc" -d "Calculation prefix (alias)"
+    -a "calc"
 
 # ── Arithmetic operators ─────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "+" -d "Addition"
+    -a "+"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "-" -d "Subtraction"
+    -a "-"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "*" -d "Multiplication"
+    -a "*"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "/" -d "Division"
+    -a "/"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "^" -d "Power"
+    -a "^"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "**" -d "Fast integer power"
+    -a "**"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "%" -d "Modulo"
+    -a "%"
 
 # ── Logarithmic operators ────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "lg" -d "Log base 2"
+    -a "lg"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "log" -d "Log base 10"
+    -a "log"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ln" -d "Natural log"
+    -a "ln"
 
 # ── Comparison operators ─────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "gt" -d "Greater than"
+    -a "gt"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "lt" -d "Less than"
+    -a "lt"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "gte" -d "Greater or equal"
+    -a "gte"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "lte" -d "Less or equal"
+    -a "lte"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "eq" -d "Equal"
+    -a "eq"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "==" -d "Equal"
+    -a "=="
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "neq" -d "Not equal"
+    -a "neq"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "!=" -d "Not equal"
+    -a "!="
 
 # ── Hyper (n-ary) operators ──────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[+]" -d "Hyper add (n-ary)"
+    -a "[+]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[-]" -d "Hyper subtract (n-ary)"
+    -a "[-]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[*]" -d "Hyper multiply (n-ary)"
+    -a "[*]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[/]" -d "Hyper divide (n-ary)"
+    -a "[/]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[^]" -d "Hyper power (n-ary)"
+    -a "[^]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[%]" -d "Hyper modulo (n-ary)"
+    -a "[%]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[lg]" -d "Hyper log2 (n-ary)"
+    -a "[lg]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[log]" -d "Hyper log10 (n-ary)"
+    -a "[log]"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "[ln]" -d "Hyper ln (n-ary)"
+    -a "[ln]"
 
 # ── Stack operators ──────────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "dup" -d "Duplicate top of stack"
+    -a "dup"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "swap" -d "Swap top two stack values"
+    -a "swap"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "pop" -d "Discard top of stack"
+    -a "pop"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "d" -d "Delete top two stack values"
+    -a "d"
 
 # ── Assignment / conversion operators ────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a ":=" -d "Assign right-to-left"
+    -a ":="
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "=:" -d "Assign left-to-right"
+    -a "=:"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "convert" -d "Convert metric unit (with @unit)"
+    -a "convert"
 
 # ── Command operators ────────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "show" -d "Show stack"
+    -a "show"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "showstack" -d "Show stack (alias)"
+    -a "showstack"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "print" -d "Show stack (alias)"
+    -a "print"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "vars" -d "List variables"
+    -a "vars"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "constants" -d "List constants"
+    -a "constants"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "clear" -d "Clear all variables"
+    -a "clear"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "clearconstants" -d "Reset constants to defaults"
+    -a "clearconstants"
 
 # ── Boolean literals ─────────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "true" -d "Boolean true (coerces to 1)"
+    -a "true"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "false" -d "Boolean false (coerces to 0)"
+    -a "false"
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "pi" -d "π (3.14159…)"
+    -a "pi"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "e" -d "Euler's number (2.71828…)"
+    -a "e"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "euler" -d "Euler's number (alias)"
+    -a "euler"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "phi" -d "Golden ratio (1.61803…)"
+    -a "phi"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "sqrt2" -d "√2 (1.41421…)"
+    -a "sqrt2"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "sqrt3" -d "√3 (1.73205…)"
+    -a "sqrt3"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "sqrt5" -d "√5 (2.23606…)"
+    -a "sqrt5"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ln2" -d "ln(2) (0.69314…)"
+    -a "ln2"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "log2" -d "ln(2) (alias)"
+    -a "log2"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ln10" -d "ln(10) (2.30258…)"
+    -a "ln10"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "log10" -d "ln(10) (alias)"
+    -a "log10"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "log_e" -d "log₁₀(e) (0.43429…)"
+    -a "log_e"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "log_e10" -d "log₁₀(e) (alias)"
+    -a "log_e10"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "tau" -d "τ = 2π (6.28318…)"
+    -a "tau"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "inv_pi" -d "1/π (0.31830…)"
+    -a "inv_pi"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "inv_e" -d "1/e (0.36787…)"
+    -a "inv_e"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "inf" -d "Positive infinity"
+    -a "inf"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "infinity" -d "Positive infinity (alias)"
+    -a "infinity"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "-inf" -d "Negative infinity"
+    -a "-inf"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "-infinity" -d "Negative infinity (alias)"
+    -a "-infinity"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "nan" -d "NaN (Not a Number)"
+    -a "nan"
 
 # ── Metric units ─────────────────────────────────────────────────────────────
 
 # DataRate (base: bps)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "bps" -d "Bits per second"
+    -a "bps"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "Kbps" -d "Kilobits per second"
+    -a "Kbps"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "Mbps" -d "Megabits per second"
+    -a "Mbps"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "Gbps" -d "Gigabits per second"
+    -a "Gbps"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "Tbps" -d "Terabits per second"
+    -a "Tbps"
 
 # DataSize (base: bits)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "bits" -d "Bits"
+    -a "bits"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "bytes" -d "Bytes"
+    -a "bytes"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "KB" -d "Kilobyte (SI / IEC)"
+    -a "KB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "MB" -d "Megabyte (SI / IEC)"
+    -a "MB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "GB" -d "Gigabyte (SI / IEC)"
+    -a "GB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "TB" -d "Terabyte (SI / IEC)"
+    -a "TB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "PB" -d "Petabyte (SI / IEC)"
+    -a "PB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "KiB" -d "Kibibyte (1024 bytes)"
+    -a "KiB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "MiB" -d "Mebibyte (1024 KiB)"
+    -a "MiB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "GiB" -d "Gibibyte (1024 MiB)"
+    -a "GiB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "TiB" -d "Tebibyte (1024 GiB)"
+    -a "TiB"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "PiB" -d "Pebibyte (1024 TiB)"
+    -a "PiB"
 
 # Time (base: seconds)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ms" -d "Milliseconds"
+    -a "ms"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "s" -d "Seconds"
+    -a "s"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "sec" -d "Seconds (alias)"
+    -a "sec"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "secs" -d "Seconds (alias)"
+    -a "secs"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "min" -d "Minutes"
+    -a "min"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "hr" -d "Hours"
+    -a "hr"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "day" -d "Days"
+    -a "day"
 
 # Weight (base: kilograms)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mg" -d "Milligrams"
+    -a "mg"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "g" -d "Grams"
+    -a "g"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "kg" -d "Kilograms"
+    -a "kg"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ton" -d "Metric tons"
+    -a "ton"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "lb" -d "Pounds"
+    -a "lb"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "oz" -d "Ounces"
+    -a "oz"
 
 # Speed (base: m/s)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mps" -d "Meters per second"
+    -a "mps"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "kmh" -d "Kilometers per hour"
+    -a "kmh"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mph" -d "Miles per hour"
+    -a "mph"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "knots" -d "Knots"
+    -a "knots"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "knot" -d "Knots (alias)"
+    -a "knot"
 
 # Distance (base: meters)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "m" -d "Meters"
+    -a "m"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "km" -d "Kilometers"
+    -a "km"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mi" -d "Miles"
+    -a "mi"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mile" -d "Miles (alias)"
+    -a "mile"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "miles" -d "Miles (alias)"
+    -a "miles"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "ft" -d "Feet"
+    -a "ft"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "foot" -d "Feet (alias)"
+    -a "foot"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "feet" -d "Feet (alias)"
+    -a "feet"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "in" -d "Inches"
+    -a "in"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "nm" -d "Nautical miles"
+    -a "nm"
 
 # DataRate aliases (bit/s notation)
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "bit/s" -d "Bits per second (alias)"
+    -a "bit/s"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "kbit/s" -d "Kilobits per second (alias)"
+    -a "kbit/s"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "mbit/s" -d "Megabits per second (alias)"
+    -a "mbit/s"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "gbit/s" -d "Gigabits per second (alias)"
+    -a "gbit/s"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "tbit/s" -d "Terabits per second (alias)"
+    -a "tbit/s"
 
 # ── `metric` subcommand ──────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_seen_subcommand_from metric" \
-    -a "show" -d "Show metric info for top of stack"
+    -a "show"
 complete -c gt -n "__fish_seen_subcommand_from metric" \
-    -a "list" -d "List all metric categories"
+    -a "list"
 complete -c gt -n "__fish_seen_subcommand_from metric" \
-    -a "compatible" -d "Check metric compatibility (top 2 values)"
+    -a "compatible"
 complete -c gt -n "__fish_seen_subcommand_from metric" \
-    -a "decimal set" -d "Switch to SI prefix mode (1000-based)"
+    -a "decimal set"
 complete -c gt -n "__fish_seen_subcommand_from metric" \
-    -a "binary set" -d "Switch to IEC prefix mode (1024-based)"
+    -a "binary set"
 
 # metric <category> — list metrics in a category
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "DataRate" -d "bps, Kbps, Mbps, Gbps, Tbps"
+    -a "DataRate"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "DataSize" -d "bits, bytes, KB, MB, GB, …"
+    -a "DataSize"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "Distance" -d "m, km, mi, ft, in, nm"
+    -a "Distance"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "Speed" -d "mps, kmh, mph, knots"
+    -a "Speed"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "Time" -d "ms, s, min, hr, day"
+    -a "Time"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "Universal" -d "Cool (unitless)"
+    -a "Universal"
 complete -c gt \
     -n "__fish_seen_subcommand_from metric; and not __fish_seen_subcommand_from show list compatible 'decimal set' 'binary set'" \
-    -a "Weight" -d "mg, g, kg, ton, lb, oz"
+    -a "Weight"
 
 # ── `custom` subcommand ──────────────────────────────────────────────────────
 
 complete -c gt -n "__fish_seen_subcommand_from custom" \
-    -a "show" -d "Show custom metric(s)"
+    -a "show"
 complete -c gt -n "__fish_seen_subcommand_from custom" \
-    -a "list" -d "List all custom metrics"
+    -a "list"
 complete -c gt -n "__fish_seen_subcommand_from custom" \
-    -a "define" -d "Define a new custom metric"
+    -a "define"
 complete -c gt -n "__fish_seen_subcommand_from custom" \
-    -a "undefine" -d "Remove a custom metric"
+    -a "undefine"
 
 # custom define <name> <factor> <category> — complete categories
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Custom" -d "Custom (user-defined)"
+    -a "Custom"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "DataRate" -d "Data rate category"
+    -a "DataRate"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "DataSize" -d "Data size category"
+    -a "DataSize"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Distance" -d "Distance category"
+    -a "Distance"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Speed" -d "Speed category"
+    -a "Speed"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Time" -d "Time category"
+    -a "Time"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Universal" -d "Universal (unitless)"
+    -a "Universal"
 complete -c gt \
     -n "__fish_seen_subcommand_from define" \
-    -a "Weight" -d "Weight category"
+    -a "Weight"
