@@ -104,24 +104,57 @@ func (a *AutoCompleteAdapter) completeHelpTopics(lastWord string) ([][]rune, int
 	return a.withCommonPrefix(matches, lastWord)
 }
 
-// withCommonPrefix calculates the common prefix adjustment for readline.
+// withCommonPrefix calculates the common prefix and returns suffixes
+// as required by the readline AutoCompleter interface.
+// Per the readline docs, candidates should be the characters AFTER the
+// common prefix, and length is the common prefix length.
+// Example: input "he" matches "help" => return [["lp"]], 2
 func (a *AutoCompleteAdapter) withCommonPrefix(matches [][]rune, lastWord string) ([][]rune, int) {
 	if len(matches) == 0 {
 		return matches, 0
 	}
 
-	// Find common prefix length
-	minLen := len(lastWord)
-	for _, m := range matches {
-		compare := string(m)
-		i := 0
-		for i < len(lastWord) && i < len(compare) && lastWord[i] == compare[i] {
-			i++
+	// Find the common prefix length across all matches.
+	minLen := len(matches[0])
+	for _, m := range matches[1:] {
+		if len(m) < minLen {
+			minLen = len(m)
 		}
-		if i < minLen {
-			minLen = i
+	}
+	for i := 0; i < minLen; i++ {
+		ch := matches[0][i]
+		for _, m := range matches[1:] {
+			if m[i] != ch {
+				minLen = i
+				break
+			}
+		}
+		if minLen == i {
+			break
 		}
 	}
 
-	return matches, minLen - len(lastWord)
+	// Also cap by the number of characters that match the typed input.
+	// Case-insensitive matches (e.g. "HELP" -> "help") have 0 shared chars.
+	inputWord := []rune(lastWord)
+	sharedWithInput := 0
+	for i := 0; i < minLen && i < len(inputWord); i++ {
+		// Check against first match (all matches share this prefix)
+		if i < len(matches[0]) && matches[0][i] == inputWord[i] {
+			sharedWithInput++
+		} else {
+			break
+		}
+	}
+	if sharedWithInput < minLen {
+		minLen = sharedWithInput
+	}
+
+	// Return only the suffixes (characters after the common prefix).
+	suffixes := make([][]rune, len(matches))
+	for i, m := range matches {
+		suffixes[i] = m[minLen:]
+	}
+
+	return suffixes, minLen
 }

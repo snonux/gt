@@ -4,6 +4,7 @@
 package repl
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -63,34 +64,34 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			wantLen:    0,
 			wantMinLen: 0,
 		},
-		// Partial matches (single match, commonLen always 0 since minLen capped at len(lastWord))
+		// Partial matches (single match, commonLen = shared prefix length)
 		{
 			name:       "partial match he",
 			line:       []rune("he"),
 			pos:        2,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 2, // "he" shared, suffix "lp"
 		},
 		{
 			name:       "partial match cl",
 			line:       []rune("cl"),
 			pos:        2,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 2, // "cl" shared, suffix "ear"
 		},
 		{
 			name:       "partial match q",
 			line:       []rune("q"),
 			pos:        1,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 1, // "q" shared, suffix "uit"
 		},
 		{
 			name:       "partial match rp",
 			line:       []rune("rp"),
 			pos:        2,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 2, // "rp" shared, suffix "n"
 		},
 		// Multiple matches
 		{
@@ -98,7 +99,7 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			line:       []rune("c"),
 			pos:        1,
 			wantLen:    2,
-			wantMinLen: 0,
+			wantMinLen: 1, // "c" shared, suffixes "alc" and "lear"
 		},
 		// No matches
 		{
@@ -129,41 +130,41 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			wantLen:    0,
 			wantMinLen: 0,
 		},
-		// Case insensitive
+		// Case insensitive — case mismatch means no shared prefix
 		{
 			name:       "uppercase HELP",
 			line:       []rune("HELP"),
 			pos:        4,
 			wantLen:    1,
-			wantMinLen: -4, // HELP vs help: no case match in prefix calc
+			wantMinLen: 0, // H vs h: no shared prefix
 		},
 		{
 			name:       "uppercase CLEAR",
 			line:       []rune("CLEAR"),
 			pos:        5,
 			wantLen:    1,
-			wantMinLen: -5,
+			wantMinLen: 0, // C vs c: no shared prefix
 		},
 		{
 			name:       "mixed case HeLp",
 			line:       []rune("HeLp"),
 			pos:        4,
 			wantLen:    1,
-			wantMinLen: -4,
+			wantMinLen: 0, // H vs h: no shared prefix
 		},
 		{
 			name:       "uppercase Q matches quit",
 			line:       []rune("Q"),
 			pos:        1,
 			wantLen:    1,
-			wantMinLen: -1,
+			wantMinLen: 0, // Q vs q: no shared prefix
 		},
 		{
 			name:       "uppercase C matches calc and clear",
 			line:       []rune("C"),
 			pos:        1,
 			wantLen:    2,
-			wantMinLen: -1,
+			wantMinLen: 0, // C vs c: no shared prefix
 		},
 		// Multi-word input completes last word (exact match returns nothing)
 		{
@@ -179,29 +180,28 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			line:       []rune("help"),
 			pos:        2,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 2, // "he" shared, suffix "lp"
 		},
-		// Single character prefixes
 		{
 			name:       "single char h",
 			line:       []rune("h"),
 			pos:        1,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 1, // "h" shared, suffix "elp"
 		},
 		{
 			name:       "single char e matches exit",
 			line:       []rune("e"),
 			pos:        1,
 			wantLen:    1,
-			wantMinLen: 0,
+			wantMinLen: 1, // "e" shared, suffix "xit"
 		},
 		{
 			name:       "single char r matches rpn and rat",
 			line:       []rune("r"),
 			pos:        1,
 			wantLen:    2,
-			wantMinLen: 0,
+			wantMinLen: 1, // "r" shared, suffixes "pn" and "at"
 		},
 	}
 
@@ -218,12 +218,23 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 				t.Errorf("common prefix len = %d, want %d", commonLen, tt.wantMinLen)
 			}
 
-			// Verify all matches are actual commands
+			// Verify all matches are actual commands (prefix + suffix)
+			prefixWords := strings.Fields(string(tt.line[:tt.pos]))
+			var prefix string
+			if len(prefixWords) > 0 {
+				prefix = prefixWords[len(prefixWords)-1]
+			}
 			for _, m := range matches {
-				matchStr := string(m)
+				matchStr := prefix + string(m)
+				// For case-insensitive matches, also check case-folded
 				found := false
 				for _, cmd := range commands {
-					if cmd == matchStr {
+					if cmd == matchStr || strings.EqualFold(cmd, matchStr) {
+						found = true
+						break
+					}
+					// Case-insensitive: the suffix itself (lowercased) should be a valid command
+					if commonLen == 0 && strings.EqualFold(string(m), cmd) {
 						found = true
 						break
 					}
@@ -255,8 +266,9 @@ func TestAutoCompleteAdapterDoPreserveCommandOrder(t *testing.T) {
 		}
 	}
 
-	match0 := string(matches[0])
-	match1 := string(matches[1])
+	// Suffixes: prefix is "c", so matches are "alc" and "lear"
+	match0 := "c" + string(matches[0])
+	match1 := "c" + string(matches[1])
 
 	if calcIdx < clearIdx {
 		if match0 != "calc" || match1 != "clear" {
