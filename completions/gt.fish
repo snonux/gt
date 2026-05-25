@@ -26,8 +26,10 @@ end
 
 # ── Flags ────────────────────────────────────────────────────────────────────
 
-# Suppress fish's default file/path completions so only our custom tokens appear.
-complete -c gt -k
+# Prevent fish from mixing in file/path completions from the current directory.
+# The -f flag tells fish "file completions are handled" and the empty -a means
+# no actual files are offered, so only our custom -a entries appear.
+complete -c gt -f -a ""
 
 complete -c gt -n "__fish_gt_needs_top_level" \
     -l log -r -d "Session log file (REPL mode)"
