@@ -34,8 +34,8 @@ func TestExecuteCommandHelpWithUnknownSubcommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ExecuteCommand('help unknown') returned error: %v", err)
 	}
-	if !strings.Contains(output, "No help available") {
-		t.Errorf("ExecuteCommand('help unknown') should mention 'No help available', got: %s", output[:50])
+	if !strings.Contains(output, "No help for") {
+		t.Errorf("ExecuteCommand('help unknown') should mention 'No help for', got: %s", output[:80])
 	}
 }
 
@@ -57,8 +57,11 @@ func TestExecuteCommandHelp(t *testing.T) {
 	if output == "" {
 		t.Error("ExecuteCommand('help') returned empty output")
 	}
-	if !strings.Contains(output, "PERC") {
-		t.Errorf("ExecuteCommand('help') output should contain 'PERC', got: %s", output[:50])
+	if !strings.Contains(output, "gt") {
+		t.Errorf("ExecuteCommand('help') output should contain 'gt', got: %s", output[:80])
+	}
+	if !strings.Contains(output, "RPN") {
+		t.Errorf("ExecuteCommand('help') output should mention RPN, got: %s", output[:80])
 	}
 }
 

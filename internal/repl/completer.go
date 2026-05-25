@@ -36,6 +36,7 @@ var _ readline.AutoCompleter = (*AutoCompleteAdapter)(nil)
 
 // AutoCompleteAdapter implements the readline AutoCompleter interface,
 // providing tab-completion suggestions for built-in commands.
+// When the first word is "help", it completes with help topics instead.
 type AutoCompleteAdapter struct {
 	commands []string
 }
@@ -49,23 +50,50 @@ func NewAutoCompleter() *AutoCompleteAdapter {
 
 // Do implements the readline.AutoCompleter interface.
 // It returns matching command completions for the given line.
+// When the first word is "help", it offers help topic completions.
 func (a *AutoCompleteAdapter) Do(line []rune, pos int) ([][]rune, int) {
 	text := string(line[:pos])
 	words := strings.Fields(text)
 	if len(words) == 0 {
-		var result [][]rune
-		for _, cmd := range a.commands {
-			result = append(result, []rune(cmd))
-		}
-		return result, 0
+		return a.completeCommands("")
+	}
+
+	// If first word is "help", complete help topics
+	if strings.ToLower(words[0]) == "help" && len(words) > 1 {
+		return a.completeHelpTopics(words[len(words)-1])
 	}
 
 	lastWord := words[len(words)-1]
+	return a.completeCommands(lastWord)
+}
+
+// completeCommands returns matching command completions and prefix length.
+func (a *AutoCompleteAdapter) completeCommands(lastWord string) ([][]rune, int) {
 	var matches [][]rune
 	for _, cmd := range a.commands {
 		if strings.HasPrefix(strings.ToLower(cmd), strings.ToLower(lastWord)) {
 			matches = append(matches, []rune(cmd))
 		}
+	}
+	return a.withCommonPrefix(matches, lastWord)
+}
+
+// completeHelpTopics returns matching help topic completions and prefix length.
+func (a *AutoCompleteAdapter) completeHelpTopics(lastWord string) ([][]rune, int) {
+	var matches [][]rune
+	topics := GetCompletionTopics()
+	for _, topic := range topics {
+		if strings.HasPrefix(strings.ToLower(topic), strings.ToLower(lastWord)) {
+			matches = append(matches, []rune(topic))
+		}
+	}
+	return a.withCommonPrefix(matches, lastWord)
+}
+
+// withCommonPrefix calculates the common prefix adjustment for readline.
+func (a *AutoCompleteAdapter) withCommonPrefix(matches [][]rune, lastWord string) ([][]rune, int) {
+	if len(matches) == 0 {
+		return matches, 0
 	}
 
 	// Find common prefix length
