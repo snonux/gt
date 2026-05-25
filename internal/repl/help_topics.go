@@ -503,14 +503,14 @@ var (
 )
 
 func init() {
-	seenCat := make(map[string]bool)
+	seenCat := make(map[string]struct{})
 	for i := range helpTopics {
 		t := &helpTopics[i]
 		for _, a := range t.Aliases {
 			helpByAlias[a] = t
 		}
-		if !seenCat[t.Category] {
-			seenCat[t.Category] = true
+		if _, ok := seenCat[t.Category]; !ok {
+			seenCat[t.Category] = struct{}{}
 			categoryOrder = append(categoryOrder, t.Category)
 		}
 		helpByCat[t.Category] = append(helpByCat[t.Category], t.Operator)

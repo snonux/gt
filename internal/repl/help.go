@@ -44,7 +44,7 @@ func GetAllTopics() []string {
 // GetCompletionTopics returns all help topics suitable for tab completion.
 // Includes operator names and aliases from all registered HelpTopic entries.
 func GetCompletionTopics() []string {
-	seen := make(map[string]bool)
+	seen := make(map[string]struct{})
 	var topics []string
 
 	// Add all operator names (skip "help" itself — no need to complete help help)
@@ -53,12 +53,12 @@ func GetCompletionTopics() []string {
 			continue
 		}
 		topics = append(topics, op)
-		seen[op] = true
+		seen[op] = struct{}{}
 		// Add aliases
 		for _, a := range t.Aliases {
-			if !seen[a] {
+			if _, ok := seen[a]; !ok {
 				topics = append(topics, a)
-				seen[a] = true
+				seen[a] = struct{}{}
 			}
 		}
 	}
