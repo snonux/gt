@@ -3,6 +3,11 @@
 
 package repl
 
+import (
+	"fmt"
+	"strings"
+)
+
 type HelpTopic struct {
 	Category    string // e.g. "Arithmetic", "Stack", "Comparison", "Variables", "Hyper", "REPL"
 	Operator    string // the operator or command name (e.g. "+", "help", "rat")
@@ -10,6 +15,9 @@ type HelpTopic struct {
 	Description string
 	Usage       string // short usage hint
 	Examples    []string
+	// Render, when non-nil, overrides the default formatTopic rendering.
+	// Used for special topics like "categories" that need custom output.
+	Render func() string
 }
 
 // helpTopics is the single source of truth for all inline help entries.
@@ -454,6 +462,34 @@ var helpTopics = []HelpTopic{
 		Usage:       "a b [ln] ...",
 		Examples: []string{
 			"1 2.71828 [ln]  ln(1) + ln(2.71828) = 0 + 1 = 1",
+		},
+	},
+
+	// ── Special topics (custom render) ──
+
+	{
+		Category:    "REPL",
+		Operator:    "categories",
+		Description: "List all available help topics by category",
+		Usage:       "help categories",
+		Examples:    []string{"help categories    List all topics grouped by category"},
+		Render: func() string {
+			var sb strings.Builder
+			sb.WriteString("Available help topics by category:\n\n")
+			for _, cat := range categoryOrder {
+				sb.WriteString(fmt.Sprintf("  %s:\n", cat))
+				for _, op := range helpByCat[cat] {
+					t := helpByTopic[op]
+					aliasStr := ""
+					if len(t.Aliases) > 0 {
+						aliasStr = " (" + strings.Join(t.Aliases, ", ") + ")"
+					}
+					sb.WriteString(fmt.Sprintf("    %-16s %s%s\n", op, t.Description, aliasStr))
+				}
+				sb.WriteString("\n")
+			}
+			sb.WriteString("Use 'help <topic>' for details on any topic.\n")
+			return sb.String()
 		},
 	},
 }

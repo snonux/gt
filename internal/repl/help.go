@@ -11,13 +11,9 @@ import (
 
 // GetHelp returns the formatted help text for a topic.
 // If topic is empty, it returns the general help overview.
-// If topic is "categories", it lists all categories.
 func GetHelp(topic string) string {
 	if topic == "" {
 		return getGeneralHelp()
-	}
-	if topic == "categories" {
-		return getCategoriesHelp()
 	}
 
 	// Look up by operator name or alias
@@ -28,6 +24,9 @@ func GetHelp(topic string) string {
 	}
 	if !ok {
 		return fmt.Sprintf("No help for %q.\n\nType 'help' for an overview, or 'help categories' to list all topics.", topic)
+	}
+	if t.Render != nil {
+		return t.Render()
 	}
 	return formatTopic(t)
 }
@@ -43,13 +42,10 @@ func GetAllTopics() []string {
 }
 
 // GetCompletionTopics returns all help topics suitable for tab completion.
-// Includes operator names, aliases, and special topics like "categories".
+// Includes operator names and aliases from all registered HelpTopic entries.
 func GetCompletionTopics() []string {
 	seen := make(map[string]bool)
 	var topics []string
-
-	// Add "categories" as a special topic
-	topics = append(topics, "categories")
 
 	// Add all operator names (skip "help" itself — no need to complete help help)
 	for op, t := range helpByTopic {
@@ -128,26 +124,6 @@ func getGeneralHelp() string {
 	sb.WriteString("\nUse 'help <topic>' for details on any operator or command.\n")
 	sb.WriteString("Use 'help categories' to see all available topics.\n")
 
-	return sb.String()
-}
-
-// getCategoriesHelp lists all categories and their topics.
-func getCategoriesHelp() string {
-	var sb strings.Builder
-	sb.WriteString("Available help topics by category:\n\n")
-	for _, cat := range categoryOrder {
-		sb.WriteString(fmt.Sprintf("  %s:\n", cat))
-		for _, op := range helpByCat[cat] {
-			t := helpByTopic[op]
-			aliasStr := ""
-			if len(t.Aliases) > 0 {
-				aliasStr = " (" + strings.Join(t.Aliases, ", ") + ")"
-			}
-			sb.WriteString(fmt.Sprintf("    %-16s %s%s\n", op, t.Description, aliasStr))
-		}
-		sb.WriteString("\n")
-	}
-	sb.WriteString("Use 'help <topic>' for details on any topic.\n")
 	return sb.String()
 }
 
