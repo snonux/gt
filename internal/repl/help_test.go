@@ -134,14 +134,21 @@ func TestGetCompletionTopicsIncludesAliases(t *testing.T) {
 	expectedAliases := []string{"exit", "calc", "gt", "lt", "categories"}
 	for _, expected := range expectedAliases {
 		found := false
-		for _, t := range topics {
-			if t == expected {
+		for _, topic := range topics {
+			if topic == expected {
 				found = true
 				break
 			}
 		}
 		if !found {
 			t.Errorf("GetCompletionTopics() missing alias/topic %q", expected)
+		}
+	}
+
+	// "help" itself should NOT be in completion topics
+	for _, topic := range topics {
+		if topic == "help" {
+			t.Error("GetCompletionTopics() should not include 'help' itself")
 		}
 	}
 }

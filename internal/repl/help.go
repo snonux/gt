@@ -537,8 +537,11 @@ func GetCompletionTopics() []string {
 	// Add "categories" as a special topic
 	topics = append(topics, "categories")
 
-	// Add all operator names
+	// Add all operator names (skip "help" itself — no need to complete help help)
 	for op, t := range helpByTopic {
+		if op == "help" {
+			continue
+		}
 		topics = append(topics, op)
 		seen[op] = true
 		// Add aliases
