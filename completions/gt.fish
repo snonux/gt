@@ -26,6 +26,9 @@ end
 
 # ── Flags ────────────────────────────────────────────────────────────────────
 
+# Suppress fish's default file/path completions so only our custom tokens appear.
+complete -c gt -k
+
 complete -c gt -n "__fish_gt_needs_top_level" \
     -l log -r -d "Session log file (REPL mode)"
 
