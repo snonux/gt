@@ -30,7 +30,7 @@
 //
 // # Version History
 //
-// Current: v0.4.2
+// Current: v0.5.1
 //
 // See the git repository for complete version history and release notes.
 package internal
@@ -39,12 +39,12 @@ package internal
 //
 // This constant is defined at build time and can be overridden during builds:
 //
-//	go build -ldflags="-X 'codeberg.org/snonux/gt/internal.Version=v0.4.2-20260524'"
+//	go build -ldflags="-X 'codeberg.org/snonux/gt/internal.Version=v0.5.1-20260524'"
 //
 // The version is used for the "gt version" command-line subcommand.
 //
 // Example output:
 //
 //	$ gt version
-//	v0.4.2
-const Version = "v0.5.0"
+//	v0.5.1
+const Version = "v0.5.1"
