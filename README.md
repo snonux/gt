@@ -28,6 +28,20 @@ gt '100Mbps 1hr *'      # rate × time → 3.6e+11 bits
 gt                      # interactive REPL
 ```
 
+## Shell Completions
+
+Fish completions are available in [`completions/`](completions/). To install:
+
+```bash
+cp completions/gt.fish ~/.config/fish/completions/
+```
+
+Or system-wide:
+
+```bash
+sudo cp completions/gt.fish /usr/local/share/fish/vendor_completions.d/
+```
+
 ## Feature Guide
 
 All features are documented in [`docs/`](docs/):
@@ -51,6 +65,7 @@ All features are documented in [`docs/`](docs/):
 | Custom metrics | [custom-metrics](docs/custom-metrics.md) |
 | REPL mode | [repl-mode](docs/repl-mode.md) |
 | Rational number mode | [rational-mode](docs/rational-mode.md) |
+| Fish shell completions | [completions](completions/)
 
 ## Building and Testing
 
