@@ -222,8 +222,26 @@ func TestHelpCompleterIntegration(t *testing.T) {
 		t.Fatal("NewAutoCompleter returned nil")
 	}
 
+	// "help " (with trailing space) should offer help topics, not "help help"
+	matches, _ := adapter.Do([]rune("help "), 5)
+	for _, m := range matches {
+		if string(m) == "help" {
+			t.Error("'help ' should not complete to 'help help'")
+		}
+	}
+	// Should include a known topic
+	foundPlus := false
+	for _, m := range matches {
+		if string(m) == "+" {
+			foundPlus = true
+		}
+	}
+	if !foundPlus {
+		t.Errorf("'help ' should suggest '+', got: %v", matches)
+	}
+
 	// Test help topic completion
-	matches, _ := adapter.Do([]rune("help +"), 6)
+	matches, _ = adapter.Do([]rune("help +"), 6)
 	if len(matches) != 1 {
 		t.Errorf("'help +' should match +, got %d matches: %v", len(matches), matches)
 	}

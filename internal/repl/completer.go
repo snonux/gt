@@ -50,7 +50,7 @@ func NewAutoCompleter() *AutoCompleteAdapter {
 
 // Do implements the readline.AutoCompleter interface.
 // It returns matching command completions for the given line.
-// When the first word is "help", it offers help topic completions.
+// When the first word is "help" followed by a space, it offers help topic completions.
 func (a *AutoCompleteAdapter) Do(line []rune, pos int) ([][]rune, int) {
 	text := string(line[:pos])
 	words := strings.Fields(text)
@@ -58,7 +58,16 @@ func (a *AutoCompleteAdapter) Do(line []rune, pos int) ([][]rune, int) {
 		return a.completeCommands("")
 	}
 
-	// If first word is "help", complete help topics
+	// If first word is "help" and user typed a space after it (or more words),
+	// complete help topics. If first word is just "help" with no trailing space,
+	// complete the command "help".
+	if strings.ToLower(words[0]) == "help" && len(words) == 1 {
+		// Check if there's a trailing space — means user wants topics
+		if len(text) > 0 && text[len(text)-1] == ' ' {
+			return a.completeHelpTopics("")
+		}
+		// No trailing space — just completing the command "help"
+	}
 	if strings.ToLower(words[0]) == "help" && len(words) > 1 {
 		return a.completeHelpTopics(words[len(words)-1])
 	}
