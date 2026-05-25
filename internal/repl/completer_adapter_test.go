@@ -48,19 +48,19 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			wantLen:    len(commands),
 			wantMinLen: 0,
 		},
-		// Exact matches
+		// Exact matches — no completion offered (readline would append the word)
 		{
 			name:       "exact match help",
 			line:       []rune("help"),
 			pos:        4,
-			wantLen:    1,
+			wantLen:    0,
 			wantMinLen: 0,
 		},
 		{
 			name:       "exact match clear",
 			line:       []rune("clear"),
 			pos:        5,
-			wantLen:    1,
+			wantLen:    0,
 			wantMinLen: 0,
 		},
 		// Partial matches (single match, commonLen always 0 since minLen capped at len(lastWord))
@@ -165,12 +165,12 @@ func TestAutoCompleteAdapterDo(t *testing.T) {
 			wantLen:    2,
 			wantMinLen: -1,
 		},
-		// Multi-word input completes last word
+		// Multi-word input completes last word (exact match returns nothing)
 		{
 			name:       "multi word input completes last word",
 			line:       []rune("rpn help"),
 			pos:        8,
-			wantLen:    1,
+			wantLen:    0,
 			wantMinLen: 0,
 		},
 		// Cursor position matters
@@ -272,10 +272,10 @@ func TestAutoCompleteAdapterDoPreserveCommandOrder(t *testing.T) {
 func TestAutoCompleteAdapterDoMultilineInput(t *testing.T) {
 	adapter := NewAutoCompleter()
 
-	// Tab-separated words
+	// Tab-separated words — exact match "help" returns no completions
 	matches, _ := adapter.Do([]rune("rpn\thelp"), 8)
-	if len(matches) != 1 {
-		t.Errorf("tab-separated 'rpn\\thelp' should match 'help', got %d: %v",
+	if len(matches) != 0 {
+		t.Errorf("tab-separated 'rpn\\thelp' (exact match) should return 0, got %d: %v",
 			len(matches), runeSliceToStringSlice(matches))
 	}
 }

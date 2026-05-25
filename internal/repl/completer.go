@@ -84,6 +84,11 @@ func (a *AutoCompleteAdapter) completeCommands(lastWord string) ([][]rune, int) 
 			matches = append(matches, []rune(cmd))
 		}
 	}
+	// If the word already exactly matches one command, don't offer it as a
+	// completion — readline would append it, giving e.g. "helphelp".
+	if len(matches) == 1 && string(matches[0]) == lastWord {
+		return nil, 0
+	}
 	return a.withCommonPrefix(matches, lastWord)
 }
 
