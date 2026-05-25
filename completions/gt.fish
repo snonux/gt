@@ -13,8 +13,7 @@
 
 # Return true when we are at the top-level (first argument after 'gt').
 function __fish_gt_needs_top_level
-    # Only match if we haven't seen any subcommand or flag yet
-    not __fish_seen_command_argument --exclusive
+    __fish_use_subcommand
 end
 
 # Return true when the current token is part of an RPN expression (i.e. we are
