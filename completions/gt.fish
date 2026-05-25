@@ -74,17 +74,9 @@ complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
     -a "lt" -d "Less than"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a ">" -d "Greater than"
-complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "<" -d "Less than"
-complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
     -a "gte" -d "Greater or equal"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a ">=" -d "Greater or equal"
-complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
     -a "lte" -d "Less or equal"
-complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
-    -a "<=" -d "Less or equal"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
     -a "eq" -d "Equal"
 complete -c gt -n "__fish_gt_not_in_metric_or_custom" \
