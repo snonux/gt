@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/snonux/gt/internal/perc"
-	"codeberg.org/snonux/gt/internal/rpn"
+	"github.com/snonux/gt/internal/perc"
+	"github.com/snonux/gt/internal/rpn"
 )
 
 // rpnPrefixes lists the command prefixes that trigger RPN evaluation.

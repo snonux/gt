@@ -1,4 +1,4 @@
-module codeberg.org/snonux/gt
+module github.com/snonux/gt
 
 go 1.26.0
 

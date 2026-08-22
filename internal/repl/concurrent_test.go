@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"codeberg.org/snonux/gt/internal/rpn"
+	"github.com/snonux/gt/internal/rpn"
 )
 
 // TestConcurrentExecutor tests concurrent calls to defaultExecutor with fresh state

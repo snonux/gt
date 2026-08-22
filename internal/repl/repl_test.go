@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/snonux/gt/internal/rpn"
+	"github.com/snonux/gt/internal/rpn"
 )
 
 // Helper to create a minimal REPL for testing without prompt (no TTY required)

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/snonux/gt/internal/rpn"
+	"github.com/snonux/gt/internal/rpn"
 )
 
 func TestNewRPNState(t *testing.T) {

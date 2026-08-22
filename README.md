@@ -9,7 +9,7 @@ This is a toy project to experiment with local LLMs (Qwen, Gemma, Nemotron, GPT 
 ## Installation
 
 ```bash
-go install codeberg.org/snonux/gt/cmd/gt@latest
+go install github.com/snonux/gt/cmd/gt@latest
 ```
 
 Or using [mage](https://github.com/magefile/mage):

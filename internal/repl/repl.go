@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"codeberg.org/snonux/gt/internal/rpn"
+	"github.com/snonux/gt/internal/rpn"
 
 	"github.com/chzyer/readline"
 )
